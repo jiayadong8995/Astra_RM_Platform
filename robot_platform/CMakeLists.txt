@@ -23,10 +23,6 @@ add_custom_target(platform_info
   COMMAND ${CMAKE_COMMAND} -E echo "Phase 2 seeds a GCC-compilable hardware target from generated code"
 )
 
-if(NOT PLATFORM_TARGET_HW)
-  return()
-endif()
-
 set(CHASSIS_ROOT ${PLATFORM_REPO_ROOT}/Chassis)
 set(CHASSIS_DRIVERS_DIR ${CHASSIS_ROOT}/Drivers)
 set(CHASSIS_HAL_DIR ${CHASSIS_DRIVERS_DIR}/STM32H7xx_HAL_Driver)
@@ -43,6 +39,9 @@ set(PLATFORM_SEED_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis_seed)
 set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
 set(PLATFORM_BMI088_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/bmi088)
 set(PLATFORM_DSP_LIB ${CHASSIS_CMSIS_DIR}/DSP/Lib/GCC/libarm_cortexM7lfdp_math.a)
+
+if(PLATFORM_TARGET_HW)
+
 
 set(BALANCE_CHASSIS_CPU_FLAGS
   -mcpu=cortex-m7
@@ -376,3 +375,145 @@ add_custom_command(TARGET balance_chassis_legacy_full.elf POST_BUILD
   COMMAND ${CMAKE_SIZE} $<TARGET_FILE:balance_chassis_legacy_full.elf>
   COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:balance_chassis_legacy_full.elf> ${CMAKE_CURRENT_BINARY_DIR}/balance_chassis_legacy_full.bin
 )
+
+endif() # end of PLATFORM_TARGET_HW
+
+if(PLATFORM_TARGET_SIM)
+  message(STATUS "Configuring SITL target balance_chassis_sitl")
+  
+  set(PLATFORM_SITL_BSP_DIR ${PLATFORM_RUNTIME_DIR}/bsp/sitl)
+  set(PLATFORM_FREERTOS_PORT_DIR ${PLATFORM_THIRD_PARTY_DIR}/freertos_port_linux)
+
+  set(BALANCE_CHASSIS_FREERTOS_SOURCES
+    ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS/cmsis_os.c
+    ${CHASSIS_FREERTOS_DIR}/croutine.c
+    ${CHASSIS_FREERTOS_DIR}/event_groups.c
+    ${CHASSIS_FREERTOS_DIR}/list.c
+    ${CHASSIS_FREERTOS_DIR}/portable/MemMang/heap_3.c
+    ${PLATFORM_FREERTOS_PORT_DIR}/port.c
+    ${PLATFORM_FREERTOS_PORT_DIR}/utils/wait_for_event.c
+    ${CHASSIS_FREERTOS_DIR}/queue.c
+    ${CHASSIS_FREERTOS_DIR}/stream_buffer.c
+    ${CHASSIS_FREERTOS_DIR}/tasks.c
+    ${CHASSIS_FREERTOS_DIR}/timers.c
+  )
+
+  set(BALANCE_CHASSIS_SITL_BSP_SOURCES
+    ${PLATFORM_SITL_BSP_DIR}/hal_stub.c
+    ${PLATFORM_SITL_BSP_DIR}/bsp_dwt_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/bsp_PWM_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/can_bsp_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/BMI088driver_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
+  )
+
+  set(BALANCE_CHASSIS_LEGACY_APP_SOURCES
+    ${PLATFORM_LEGACY_APP_DIR}/INS_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/chassis_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/motor_control_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/observe_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/remote_control.c
+    ${PLATFORM_LEGACY_APP_DIR}/remote_task.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC/VMC_calc.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/kalman/kalman_filter.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony/mahony_filter.c
+    ${PLATFORM_RUNTIME_DIR}/module/controller/controller.c
+    ${PLATFORM_RUNTIME_DIR}/module/lib/user_lib.c
+    ${PLATFORM_RUNTIME_DIR}/module/message_center/message_center.c
+  )
+
+  set(BALANCE_CHASSIS_CMSIS_DSP_SOURCES
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/BasicMathFunctions/BasicMathFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/CommonTables/CommonTables.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/ComplexMathFunctions/ComplexMathFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/ControllerFunctions/ControllerFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/FastMathFunctions/FastMathFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/FilteringFunctions/FilteringFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/MatrixFunctions/MatrixFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/StatisticsFunctions/StatisticsFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/SupportFunctions/SupportFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/TransformFunctions/TransformFunctions.c
+  )
+
+  add_library(cmsis_dsp_sitl STATIC
+    ${BALANCE_CHASSIS_CMSIS_DSP_SOURCES}
+  )
+
+  target_include_directories(cmsis_dsp_sitl
+    PRIVATE
+      ${PLATFORM_SITL_BSP_DIR}
+      ${CHASSIS_HAL_DIR}/Inc
+      ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
+      ${CHASSIS_CMSIS_DIR}/Include
+      ${CHASSIS_CMSIS_DIR}/DSP/Include
+  )
+
+  target_compile_definitions(cmsis_dsp_sitl
+    PRIVATE
+      USE_HAL_DRIVER
+      STM32H723xx
+      ARM_MATH_CM7
+  )
+
+  target_compile_options(cmsis_dsp_sitl
+    PRIVATE
+      -Wall -Wextra -Wno-unused-parameter -O0 -g3
+  )
+
+  add_executable(balance_chassis_sitl
+    ${PLATFORM_SITL_BSP_DIR}/main_sitl.c
+    ${PLATFORM_LEGACY_APP_DIR}/freertos_legacy.c
+    ${BALANCE_CHASSIS_FREERTOS_SOURCES}
+    ${BALANCE_CHASSIS_SITL_BSP_SOURCES}
+    ${BALANCE_CHASSIS_LEGACY_APP_SOURCES}
+  )
+
+  target_include_directories(balance_chassis_sitl
+    PRIVATE
+      # SITL overrides (must be first to override main.h, etc)
+      ${PLATFORM_SITL_BSP_DIR}
+      # Original hardware headers so app/module can find them
+      ${PLATFORM_BOARD_BSP_DIR}
+      ${PLATFORM_DM_MOTOR_DIR}
+      ${PLATFORM_BMI088_DIR}
+      ${PLATFORM_REMOTE_CONTROL_DIR}
+      ${PLATFORM_LEGACY_APP_DIR}
+      # CMSIS / Core headers needed by FreeRTOS CMSIS wrapper and others
+      ${CHASSIS_HAL_DIR}/Inc
+      ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
+      ${CHASSIS_CMSIS_DIR}/Include
+      ${CHASSIS_CMSIS_DIR}/DSP/Include
+      ${GENERATED_RAW_DIR}/Inc
+      # FreeRTOS headers
+      ${CHASSIS_FREERTOS_DIR}/include
+      ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS
+      ${PLATFORM_FREERTOS_PORT_DIR}
+      # Module headers
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/kalman
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony
+      ${PLATFORM_RUNTIME_DIR}/module/controller
+      ${PLATFORM_RUNTIME_DIR}/module/lib
+      ${PLATFORM_RUNTIME_DIR}/module/message_center
+  )
+
+  target_compile_definitions(balance_chassis_sitl
+    PRIVATE
+      USE_HAL_DRIVER
+      STM32H723xx
+      SITL_BUILD
+      ARM_MATH_CM7
+  )
+
+  target_link_libraries(balance_chassis_sitl
+    PRIVATE
+      cmsis_dsp_sitl
+      pthread
+      m
+  )
+endif()
+
