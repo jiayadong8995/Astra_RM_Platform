@@ -23,13 +23,13 @@ add_custom_target(platform_info
   COMMAND ${CMAKE_COMMAND} -E echo "Phase 2 seeds a GCC-compilable hardware target from generated code"
 )
 
-set(CHASSIS_ROOT ${PLATFORM_REPO_ROOT}/Chassis)
+set(PLATFORM_THIRD_PARTY_DIR ${PLATFORM_ROOT}/third_party)
+set(CHASSIS_ROOT ${PLATFORM_THIRD_PARTY_DIR}/stm32_cube)
 set(CHASSIS_DRIVERS_DIR ${CHASSIS_ROOT}/Drivers)
 set(CHASSIS_HAL_DIR ${CHASSIS_DRIVERS_DIR}/STM32H7xx_HAL_Driver)
 set(CHASSIS_CMSIS_DIR ${CHASSIS_DRIVERS_DIR}/CMSIS)
 set(CHASSIS_FREERTOS_DIR ${CHASSIS_ROOT}/Middlewares/Third_Party/FreeRTOS/Source)
 set(GENERATED_RAW_DIR ${PLATFORM_RUNTIME_DIR}/generated/stm32h7_ctrl_board_raw)
-set(PLATFORM_THIRD_PARTY_DIR ${PLATFORM_ROOT}/third_party)
 set(PLATFORM_FREERTOS_PORT_DIR ${PLATFORM_THIRD_PARTY_DIR}/freertos_port_gcc_cm7_r0p1)
 set(PLATFORM_LINKER_SCRIPT ${PLATFORM_ROOT}/cmake/linker/stm32h723_flash.ld)
 set(PLATFORM_BOARD_BSP_DIR ${PLATFORM_RUNTIME_DIR}/bsp/boards/stm32h7_ctrl_board)
@@ -67,7 +67,7 @@ set(BALANCE_CHASSIS_GENERATED_SOURCES
   ${GENERATED_RAW_DIR}/Src/stm32h7xx_it.c
   ${GENERATED_RAW_DIR}/Src/tim.c
   ${GENERATED_RAW_DIR}/Src/usart.c
-  ${CHASSIS_ROOT}/Core/Src/system_stm32h7xx.c
+  ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Source/Templates/system_stm32h7xx.c
 )
 
 set(BALANCE_CHASSIS_HAL_SOURCES
