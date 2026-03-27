@@ -1,0 +1,33 @@
+# Build output
+build/
+*.o
+*.a
+*.elf
+*.bin
+*.map
+*.hex
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Keil
+MDK-ARM/*.uvguix.*
+MDK-ARM/DebugConfig/
+MDK-ARM/RTE/
+MDK-ARM/*.bak
+MDK-ARM/Listings/
+MDK-ARM/Objects/
+
+# OS
+.DS_Store
+Thumbs.db
