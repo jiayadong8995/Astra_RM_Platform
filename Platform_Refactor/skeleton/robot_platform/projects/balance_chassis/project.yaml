@@ -1,0 +1,10 @@
+name: balance_chassis
+board: stm32h7_ctrl_board
+robot: astra_rm2025_balance
+runtime_modes:
+  - hw
+  - replay
+  - physics_sim
+build:
+  default: hw
+app: app_balance_chassis

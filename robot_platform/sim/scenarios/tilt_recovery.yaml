@@ -1,0 +1,32 @@
+name: tilt_recovery
+description: Recover from larger initial pitch offset.
+environment: physics_sim
+duration_s: 4.0
+dt_s: 0.002
+initial:
+  theta_deg: 6.0
+  theta_dot_deg_s: 0.0
+  x_m: 0.0
+  x_dot_m_s: 0.0
+disturbance:
+  start_s: 0.0
+  end_s: 0.0
+  torque_bias: 0.0
+noise:
+  imu_theta_deg_std: 0.1
+checks:
+  max_abs_theta_deg: 14.0
+  final_abs_theta_deg: 3.5
+  max_abs_x_m: 0.60
+controller:
+  kp_theta: 42.0
+  kd_theta: 6.0
+  kp_x: 0.9
+  kd_x: 1.3
+  max_torque: 26.0
+plant:
+  gravity_gain: 18.0
+  torque_gain: 1.7
+  damping: 2.2
+  velocity_damping: 1.1
+  wheel_coupling: 0.55

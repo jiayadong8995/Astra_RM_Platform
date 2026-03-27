@@ -1,0 +1,32 @@
+name: push_recovery
+description: Small external push then recover upright.
+environment: physics_sim
+duration_s: 4.0
+dt_s: 0.002
+initial:
+  theta_deg: 0.8
+  theta_dot_deg_s: 0.0
+  x_m: 0.0
+  x_dot_m_s: 0.0
+disturbance:
+  start_s: 0.4
+  end_s: 0.55
+  torque_bias: 4.0
+noise:
+  imu_theta_deg_std: 0.15
+checks:
+  max_abs_theta_deg: 10.0
+  final_abs_theta_deg: 2.5
+  max_abs_x_m: 0.8
+controller:
+  kp_theta: 38.0
+  kd_theta: 5.5
+  kp_x: 1.0
+  kd_x: 1.5
+  max_torque: 25.0
+plant:
+  gravity_gain: 18.0
+  torque_gain: 1.7
+  damping: 2.2
+  velocity_damping: 1.1
+  wheel_coupling: 0.55

@@ -1,0 +1,20 @@
+type: object
+required:
+  - name
+  - mcu
+  - clock
+  - peripherals
+properties:
+  name:
+    type: string
+  mcu:
+    type: string
+  clock:
+    type: object
+  peripherals:
+    type: array
+  memory:
+    type: object
+  devices:
+    type: array
+

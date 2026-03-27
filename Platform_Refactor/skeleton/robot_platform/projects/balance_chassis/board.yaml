@@ -1,0 +1,21 @@
+name: stm32h7_ctrl_board
+mcu: STM32H743
+clock:
+  source: HSE
+  sysclk_hz: 480000000
+peripherals:
+  - fdcan1
+  - fdcan2
+  - fdcan3
+  - spi2
+  - uart5
+  - usart1
+memory:
+  flash_kb: 2048
+  ram_kb: 1024
+devices:
+  - bmi088
+  - dm4310
+  - m3508
+  - dbus_remote
+

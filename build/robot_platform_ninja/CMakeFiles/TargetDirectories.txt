@@ -1,0 +1,9 @@
+/home/xbd/worspcae/code/Astra_RM2025_Balance/build/robot_platform_ninja/CMakeFiles/platform_info.dir
+/home/xbd/worspcae/code/Astra_RM2025_Balance/build/robot_platform_ninja/CMakeFiles/balance_chassis_generated_raw.dir
+/home/xbd/worspcae/code/Astra_RM2025_Balance/build/robot_platform_ninja/CMakeFiles/balance_chassis_bsp_seed.dir
+/home/xbd/worspcae/code/Astra_RM2025_Balance/build/robot_platform_ninja/CMakeFiles/balance_chassis_hw_seed.elf.dir
+/home/xbd/worspcae/code/Astra_RM2025_Balance/build/robot_platform_ninja/CMakeFiles/balance_chassis_legacy_full_obj.dir
+/home/xbd/worspcae/code/Astra_RM2025_Balance/build/robot_platform_ninja/CMakeFiles/balance_chassis_bsp_full.dir
+/home/xbd/worspcae/code/Astra_RM2025_Balance/build/robot_platform_ninja/CMakeFiles/balance_chassis_legacy_full.elf.dir
+/home/xbd/worspcae/code/Astra_RM2025_Balance/build/robot_platform_ninja/CMakeFiles/edit_cache.dir
+/home/xbd/worspcae/code/Astra_RM2025_Balance/build/robot_platform_ninja/CMakeFiles/rebuild_cache.dir
