@@ -263,6 +263,8 @@ def _build_smoke_result(summary: dict[str, object]) -> None:
     bridge_stats_summary = summary.get("bridge_stats_summary")
     startup_error = summary.get("bridge_startup_error")
     sitl_exit_code = summary.get("sitl_exit_code")
+    validation_summary = summary.get("validation_summary")
+    validation_targets_status = summary.get("validation_targets_status")
     result: dict[str, object] = {
         "status": summary.get("status"),
         "passed": False,
@@ -296,6 +298,23 @@ def _build_smoke_result(summary: dict[str, object]) -> None:
         }
     if isinstance(bridge_stats_summary, dict):
         result["bridge_activity"] = bridge_stats_summary
+    if isinstance(validation_summary, dict):
+        result["validation"] = {
+            "declared_count": int(validation_summary.get("declared_count", 0)),
+            "required_count": int(validation_summary.get("required_count", 0)),
+            "observed_count": int(validation_summary.get("observed_count", 0)),
+            "pending_count": int(validation_summary.get("pending_count", 0)),
+        }
+    if isinstance(validation_targets_status, list):
+        pending_required = [
+            item.get("name")
+            for item in validation_targets_status
+            if isinstance(item, dict)
+            and bool(item.get("required_for_smoke"))
+            and item.get("status") != "observed"
+        ]
+        if pending_required:
+            result["pending_validation_targets"] = pending_required
 
     summary["smoke_result"] = result
 

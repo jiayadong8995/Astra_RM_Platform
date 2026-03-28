@@ -95,6 +95,16 @@ class RunnerSummaryTests(unittest.TestCase):
             "sitl_exit_code": -15,
             "bridge_startup_error": {"message": "[Errno 1] Operation not permitted"},
             "bridge_stats_last": {"imu_sent": 0, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
+            "validation_summary": {
+                "declared_count": 2,
+                "required_count": 2,
+                "observed_count": 0,
+                "pending_count": 2,
+            },
+            "validation_targets_status": [
+                {"name": "chassis_state_summary", "required_for_smoke": True, "status": "declared_only"},
+                {"name": "leg_output_pair", "required_for_smoke": True, "status": "declared_only"},
+            ],
             "smoke_health": {"passed": False, "failures": ["session_status_ok"]},
         }
 
@@ -103,6 +113,14 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertEqual(summary["smoke_result"]["primary_failure"], "bridge_startup_error")
         self.assertEqual(summary["smoke_result"]["failure_detail"], "[Errno 1] Operation not permitted")
         self.assertTrue(summary["smoke_result"]["sitl_remained_alive"])
+        self.assertEqual(
+            summary["smoke_result"]["validation"],
+            {"declared_count": 2, "required_count": 2, "observed_count": 0, "pending_count": 2},
+        )
+        self.assertEqual(
+            summary["smoke_result"]["pending_validation_targets"],
+            ["chassis_state_summary", "leg_output_pair"],
+        )
 
     def test_smoke_health_recomputes_failure_after_runtime_error_status(self) -> None:
         summary = {
