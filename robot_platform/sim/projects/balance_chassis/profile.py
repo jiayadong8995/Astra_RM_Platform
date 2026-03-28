@@ -5,6 +5,7 @@ from robot_platform.sim.core.profile import (
     SimProjectProfile,
     SmokeExpectations,
     TransportPorts,
+    ValidationTarget,
 )
 from robot_platform.sim.core.protocol import BRIDGE_PROTOCOL_VERSION
 
@@ -29,6 +30,23 @@ RUNTIME_OUTPUT_BOUNDARY = RuntimeTopicBoundary(
 RUNTIME_TRANSITIONAL_TOPICS = RuntimeTopicBoundary(
     role="transitional_internal",
     topics=("chassis_observe",),
+)
+
+VALIDATION_TARGETS = (
+    ValidationTarget(
+        name="chassis_state_summary",
+        kind="runtime_output",
+        source_topics=("chassis_state",),
+        description="Primary chassis runtime state summary exposed to sim/report consumers.",
+        required_for_smoke=True,
+    ),
+    ValidationTarget(
+        name="leg_output_pair",
+        kind="runtime_output",
+        source_topics=("leg_left", "leg_right"),
+        description="Left/right leg outputs that capture the main control result for the current robot profile.",
+        required_for_smoke=True,
+    ),
 )
 
 BALANCE_CHASSIS_PROFILE = SimProjectProfile(
@@ -56,4 +74,5 @@ BALANCE_CHASSIS_PROFILE = SimProjectProfile(
         warn_on_missing_motor_command=True,
         warn_on_missing_motor_feedback=True,
     ),
+    validation_targets=VALIDATION_TARGETS,
 )

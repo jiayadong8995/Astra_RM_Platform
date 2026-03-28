@@ -48,6 +48,7 @@ python3 -m robot_platform.tools.platform_cli.main test sim
 - 统计摘要（样本数、计数增量、单位时间速率）
 - 可选警告项（例如已启动但尚未看到电机命令/反馈）
 - bridge 失败时的 SITL 存活状态（区分“bridge 没起来”和“SITL 自己崩了”）
+- 项目 profile 声明的验证目标（当前先声明 `chassis_state` / `leg_*` 这类正式输出，后续再接真实采集）
 
 当前 `test sim` 会跑 sim 侧最小单元回归，锁住：
 

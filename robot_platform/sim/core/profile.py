@@ -29,6 +29,15 @@ class SmokeExpectations:
 
 
 @dataclass(frozen=True)
+class ValidationTarget:
+    name: str
+    kind: str
+    source_topics: tuple[str, ...]
+    description: str
+    required_for_smoke: bool = False
+
+
+@dataclass(frozen=True)
 class SimProjectProfile:
     name: str
     sitl_target: str
@@ -41,3 +50,4 @@ class SimProjectProfile:
     runtime_transitional_topics: RuntimeTopicBoundary
     transport_ports: TransportPorts
     smoke_expectations: SmokeExpectations
+    validation_targets: tuple[ValidationTarget, ...] = ()

@@ -6,6 +6,7 @@ from robot_platform.sim.core.runner import (
     _extract_bridge_metadata,
     _summarize_bridge_stats,
     _summarize_runtime_boundary,
+    _summarize_validation_targets,
     _summarize_smoke_health,
 )
 from robot_platform.sim.projects.balance_chassis.smoke import run_smoke_session

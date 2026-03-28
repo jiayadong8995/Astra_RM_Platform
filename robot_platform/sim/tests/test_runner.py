@@ -8,6 +8,7 @@ from robot_platform.sim.runner import (
     _extract_bridge_metadata,
     _summarize_bridge_stats,
     _summarize_runtime_boundary,
+    _summarize_validation_targets,
     _summarize_smoke_health,
 )
 from robot_platform.sim.projects.balance_chassis.profile import BALANCE_CHASSIS_PROFILE
@@ -60,6 +61,10 @@ class RunnerSummaryTests(unittest.TestCase):
             ("chassis_state", "leg_left", "leg_right"),
         )
         self.assertTrue(BALANCE_CHASSIS_PROFILE.smoke_expectations.require_bridge_stats_observed)
+        self.assertEqual(
+            tuple(target.name for target in BALANCE_CHASSIS_PROFILE.validation_targets),
+            ("chassis_state_summary", "leg_output_pair"),
+        )
 
     def test_summarize_bridge_stats_computes_delta_and_rate(self) -> None:
         summary = {
@@ -141,6 +146,44 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertTrue(summary["smoke_health"]["passed"])
         self.assertEqual(summary["smoke_health"]["warnings"], ["motor_command_seen", "motor_feedback_active"])
         self.assertEqual(summary["smoke_result"]["warnings"], ["motor_command_seen", "motor_feedback_active"])
+
+    def test_validation_targets_are_declared_for_reporting(self) -> None:
+        summary: dict[str, object] = {}
+
+        _summarize_validation_targets(summary, BALANCE_CHASSIS_PROFILE)
+
+        self.assertEqual(
+            summary["validation_summary"],
+            {
+                "declared_count": 2,
+                "required_count": 2,
+                "observed_count": 0,
+                "pending_count": 2,
+            },
+        )
+        self.assertEqual(
+            summary["validation_targets_status"],
+            [
+                {
+                    "name": "chassis_state_summary",
+                    "kind": "runtime_output",
+                    "source_topics": ["chassis_state"],
+                    "description": "Primary chassis runtime state summary exposed to sim/report consumers.",
+                    "required_for_smoke": True,
+                    "status": "declared_only",
+                    "observed": False,
+                },
+                {
+                    "name": "leg_output_pair",
+                    "kind": "runtime_output",
+                    "source_topics": ["leg_left", "leg_right"],
+                    "description": "Left/right leg outputs that capture the main control result for the current robot profile.",
+                    "required_for_smoke": True,
+                    "status": "declared_only",
+                    "observed": False,
+                },
+            ],
+        )
 
     def test_bridge_failure_requires_sitl_to_remain_alive(self) -> None:
         summary = {
