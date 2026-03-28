@@ -1,7 +1,8 @@
-#ifndef BALANCE_CHASSIS_APP_IO_OBSERVE_TOPICS_H
-#define BALANCE_CHASSIS_APP_IO_OBSERVE_TOPICS_H
+#ifndef BALANCE_CHASSIS_RUNTIME_SERVICE_OBSERVE_TOPICS_H
+#define BALANCE_CHASSIS_RUNTIME_SERVICE_OBSERVE_TOPICS_H
 
-#include "topic_contract.h"
+#include "../../app/balance_chassis/app_config/robot_def.h"
+#include "message_center.h"
 
 typedef struct
 {

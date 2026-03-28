@@ -2,8 +2,9 @@
 
 该目录将承接观测链运行时组织。
 
-计划迁入：
+当前第一批迁入文件：
 
 - `observe_orchestration.*`
+- `observe_runtime.h`
 - `observe_topics.*`
-- `legacy/observe_task.*`
+- `observe_task.*`

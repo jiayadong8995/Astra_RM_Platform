@@ -15,11 +15,11 @@
 	
 #include "observe_task.h"
 #include "cmsis_os.h"
-#include "../app_config/app_params.h"
-#include "../app_config/robot_def.h"
-#include "../app_io/observe_topics.h"
-#include "../app_flow/observe_orchestration.h"
-#include "../app_flow/observe_runtime.h"
+#include "../../app/balance_chassis/app_config/app_params.h"
+#include "../../app/balance_chassis/app_config/robot_def.h"
+#include "observe_topics.h"
+#include "observe_orchestration.h"
+#include "observe_runtime.h"
 
 void Observe_task(void)
 {
