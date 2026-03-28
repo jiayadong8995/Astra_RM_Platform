@@ -264,7 +264,7 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_LEGACY_APP_DIR}/legacy/INS_task.c
     ${PLATFORM_LEGACY_APP_DIR}/legacy/chassis_task.c
     ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_flow/chassis_runtime_helpers.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_flow/chassis_control_support.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/chassis_orchestration.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/actuator_runtime.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/observe_orchestration.c

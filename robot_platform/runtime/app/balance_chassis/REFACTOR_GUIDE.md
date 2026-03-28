@@ -32,7 +32,7 @@
   - 当前文件：`topic_contract.h`、`chassis_topics.*`、`remote_topics.*`、`observe_topics.*`、`actuator_topics.*`、`ins_topics.*`
 - `app_flow/`
   - 业务编排与运行态装配
-  - 当前文件：`chassis_orchestration.*`、`chassis_runtime_helpers.*`、`remote_orchestration.*`、`remote_runtime.*`、`observe_orchestration.*`、`observe_runtime.*`、`actuator_runtime.*`、`ins_runtime.*`
+  - 当前文件：`chassis_orchestration.*`、`chassis_control_support.*`、`remote_orchestration.*`、`remote_runtime.*`、`observe_orchestration.*`、`observe_runtime.*`、`actuator_runtime.*`、`ins_runtime.*`
 - `app_config/`
   - 项目参数、topic 结构、业务常量、app 运行态结构
   - 当前文件：`robot_def.h`、`runtime_state.h`、`app_params.h`
