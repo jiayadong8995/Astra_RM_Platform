@@ -32,7 +32,7 @@
   - 当前文件：`topic_contract.h`、`chassis_topics.*`、`remote_topics.*`、`observe_topics.*`、`actuator_topics.*`、`ins_topics.*`
 - `app_flow/`
   - 业务编排与运行态装配
-  - 当前文件：`chassis_orchestration.*`、`chassis_runtime_helpers.*`、`remote_runtime.*`、`observe_runtime.*`、`actuator_runtime.*`、`ins_runtime.*`
+  - 当前文件：`chassis_orchestration.*`、`chassis_runtime_helpers.*`、`remote_orchestration.*`、`remote_runtime.*`、`observe_orchestration.*`、`observe_runtime.*`、`actuator_runtime.*`、`ins_runtime.*`
 - `app_config/`
   - 项目参数、topic 结构、业务常量、app 运行态结构
   - 当前文件：`robot_def.h`、`runtime_state.h`、`app_params.h`
@@ -94,7 +94,7 @@
 - [x] `app_io/chassis_topics.h` 不再直接依赖 `VMC_calc.h`
 - [x] `app_io/remote_topics.h` 只暴露 app 级 contract，不暴露 remote runtime 类型
 - [x] `topic_contract.h` 已作为 app 级 topic 契约入口引入
-- [x] `observe_task` 已开始拆成 `app_io/observe_topics.* + app_flow/observe_runtime_helpers.* + task shell`
+- [x] `observe_task` 已开始拆成 `app_io/observe_topics.* + app_flow/observe_orchestration.* + task shell`
 - [x] `INS_task` 已开始拆成 `app_io/ins_topics.* + app_flow/ins_runtime.* + task shell`
 - [x] `motor_control_task` 已开始拆成 `app_io/actuator_topics.* + app_flow/actuator_runtime.* + task shell`
 

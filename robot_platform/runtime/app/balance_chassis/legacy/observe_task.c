@@ -18,8 +18,8 @@
 #include "../app_config/app_params.h"
 #include "../app_config/robot_def.h"
 #include "../app_io/observe_topics.h"
+#include "../app_flow/observe_orchestration.h"
 #include "../app_flow/observe_runtime.h"
-#include "../app_flow/observe_runtime_helpers.h"
 
 void Observe_task(void)
 {
