@@ -19,8 +19,13 @@
 当前阶段未落地：
 
 1. `flash / debug / replay / test` 的统一 CLI 落地
-2. SITL 场景、回放、报告的完整闭环
+2. SITL 回放与报告的完整闭环
 3. runtime 边界进一步收紧，减少 legacy 头文件直连
+
+当前不优先做：
+
+- `physics_sim`
+- 高保真动力学场景库
 
 ## 目录
 

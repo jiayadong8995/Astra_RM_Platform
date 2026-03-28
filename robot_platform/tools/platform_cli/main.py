@@ -152,7 +152,7 @@ def main() -> int:
         return _build_hw_seed(supported[mode])
 
     if cmd == "sim":
-        scenario = args[1] if len(args) > 1 else "standstill"
+        scenario = args[1] if len(args) > 1 else "sitl"
         return _run_sim(scenario)
 
     print(f"command placeholder: {cmd}")

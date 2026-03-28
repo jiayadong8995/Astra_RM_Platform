@@ -2,7 +2,7 @@
 
 ## 目标
 
-这一阶段只做平台入口，不动现有 `Chassis/` 和 `Gimbal/` 主线。
+这一阶段只做平台入口，不动现有 legacy 主线。
 
 注意：
 
@@ -28,15 +28,14 @@ runtime/
   bsp/
   module/
   app/
-  osal/
 ```
 
 ### 3. 旧工程定位
 
-旧工程：
+旧工程归档：
 
-- `Chassis/MDK-ARM/*.uvprojx`
-- `Gimbal/MDK-ARM/*.uvprojx`
+- `Astra_RM2025_Balance/Chassis/`
+- `Astra_RM2025_Balance/Gimbal/`
 
 只作为迁移参考，不再作为主构建入口。
 
@@ -44,10 +43,10 @@ runtime/
 
 第二阶段优先接 `Chassis`：
 
-- generated 来源：`Chassis/Core`, `Chassis/Drivers`, `Chassis/Middlewares`
-- bsp 来源：`Chassis/User/Bsp`
-- module 来源：`Chassis/User/Algorithm`, `Chassis/User/Controller`, `Chassis/User/modules`
-- app 来源：`Chassis/User/APP`
+- generated 来源：`Astra_RM2025_Balance/Chassis/Core`, `Astra_RM2025_Balance/Chassis/Drivers`, `Astra_RM2025_Balance/Chassis/Middlewares`
+- bsp 来源：`Astra_RM2025_Balance/Chassis/User/Bsp`
+- module 来源：`Astra_RM2025_Balance/Chassis/User/Algorithm`, `Astra_RM2025_Balance/Chassis/User/Controller`, `Astra_RM2025_Balance/Chassis/User/modules`
+- app 来源：`Astra_RM2025_Balance/Chassis/User/APP`
 
 ## 本阶段完成标准
 

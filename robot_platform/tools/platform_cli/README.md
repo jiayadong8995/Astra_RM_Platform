@@ -32,3 +32,7 @@ platform test
 - `debug`
 - `replay`
 - `test`
+
+当前不投入：
+
+- `physics_sim` 场景化闭环
