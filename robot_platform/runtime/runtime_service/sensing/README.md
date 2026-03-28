@@ -2,8 +2,8 @@
 
 该目录将承接传感器运行时输入整理。
 
-计划迁入：
+当前第一批迁入文件：
 
 - `ins_runtime.*`
 - `ins_topics.*`
-- `legacy/INS_task.*`
+- `INS_task.*`

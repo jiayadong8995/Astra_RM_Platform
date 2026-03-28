@@ -1,8 +1,8 @@
-#ifndef BALANCE_CHASSIS_APP_FLOW_INS_RUNTIME_H
-#define BALANCE_CHASSIS_APP_FLOW_INS_RUNTIME_H
+#ifndef BALANCE_CHASSIS_RUNTIME_SERVICE_SENSING_INS_RUNTIME_H
+#define BALANCE_CHASSIS_RUNTIME_SERVICE_SENSING_INS_RUNTIME_H
 
-#include "../app_config/robot_def.h"
-#include "../app_config/runtime_state.h"
+#include "../../app/balance_chassis/app_config/robot_def.h"
+#include "../../app/balance_chassis/app_config/runtime_state.h"
 #include "mahony_filter.h"
 
 typedef struct

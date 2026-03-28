@@ -17,10 +17,10 @@
 #include "bsp_PWM.h"
 #include "bsp_dwt.h"
 #include "cmsis_os.h"
-#include "../app_config/app_params.h"
-#include "../app_config/robot_def.h"
-#include "../app_flow/ins_runtime.h"
-#include "../app_io/ins_topics.h"
+#include "../../app/balance_chassis/app_config/app_params.h"
+#include "../../app/balance_chassis/app_config/robot_def.h"
+#include "ins_runtime.h"
+#include "ins_topics.h"
 
 static INS_Runtime_State_t runtime_state;
 static INS_Runtime_Bus_t runtime_bus;
