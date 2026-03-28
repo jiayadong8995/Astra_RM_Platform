@@ -264,6 +264,7 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_LEGACY_APP_DIR}/INS_task.c
     ${PLATFORM_LEGACY_APP_DIR}/chassis_task.c
     ${PLATFORM_LEGACY_APP_DIR}/control/chassis_runtime_helpers.c
+    ${PLATFORM_LEGACY_APP_DIR}/io/chassis_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/motor_control_task.c
     ${PLATFORM_LEGACY_APP_DIR}/observe_task.c
     ${PLATFORM_LEGACY_APP_DIR}/remote_task.c

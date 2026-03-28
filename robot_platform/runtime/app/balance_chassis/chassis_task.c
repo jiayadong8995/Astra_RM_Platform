@@ -26,6 +26,7 @@
 #include "robot_def.h"
 #include "user_lib.h"
 #include "control/chassis_runtime_helpers.h"
+#include "io/chassis_topics.h"
 
 static float LQR_K_R[12]= LQR_K_MATRIX;
 
@@ -53,28 +54,8 @@ static void chassis_control_loop(chassis_t * chassis,\
 							     PidTypeDef *    legl);
 
 /* pub-sub handles */
-static Publisher_t  *chassis_state_pub;
-static Publisher_t  *leg_right_pub;
-static Publisher_t  *leg_left_pub;
-static Publisher_t  *actuator_cmd_pub;
-static Subscriber_t *ins_sub;
-static Subscriber_t *cmd_sub;
-static Subscriber_t *observe_sub;
-static Subscriber_t *actuator_feedback_sub;
+static Chassis_Runtime_Bus_t runtime_bus;
 static INS_t ins_runtime;
-
-static void update_ins_runtime(INS_t *ins, const INS_Data_t *msg);
-static void apply_chassis_cmd(chassis_t *chassis, const Chassis_Cmd_t *cmd);
-static void apply_observe_state(chassis_t *chassis, const Chassis_Observe_t *observe);
-static void pull_runtime_inputs(chassis_t *chassis,
-                                INS_t *ins,
-                                INS_Data_t *ins_msg,
-                                Chassis_Cmd_t *cmd_msg,
-                                Chassis_Observe_t *observe_msg,
-                                Actuator_Feedback_t *feedback_msg);
-static void publish_runtime_outputs(const chassis_t *chassis,
-                                    const vmc_leg_t *right_leg,
-                                    const vmc_leg_t *left_leg);
 
 void Chassis_task(void)
 {
@@ -83,134 +64,24 @@ void Chassis_task(void)
     Chassis_Observe_t observe_msg = {0};
     Actuator_Feedback_t feedback_msg = {0};
 
-    ins_sub           = SubRegister("ins_data",      sizeof(INS_Data_t));
-    cmd_sub           = SubRegister("chassis_cmd",   sizeof(Chassis_Cmd_t));
-    observe_sub       = SubRegister("chassis_observe", sizeof(Chassis_Observe_t));
-    actuator_feedback_sub = SubRegister("actuator_feedback", sizeof(Actuator_Feedback_t));
-
-	while(ins_runtime.ins_flag == 0 || feedback_msg.ready == 0U)
-	{
-        pull_runtime_inputs(&chassis_runtime, &ins_runtime, &ins_msg, &cmd_msg, &observe_msg, &feedback_msg);
-	    osDelay(1);
-	}
+    chassis_runtime_bus_init(&runtime_bus);
+    chassis_runtime_bus_wait_ready(&runtime_bus, &chassis_runtime, &ins_runtime, &ins_msg, &cmd_msg, &observe_msg, &feedback_msg);
 
     Chassis_init(&chassis_runtime,&runtime_right_leg,&runtime_left_leg);
     Pensation_init(&roll_pid,&tp_pid,&turn_pid,&leg_r_pid,&leg_l_pid);
-
-    /* register pub-sub */
-    chassis_state_pub = PubRegister("chassis_state", sizeof(Chassis_State_t));
-    leg_right_pub     = PubRegister("leg_right",     sizeof(Leg_Output_t));
-    leg_left_pub      = PubRegister("leg_left",      sizeof(Leg_Output_t));
-    actuator_cmd_pub  = PubRegister("actuator_cmd",  sizeof(Actuator_Cmd_t));
 
     osDelay(6);
 
 	while(1)
 	{	
-        pull_runtime_inputs(&chassis_runtime, &ins_runtime, &ins_msg, &cmd_msg, &observe_msg, &feedback_msg);
+        chassis_runtime_bus_pull_inputs(&runtime_bus, &chassis_runtime, &ins_runtime, &ins_msg, &cmd_msg, &observe_msg, &feedback_msg);
 
 		chassis_feedback_update(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,&feedback_msg);
 	    chassis_control_loop(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,LQR_K_R,LQR_K_R,&leg_r_pid,&leg_l_pid);
-        publish_runtime_outputs(&chassis_runtime, &runtime_right_leg, &runtime_left_leg);
+        chassis_runtime_bus_publish_outputs(&runtime_bus, &chassis_runtime, &runtime_right_leg, &runtime_left_leg);
 
 		osDelay(CHASSIS_TIME);
 	}
-}
-
-static void update_ins_runtime(INS_t *ins, const INS_Data_t *msg)
-{
-    ins->Pitch = msg->pitch;
-    ins->Roll = msg->roll;
-    ins->YawTotalAngle = msg->yaw_total;
-    ins->Gyro[0] = msg->gyro[0];
-    ins->Gyro[1] = msg->gyro[1];
-    ins->Gyro[2] = msg->gyro[2];
-    ins->MotionAccel_b[0] = msg->accel_b[0];
-    ins->MotionAccel_b[1] = msg->accel_b[1];
-    ins->MotionAccel_b[2] = msg->accel_b[2];
-    ins->ins_flag = msg->ready;
-}
-
-static void apply_chassis_cmd(chassis_t *chassis, const Chassis_Cmd_t *cmd)
-{
-    chassis->v_set = cmd->vx_cmd;
-    chassis->turn_set = cmd->turn_cmd;
-    chassis->leg_set = cmd->leg_set;
-    chassis->start_flag = cmd->start_flag;
-    chassis->jump_flag = cmd->jump_flag;
-    chassis->recover_flag = cmd->recover_flag;
-}
-
-static void apply_observe_state(chassis_t *chassis, const Chassis_Observe_t *observe)
-{
-    chassis->v_filter = observe->v_filter;
-    chassis->x_filter = observe->x_filter;
-}
-
-static void pull_runtime_inputs(chassis_t *chassis,
-                                INS_t *ins,
-                                INS_Data_t *ins_msg,
-                                Chassis_Cmd_t *cmd_msg,
-                                Chassis_Observe_t *observe_msg,
-                                Actuator_Feedback_t *feedback_msg)
-{
-    if (SubGetMessage(ins_sub, ins_msg))
-    {
-        update_ins_runtime(ins, ins_msg);
-    }
-    if (SubGetMessage(cmd_sub, cmd_msg))
-    {
-        apply_chassis_cmd(chassis, cmd_msg);
-    }
-    if (SubGetMessage(observe_sub, observe_msg))
-    {
-        apply_observe_state(chassis, observe_msg);
-    }
-    SubGetMessage(actuator_feedback_sub, feedback_msg);
-}
-
-static void publish_runtime_outputs(const chassis_t *chassis,
-                                    const vmc_leg_t *right_leg,
-                                    const vmc_leg_t *left_leg)
-{
-    Chassis_State_t state_msg = {
-        .v_filter  = chassis->v_filter,
-        .x_filter  = chassis->x_filter,
-        .x_set     = chassis->x_set,
-        .total_yaw = chassis->total_yaw,
-        .roll      = chassis->roll,
-        .turn_set  = chassis->turn_set,
-    };
-    Leg_Output_t right_msg = {
-        .joint_torque = {right_leg->torque_set[0], right_leg->torque_set[1]},
-        .wheel_torque = chassis->wheel_motor[1].torque_set,
-        .wheel_current = chassis->wheel_motor[1].give_current,
-        .leg_length = right_leg->L0,
-    };
-    Leg_Output_t left_msg = {
-        .joint_torque = {left_leg->torque_set[0], left_leg->torque_set[1]},
-        .wheel_torque = chassis->wheel_motor[0].torque_set,
-        .wheel_current = chassis->wheel_motor[0].give_current,
-        .leg_length = left_leg->L0,
-    };
-    Actuator_Cmd_t actuator_msg = {
-        .joint_torque = {
-            right_leg->torque_set[0],
-            right_leg->torque_set[1],
-            left_leg->torque_set[0],
-            left_leg->torque_set[1],
-        },
-        .wheel_current = {
-            chassis->wheel_motor[0].give_current,
-            chassis->wheel_motor[1].give_current,
-        },
-        .start_flag = chassis->start_flag,
-    };
-
-    PubPushMessage(chassis_state_pub, &state_msg);
-    PubPushMessage(leg_right_pub, &right_msg);
-    PubPushMessage(leg_left_pub,  &left_msg);
-    PubPushMessage(actuator_cmd_pub, &actuator_msg);
 }
 
 
