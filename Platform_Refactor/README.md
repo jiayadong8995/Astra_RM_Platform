@@ -1,42 +1,41 @@
-# Astra Platform Refactor
+# Platform Refactor
 
-这个目录保留平台重构过程中的关键设计文档。
+这个目录现在只保留一类内容：
 
-收口后，这里只保留仍然有参考价值的内容：
+- 为什么平台最终收敛到当前路线
+- 当前仍有参考价值的路线判断
 
-1. 架构目标与迁移边界
-2. 市场/方案调研
-3. 当前采用的 SITL 路线
+它不再承担“正在执行的开发文档”职责。真正指导当前开发的文档，统一看 [robot_platform/docs/README.md](../robot_platform/docs/README.md)。
 
-## 目录说明
+## 当前保留文件
 
 ```text
 Platform_Refactor/
   README.md
-  01_Architecture.md
-  02_Migration_Map.md
-  04_Market_Research.md
   05_SITL_Roadmap.md
 ```
 
-## 当前权威文档
+## 收口原则
 
-- [01_Architecture.md](./01_Architecture.md)
-- [02_Migration_Map.md](./02_Migration_Map.md)
-- [04_Market_Research.md](./04_Market_Research.md)
-- [05_SITL_Roadmap.md](./05_SITL_Roadmap.md)
+以下内容已经从这里移除：
 
-## 当前判断
+- 早期架构草图
+- 迁移批次拆分稿
+- 市场调研长文
 
-基于当前仓库实际情况，第一版平台只建议先覆盖 `Chassis`：
+原因：
 
-- `Chassis` 已经初步有 `Bsp / Algorithm / Controller / APP` 层次
-- `Chassis` 已经在尝试引入 message bus 和重构
-- `Gimbal` 仍是 legacy 资产，当前不作为平台主线目标
+- 这些文档描述的是立项和方案比较阶段
+- 当前仓库已经完成第一轮主线收口
+- 继续保留会把历史判断误读成当前要求
 
-## 建议阅读顺序
+## 当前建议
 
-1. [01_Architecture.md](./01_Architecture.md)
-2. [02_Migration_Map.md](./02_Migration_Map.md)
-3. [04_Market_Research.md](./04_Market_Research.md)
-4. [05_SITL_Roadmap.md](./05_SITL_Roadmap.md)
+如果只是继续开发平台，优先看：
+
+1. [../robot_platform/README.md](../robot_platform/README.md)
+2. [../robot_platform/docs/README.md](../robot_platform/docs/README.md)
+
+如果要回顾为什么最后选了现在这条验证路线，再看：
+
+1. [05_SITL_Roadmap.md](./05_SITL_Roadmap.md)

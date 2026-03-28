@@ -22,7 +22,7 @@
 2. SITL 回放与报告的完整闭环
 3. runtime 边界进一步收紧，减少 legacy 头文件直连
 
-当前不优先做：
+当前确认延后：
 
 - `physics_sim`
 - 高保真动力学场景库
@@ -43,8 +43,9 @@ robot_platform/
 ## 建议执行顺序
 
 1. 先读 [../README.md](../README.md)
-2. 再读 [docs/chassis_import_manifest.md](./docs/chassis_import_manifest.md)
-3. 如需看方案背景，再读 [../Platform_Refactor/05_SITL_Roadmap.md](../Platform_Refactor/05_SITL_Roadmap.md)
+2. 再读 [docs/README.md](./docs/README.md)
+3. 如需看环境细节，读 [docs/wsl_environment_setup.md](./docs/wsl_environment_setup.md)
+4. 如需看路线背景，再读 [../Platform_Refactor/README.md](../Platform_Refactor/README.md)
 
 ## 当前可用命令
 

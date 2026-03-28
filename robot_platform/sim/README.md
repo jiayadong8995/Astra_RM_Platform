@@ -21,4 +21,4 @@ python3 -m robot_platform.sim.bridge.sim_bridge
 
 - 先把 legacy 控制链跑进 Linux 进程
 - 先把 BSP socket bridge 跑通
-- `physics_sim` 暂不作为当前资源投入方向
+- `physics_sim` 暂不进入当前执行面

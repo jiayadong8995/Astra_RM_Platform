@@ -33,6 +33,6 @@ platform test
 - `replay`
 - `test`
 
-当前不投入：
+当前确认延后：
 
 - `physics_sim` 场景化闭环

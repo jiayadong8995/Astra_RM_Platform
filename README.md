@@ -16,7 +16,8 @@
 ## 现在应该从哪里开始
 
 1. 阅读 [robot_platform/README.md](./robot_platform/README.md)
-2. 如需看方案背景，再看 [Platform_Refactor/README.md](./Platform_Refactor/README.md)
+2. 如需看当前有效开发文档，再看 [robot_platform/docs/README.md](./robot_platform/docs/README.md)
+3. 如需看路线背景，再看 [Platform_Refactor/README.md](./Platform_Refactor/README.md)
 
 ## 非目标
 
