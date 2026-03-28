@@ -67,19 +67,52 @@ def _build_hw_seed(target: str) -> int:
     return _run(build_cmd, cwd=repo_root)
 
 
-def _run_sim(scenario: str) -> int:
-    from robot_platform.sim.physics.runner import run_physics_scenario
+def _build_sitl(target: str) -> int:
+    repo_root = _repo_root()
+    source_dir = repo_root / "robot_platform"
+    build_dir = repo_root / "build" / "robot_platform_sitl"
+    toolchain_file = source_dir / "cmake" / "toolchains" / "linux-gcc.cmake"
 
-    result = run_physics_scenario(scenario)
+    configure_cmd = [
+        "cmake",
+        "-S",
+        str(source_dir),
+        "-B",
+        str(build_dir),
+        "-G",
+        "Unix Makefiles",
+        f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
+        "-DPLATFORM_TARGET_HW=OFF",
+        "-DPLATFORM_TARGET_SIM=ON",
+    ]
+    build_cmd = [
+        "cmake",
+        "--build",
+        str(build_dir),
+        "--target",
+        target,
+        "-j4",
+    ]
+
+    rc = _run(configure_cmd, cwd=repo_root)
+    if rc != 0:
+        return rc
+    return _run(build_cmd, cwd=repo_root)
+
+
+def _run_sim(scenario: str) -> int:
     summary = {
-        "scenario": result["scenario"],
-        "passed": result["passed"],
-        "metrics": result["metrics"],
-        "checks": result["checks"],
-        "report_path": result["report_path"],
+        "sim_mode": "sitl",
+        "requested_scenario": scenario,
+        "status": "not_yet-integrated",
+        "next_steps": [
+            "python3 -m robot_platform.tools.platform_cli.main build sitl",
+            "./build/robot_platform_sitl/balance_chassis_sitl",
+            "python3 -m robot_platform.sim.bridge.sim_bridge",
+        ],
     }
     print(json.dumps(summary, indent=2, ensure_ascii=False))
-    return 0 if result["passed"] else 1
+    return 2
 
 
 def main() -> int:
@@ -109,10 +142,13 @@ def main() -> int:
             "hw_seed": "balance_chassis_bsp_seed",
             "legacy_obj": "balance_chassis_legacy_full_obj",
             "legacy_full": "balance_chassis_legacy_full.elf",
+            "sitl": "balance_chassis_sitl",
         }
         if mode not in supported:
             print(f"unsupported build mode for now: {mode}", file=sys.stderr)
             return 2
+        if mode == "sitl":
+            return _build_sitl(supported[mode])
         return _build_hw_seed(supported[mode])
 
     if cmd == "sim":
