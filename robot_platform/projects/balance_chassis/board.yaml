@@ -1,5 +1,5 @@
 name: stm32h7_ctrl_board
-mcu: STM32H743
+mcu: STM32H723
 clock:
   source: HSE
   sysclk_hz: 480000000
@@ -19,4 +19,3 @@ devices:
   - dm4310_joint_motor
   - m3508_wheel_motor
   - dbus_remote
-

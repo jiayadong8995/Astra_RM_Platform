@@ -1,185 +1,146 @@
 # WSL Environment Setup
 
-最后验证日期：2026-03-28
+本文档描述 `robot_platform` 在 WSL 环境下运行所需的前提、验证方式和已知限制。
 
-本文档记录当前仓库在 WSL 下跑通 `robot_platform` 最小硬件链路所需的环境、安装步骤和当前实测结论。
+它的目标是回答平台层面的问题：
 
-## 当前实测结果
+- 需要哪些工具
+- 平台如何发现这些工具
+- 在 WSL 下哪些命令应当可以工作
+- 当前有哪些环境限制
 
-已验证通过：
+它不记录个人机器路径、一次性安装过程或本地临时文件位置。
 
-- `java`
+## 1. 适用范围
+
+本文档适用于在 WSL 中执行以下平台能力：
+
+- `generate`
+- `build hw_elf`
+- `build legacy_full`
+- `build sitl`
+
+## 2. 环境前提
+
+在 WSL 中使用 `robot_platform`，至少需要以下工具可用：
+
+- `python3`
+- `cmake`
 - `ninja`
 - `arm-none-eabi-gcc`
-- `python3 -m robot_platform.tools.platform_cli.main build`
+- `java`
+- `STM32CubeMX`
 
-当前仍有条件性阻塞：
+说明：
 
-- 在无显示能力的自动化会话中，`python3 -m robot_platform.tools.platform_cli.main generate`
+- `python3` 用于运行平台 CLI
+- `cmake`、`ninja`、`arm-none-eabi-gcc` 用于硬件构建
+- `java` 和 `STM32CubeMX` 用于代码生成
 
-原因不是 `.ioc` 路径或 CubeMX 二进制缺失，而是 `STM32CubeMX 6.17.0` 在纯 headless 会话里，即使带 `-q <script>` 仍会初始化 Swing 主窗口，最终抛出 `java.awt.HeadlessException`。
+## 3. 平台如何发现工具
 
-换句话说：
+### 3.1 `STM32CubeMX`
 
-- 构建链已经通
-- CubeMX 安装已经通
-- CubeMX CLI 入口已经接上
-- 在带 `DISPLAY` 或 `WAYLAND_DISPLAY` 的 WSLg 终端中，应优先直接运行 `generate`
-- 只有在纯无显示会话里，才需要额外的图形显示环境，例如 `WSLg`、外部 `X Server`，或后续补装 `Xvfb`
-
-## 系统依赖
-
-建议安装：
-
-```bash
-sudo apt-get update
-sudo apt-get install -y default-jre ninja-build gcc-arm-none-eabi
-```
-
-当前实测版本：
-
-```text
-java: openjdk 21.0.10
-ninja: 1.11.1
-arm-none-eabi-gcc: 13.2.1
-python3: 3.12.3
-cmake: 3.28.3
-```
-
-## CubeMX 安装包
-
-当前使用的离线安装包路径：
-
-```text
-/home/xbd/workspace/stm32cubemx-lin-v6-17-0 (1).zip
-```
-
-解压后会得到：
-
-```text
-/tmp/stm32cubemx_617/SetupSTM32CubeMX-6.17.0
-```
-
-## CubeMX 安装位置
-
-在当前仓库内，已安装到：
-
-```text
-/home/xbd/workspace/codes/Astra_RM_Platform/.local_tools/stm32cubemx/6.17.0
-```
-
-主可执行文件：
-
-```text
-/home/xbd/workspace/codes/Astra_RM_Platform/.local_tools/stm32cubemx/6.17.0/STM32CubeMX
-```
-
-之所以安装到仓库内，而不是 `~/.local`，是因为当前自动化运行环境只保证仓库目录可写。
-
-## CubeMX 安装命令
-
-如果本机也使用相同的离线安装包，可以直接用控制台模式安装。
-
-1. 解压安装包：
-
-```bash
-rm -rf /tmp/stm32cubemx_617
-mkdir -p /tmp/stm32cubemx_617
-unzip -q "/home/xbd/workspace/stm32cubemx-lin-v6-17-0 (1).zip" -d /tmp/stm32cubemx_617
-```
-
-2. 生成安装模板：
-
-```bash
-DISPLAY= /tmp/stm32cubemx_617/SetupSTM32CubeMX-6.17.0 -options-template /tmp/stm32cubemx_617/options-template.txt
-```
-
-3. 写入目标安装路径：
-
-```bash
-cp /tmp/stm32cubemx_617/options-template.txt /tmp/stm32cubemx_617/options-repo.txt
-sed -i 's#^INSTALL_PATH=.*#INSTALL_PATH=/home/xbd/workspace/codes/Astra_RM_Platform/.local_tools/stm32cubemx/6.17.0#' /tmp/stm32cubemx_617/options-repo.txt
-mkdir -p /home/xbd/workspace/codes/Astra_RM_Platform/.local_tools/stm32cubemx/6.17.0
-```
-
-4. 执行控制台安装：
-
-```bash
-DISPLAY= /tmp/stm32cubemx_617/SetupSTM32CubeMX-6.17.0 -console -options /tmp/stm32cubemx_617/options-repo.txt
-```
-
-## 当前仓库内的 CubeMX 查找逻辑
-
-当前后端已经支持以下查找顺序：
+当前后端按以下顺序查找 `STM32CubeMX`：
 
 1. 环境变量 `STM32CUBEMX_BIN`
 2. 仓库内 `.local_tools/stm32cubemx/6.17.0/STM32CubeMX`
-3. `/home/xbd/.local/stm32cubemx/6.17.0/STM32CubeMX`
+3. 用户本地默认安装路径
 4. `PATH` 中的 `STM32CubeMX`
 5. `PATH` 中的 `stm32cubemx`
 
-## 当前 `.ioc` 输入位置
+建议：
 
-当前 `generate` 命令读取的是：
+- 在团队或 CI 环境中，优先显式设置 `STM32CUBEMX_BIN`
+- 不要让平台文档依赖某一台机器的私有安装路径
 
-```text
-/home/xbd/workspace/codes/Astra_RM_Platform/Astra_RM2025_Balance/Chassis/CtrlBoard-H7_IMU.ioc
-```
+### 3.2 可写目录
 
-## 当前命令
+当前 `CubeMX` 后端会使用仓库内可写缓存目录保存运行期配置：
 
-构建命令：
+- `.cache/stm32_user_home`
 
-```bash
-python3 -m robot_platform.tools.platform_cli.main build
-```
+这属于平台实现细节，使用者只需要保证仓库目录可写。
 
-当前实测通过，产物位于：
+## 4. 当前命令
 
-```text
-/home/xbd/workspace/codes/Astra_RM_Platform/build/robot_platform_ninja/balance_chassis_hw_seed.elf
-```
-
-生成命令：
+### 4.1 代码生成
 
 ```bash
 python3 -m robot_platform.tools.platform_cli.main generate
 ```
 
-当前会调用：
+当前行为：
 
-- `config load "<ioc>"`
-- `generate code "<output dir>"`
-- `exit`
+- 读取 `Astra_RM2025_Balance/Chassis/CtrlBoard-H7_IMU.ioc`
+- 调用 `STM32CubeMX` CLI
+- 输出到 `robot_platform/runtime/generated/stm32h7_ctrl_board_raw`
 
-脚本文件位于：
+### 4.2 硬件构建
 
-```text
-/tmp/robot_platform_codegen/generate_from_ioc.mxs
+```bash
+python3 -m robot_platform.tools.platform_cli.main build hw_elf
+python3 -m robot_platform.tools.platform_cli.main build legacy_full
 ```
 
-## generate 当前阻塞与建议
+### 4.3 SITL 构建
 
-当前报错特征：
-
-```text
-java.awt.HeadlessException
+```bash
+python3 -m robot_platform.tools.platform_cli.main build sitl
 ```
 
-这说明在当前 WSL 会话中，`STM32CubeMX -q` 仍然依赖图形显示能力。
+## 5. 推荐验证顺序
 
-建议优先级：
+在新的 WSL 环境中，建议按下面顺序验证：
 
-1. 如果当前机器支持 `WSLg`，在有图形能力的 WSL 终端里重新执行 `generate`
-2. 如果没有 `WSLg`，安装并验证一个可用的 `X Server`
-3. 或者后续补装 `Xvfb`，用虚拟显示驱动 CubeMX CLI
+1. 先验证工具存在：
+   - `python3 --version`
+   - `cmake --version`
+   - `ninja --version`
+   - `arm-none-eabi-gcc --version`
+   - `java -version`
+2. 再验证平台构建：
+   - `python3 -m robot_platform.tools.platform_cli.main build hw_elf`
+   - `python3 -m robot_platform.tools.platform_cli.main build sitl`
+3. 最后验证生成：
+   - `python3 -m robot_platform.tools.platform_cli.main generate`
 
-## 当前仓库内做过的适配
+这样做的原因是：
 
-为适配当前 WSL 环境，仓库已做以下调整：
+- 构建链通常比 `CubeMX` 图形依赖更稳定
+- 先确认构建链无误，再排查 `generate` 的环境问题更容易
 
-- `platform_cli generate` 已改为读取 `Astra_RM2025_Balance/Chassis/CtrlBoard-H7_IMU.ioc`
-- `platform_cli` 中 `sim` 改成按需导入，避免影响 `generate/build`
-- `cubemx_backend` 已支持查找仓库内安装的 CubeMX
-- `cubemx_backend` 会把 CubeMX 的 `HOME` 和 `user.home` 指向仓库内可写目录 `.cache/stm32_user_home`
-- `cubemx_backend` 在检测到 `DISPLAY` 或 `WAYLAND_DISPLAY` 时，不再强制 headless 模式
+## 6. WSL 下的已知限制
+
+当前最主要的限制在 `generate`：
+
+- `STM32CubeMX` 在部分 WSL 会话中仍依赖图形显示能力
+- 在纯无显示环境中，可能出现 `java.awt.HeadlessException`
+
+这意味着：
+
+- `build` 类命令通常可以在普通 WSL 终端或自动化环境中直接运行
+- `generate` 更适合在具备图形显示能力的 WSL 环境中执行，例如 `WSLg` 或可用的 X Server
+
+## 7. 平台层面的建议
+
+为了让 WSL 文档保持平台化质量，团队应当遵守以下原则：
+
+- 文档只描述前提、规则、验证步骤和限制
+- 不写个人机器专属路径
+- 不写一次性安装过程的临时命令
+- 不把本地排障记录直接当成平台文档
+
+如果后续需要保留详细安装步骤，应另建：
+
+- `local_setup/`
+- 或团队内部运维文档
+
+而不是继续堆在平台主文档里。
+
+## 8. 当前结论
+
+对 `robot_platform` 而言，WSL 环境下的结论可以压缩成两点：
+
+1. `build` 是当前更稳定的能力，应优先验证
+2. `generate` 可用，但仍受 `STM32CubeMX` 图形依赖约束

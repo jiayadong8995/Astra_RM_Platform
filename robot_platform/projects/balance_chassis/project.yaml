@@ -3,7 +3,7 @@ board: stm32h7_ctrl_board
 robot: astra_rm2025_balance
 runtime_modes:
   - hw
-  - replay
+  - sitl
 build:
   default: hw
 app: app_balance_chassis

@@ -1,11 +1,26 @@
 # Platform Refactor
 
-这个目录现在只保留一类内容：
+`Platform_Refactor/` 是路线决策归档目录。
 
-- 为什么平台最终收敛到当前路线
-- 当前仍有参考价值的路线判断
+它的职责只有一个：解释这个项目为什么最后收敛成现在这条路线。
 
-它不再承担“正在执行的开发文档”职责。真正指导当前开发的文档，统一看 [robot_platform/docs/README.md](../robot_platform/docs/README.md)。
+## 它主要回答什么问题
+
+- 为什么 `robot_platform` 成为主开发入口
+- 为什么 `Astra_RM2025_Balance` 只保留为历史基线
+- 为什么当前验证主线是 `SITL + replay`
+- 为什么 `physics_sim`、`osal`、大范围重构没有进入当前执行面
+
+## 它不负责什么
+
+- 不负责指导当前日常开发
+- 不负责描述最新代码结构
+- 不负责列执行清单或阶段任务
+
+这些内容统一看：
+
+- [../robot_platform/README.md](../robot_platform/README.md)
+- [../robot_platform/docs/README.md](../robot_platform/docs/README.md)
 
 ## 当前保留文件
 
@@ -15,27 +30,8 @@ Platform_Refactor/
   05_SITL_Roadmap.md
 ```
 
-## 收口原则
+## 使用方式
 
-以下内容已经从这里移除：
+如果你是在继续推进项目，实现代码、构建、验证链，优先看 `robot_platform/`。
 
-- 早期架构草图
-- 迁移批次拆分稿
-- 市场调研长文
-
-原因：
-
-- 这些文档描述的是立项和方案比较阶段
-- 当前仓库已经完成第一轮主线收口
-- 继续保留会把历史判断误读成当前要求
-
-## 当前建议
-
-如果只是继续开发平台，优先看：
-
-1. [../robot_platform/README.md](../robot_platform/README.md)
-2. [../robot_platform/docs/README.md](../robot_platform/docs/README.md)
-
-如果要回顾为什么最后选了现在这条验证路线，再看：
-
-1. [05_SITL_Roadmap.md](./05_SITL_Roadmap.md)
+如果你是在做方向对齐，想回答“这个项目到底是什么、为什么这么定”，再看这里。

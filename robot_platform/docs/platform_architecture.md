@@ -1,0 +1,308 @@
+# Platform Architecture
+
+这份文档定义当前项目的统一口径：
+
+- 这个项目是什么
+- 新平台当前做到哪一步
+- 新平台的目标架构是什么
+- 迁移目标和边界是什么
+- 当前阶段应该做什么，不做什么
+
+它不是历史讨论稿，而是当前继续推进项目时应参考的架构说明。
+
+## 1. 项目定义
+
+`Astra_RM_Platform` 是一个嵌入式平台化迁移仓库。
+
+它的目标不是继续维护一份以 `CubeMX + Keil + legacy task` 为中心的单体固件，而是把原有 RoboMaster 底盘控制工程逐步收口为统一的平台体系：
+
+- 统一生成链
+- 统一构建链
+- 统一运行时分层
+- 统一验证链
+
+整个仓库由三类资产组成：
+
+1. `Astra_RM2025_Balance/`
+   历史基线资产。
+   保存原始固件、`.ioc`、驱动布局和行为参考，不再作为主开发入口。
+2. `robot_platform/`
+   当前主工程。
+   负责承接生成、构建、运行时分层和当前验证主线，是平台继续演进的执行面。
+3. `Platform_Refactor/`
+   路线决策归档。
+   只解释为什么最后选了现在这条路线，不承担日常开发文档职责。
+
+## 2. 当前状态
+
+### 2.1 已经成立的部分
+
+当前仓库已经具备以下基础能力：
+
+1. `STM32CubeMX` 生成链已经接入 CLI
+2. `CMake + arm-none-eabi-gcc` 的硬件构建链已经可用
+3. `balance_chassis_hw_seed.elf` 可构建
+4. `balance_chassis_legacy_full.elf` 可构建
+5. `linux-gcc + FreeRTOS POSIX port` 的 SITL 目标 `balance_chassis_sitl` 可构建
+6. `runtime/bsp/sitl` 和 `sim/bridge` 已经具备最小 SITL 骨架
+
+### 2.2 仍未闭环的部分
+
+当前还没有完全收口的部分主要有：
+
+1. `flash / debug / replay / test` 还没有统一 CLI 闭环
+2. 新消息总线体系还没有成为当前主控制链的统一消息机制
+3. `runtime/module` 仍存在对 legacy 头文件和板级实现的直接依赖
+4. `runtime/app/balance_chassis` 仍主要承接 legacy task，而不是全新平台化编排
+
+## 3. 新平台当前架构
+
+当前平台在代码层面已经形成下面这套骨架：
+
+```text
+robot_platform/
+  cmake/
+  docs/
+  projects/
+  runtime/
+    generated/
+    bsp/
+    module/
+    app/
+  sim/
+  tools/
+```
+
+各层职责如下。
+
+### 3.1 `tools/`
+
+职责：
+
+- 提供统一入口
+- 驱动生成和构建
+- 后续承接 flash / debug / replay / test
+
+当前状态：
+
+- `generate` 已接 `CubeMX`
+- `build hw_elf / legacy_full / sitl` 已可用
+- 其余命令仍在收口中
+
+### 3.2 `runtime/generated/`
+
+职责：
+
+- 承接 `CubeMX` 生成代码
+- 保存启动文件、外设初始化、HAL 配置等底层生成资产
+
+当前状态：
+
+- 当前使用 `stm32h7_ctrl_board_raw`
+- 这是当前硬件构建链的重要输入
+
+约束：
+
+- 不应继续塞入长期人工维护的业务逻辑
+
+### 3.3 `runtime/bsp/`
+
+职责：
+
+- 承接板级和设备驱动
+- 把底层硬件访问收口在可管理边界内
+
+当前状态：
+
+- 已有板级目录 `boards/stm32h7_ctrl_board`
+- 已有 BMI088、DM 电机、遥控器等设备目录
+- 已有 `sitl/` 目录承接 Linux 侧 BSP 桩实现
+
+### 3.4 `runtime/module/`
+
+职责：
+
+- 放算法、控制器、公共模块
+- 承接可复用的控制逻辑
+
+当前状态：
+
+- 已有 `PID`、`VMC`、`mahony`、`kalman`、`EKF`、`controller`、`message_center`
+- 但还没有完全从 legacy 头文件和板级依赖中脱开
+
+这意味着它现在还是“已迁入的平台模块”，还不是“完全平台无关的模块层”。
+
+### 3.5 `runtime/app/`
+
+职责：
+
+- 负责业务装配、任务编排、模式管理
+- 承接具体机器人项目入口
+
+当前状态：
+
+- `balance_chassis_seed` 仍用于最小种子链路
+- `balance_chassis` 已承接 legacy task 主体
+- 目前更像 legacy app 的平台落位，还不是完全重写后的平台 app
+
+### 3.6 `projects/`
+
+职责：
+
+- 承接项目配置
+- 描述 board、robot、runtime mode 和 app 入口
+
+当前状态：
+
+- 当前主项目为 `balance_chassis`
+- `runtime_modes` 已收口为 `hw` 和 `replay`
+
+### 3.7 `sim/`
+
+职责：
+
+- 承接 SITL、bridge、replay、report
+
+当前状态：
+
+- 当前主线是 `SITL`
+- `bridge` 和 `reports` 有骨架
+- `replay` 保留为后续能力，不作为当前交付项
+- `physics_sim` 当前不进入执行面
+
+## 4. 目标架构预演
+
+新平台的目标不是一次性推翻 legacy，而是在现有平台骨架上收紧边界，最终形成下面的结构：
+
+```text
+project config
+  -> generate
+  -> build
+  -> runtime
+       generated -> bsp -> module -> app
+  -> validation
+       hw / sitl
+```
+
+可以把它拆成四条主链路理解。
+
+### 4.1 生成链
+
+目标：
+
+- 由 `CubeMX` 生成底层代码
+- 输出进入 `runtime/generated`
+- 不再把 IDE 工程文件当成真实入口
+
+### 4.2 构建链
+
+目标：
+
+- 统一走 `CMake`
+- 硬件侧走 `arm-none-eabi-gcc`
+- SITL 侧走 `linux-gcc`
+- 后续 flash / debug 也从这里接入
+
+### 4.3 运行链
+
+目标：
+
+- `generated` 负责生成产物
+- `bsp` 负责硬件访问
+- `module` 负责控制逻辑
+- `app` 负责装配和调度
+
+这条链最终要做到：
+
+- `hw` 与 `sitl` 使用同一条主控制链
+- 差异主要留在 `bsp` 和环境注入层
+
+### 4.4 验证链
+
+目标：
+
+- `hw` 用于真实板级运行
+- `sitl` 用于在 Linux 进程中运行完整控制链
+
+当前验证主线是：
+
+`hw <-> sitl`
+
+`replay` 仍有价值，但当前不进入交付面，后续再作为扩展验证能力接入。
+
+## 5. 迁移目标
+
+当前迁移目标不是“把所有 legacy 文件换个目录再放一遍”，而是逐步完成这四件事：
+
+1. 把 legacy 的生成入口迁入平台
+2. 把 legacy 的构建入口迁入平台
+3. 把 legacy 的控制链迁入平台运行时目录
+4. 把 legacy 的验证方式迁入当前 `SITL` 主线
+5. 推进新消息总线体系成为统一消息机制
+
+当前第一阶段聚焦对象只有一个：
+
+- `balance_chassis`
+
+也就是先把底盘控制链迁稳，不同时展开 `gimbal` 或更多项目。
+
+## 6. 迁移边界
+
+为了避免项目继续发散，当前边界必须明确。
+
+### 6.1 当前要做的事
+
+- 保持 `hw_elf` 和 `sitl` 双构建链稳定
+- 推进新消息总线体系全面落地
+- 继续收紧 `module` 和 `app` 的边界
+- 把 `flash / debug / test` 收进统一 CLI
+
+### 6.2 当前不做的事
+
+- 不新建 `osal` 层
+- `replay` 暂不作为当前交付项
+- 不做 `physics_sim`
+- 不做高保真场景库
+- 不做大范围算法重写
+- 不同时平台化多个业务项目
+
+## 7. 当前关键技术判断
+
+### 7.1 为什么 `robot_platform` 是主入口
+
+因为它已经承接了：
+
+- 生成
+- 构建
+- 运行时分层
+- SITL 主验证路线
+
+所以继续开发应围绕 `robot_platform/` 展开。
+
+### 7.2 为什么 `Astra_RM2025_Balance` 只保留为基线
+
+因为它的价值已经从“主工程”转成了：
+
+- 原始行为参考
+- 原始代码参考
+- `.ioc` 和驱动资产来源
+
+它不应再承担平台主开发职责。
+
+### 7.3 为什么当前主验证路线是 `SITL`
+
+因为当前资源条件下，这条路最现实：
+
+- `SITL` 能运行完整控制链
+- 它比 `replay` 和 `physics_sim` 更适合作为当前第一交付
+- 它能先验证平台化之后控制链在 Linux 侧真实跑起来
+
+`replay` 仍然有价值，但当前排期后置。
+
+## 8. 当前阶段的架构目标
+
+如果只看接下来一段时间，平台架构目标可以压缩成一句话：
+
+在不引入新抽象层和新验证分支的前提下，把 `balance_chassis` 稳定迁入 `robot_platform`，完成新消息总线体系落地，并先把 `hw + sitl` 这条最小平台闭环跑稳。
+
+达到这个目标后，项目才算真正从“迁移中的平台骨架”进入“可持续演进的平台工程”。
