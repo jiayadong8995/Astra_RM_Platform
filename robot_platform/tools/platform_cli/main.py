@@ -5,6 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from robot_platform.sim.projects import get_project_names, get_project_smoke_runner
 from robot_platform.sim.runner import run_sitl_session
 from robot_platform.tools.cubemx_backend.main import run_codegen
 
@@ -30,7 +31,8 @@ def _run(cmd: list[str], cwd: Path) -> int:
     return completed.returncode
 
 
-def _parse_sim_args(args: list[str]) -> tuple[str, float, bool]:
+def _parse_sim_args(args: list[str]) -> tuple[str, str, float, bool]:
+    project = "balance_chassis"
     scenario = "sitl"
     duration_s = 3.0
     skip_build = False
@@ -38,6 +40,12 @@ def _parse_sim_args(args: list[str]) -> tuple[str, float, bool]:
     i = 0
     while i < len(args):
         arg = args[i]
+        if arg == "--project":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --project")
+            project = args[i + 1]
+            i += 2
+            continue
         if arg == "--duration":
             if i + 1 >= len(args):
                 raise ValueError("missing value for --duration")
@@ -60,7 +68,7 @@ def _parse_sim_args(args: list[str]) -> tuple[str, float, bool]:
         scenario = arg
         i += 1
 
-    return scenario, duration_s, skip_build
+    return project, scenario, duration_s, skip_build
 
 
 def _generate_balance_chassis() -> int:
@@ -134,10 +142,22 @@ def _build_sitl(target: str) -> int:
     return _run(build_cmd, cwd=repo_root)
 
 
-def _run_sim(scenario: str, *, duration_s: float = 3.0, skip_build: bool = False) -> int:
+def _run_sim(project: str, scenario: str, *, duration_s: float = 3.0, skip_build: bool = False) -> int:
+    supported_projects = list(get_project_names())
+    if project not in supported_projects:
+        summary = {
+            "sim_mode": "sitl",
+            "requested_project": project,
+            "status": "unsupported_project",
+            "supported_projects": supported_projects,
+        }
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
+        return 2
+
     if scenario != "sitl":
         summary = {
             "sim_mode": "sitl",
+            "requested_project": project,
             "requested_scenario": scenario,
             "status": "unsupported_scenario",
             "supported_scenarios": ["sitl"],
@@ -149,7 +169,15 @@ def _run_sim(scenario: str, *, duration_s: float = 3.0, skip_build: bool = False
         rc = _build_sitl("balance_chassis_sitl")
         if rc != 0:
             return rc
-    return run_sitl_session(repo_root=_repo_root(), duration_s=duration_s)
+
+    smoke_runner = get_project_smoke_runner(project)
+    if smoke_runner is None:
+        print(f"missing smoke runner for project: {project}", file=sys.stderr)
+        return 2
+
+    if project == "balance_chassis":
+        return run_sitl_session(repo_root=_repo_root(), duration_s=duration_s)
+    return smoke_runner(repo_root=_repo_root(), duration_s=duration_s)
 
 
 def _run_tests(scope: str) -> int:
@@ -206,11 +234,11 @@ def main() -> int:
 
     if cmd == "sim":
         try:
-            scenario, duration_s, skip_build = _parse_sim_args(args[1:])
+            project, scenario, duration_s, skip_build = _parse_sim_args(args[1:])
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 2
-        return _run_sim(scenario, duration_s=duration_s, skip_build=skip_build)
+        return _run_sim(project, scenario, duration_s=duration_s, skip_build=skip_build)
 
     if cmd == "test":
         scope = args[1] if len(args) > 1 else "sim"
