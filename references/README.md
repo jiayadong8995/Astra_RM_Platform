@@ -7,6 +7,7 @@
 - 参考平台分层
 - 参考应用层拆分
 - 参考硬件接口、控制器、bringup 和仿真组织方式
+- 参考平台架构设计，不直接决定当前实现复杂度
 
 这里的内容：
 
@@ -19,6 +20,12 @@
 
 - `basic_framework`
   RoboMaster 嵌入式框架参考，重点看 `bsp / modules / application`
+- `PX4-Autopilot`
+  飞控 SITL 与仿真基础设施参考，重点看 `Tools/simulation` 与 `src/modules/simulation`
+- `ardupilot`
+  SITL 与外部 physics backend 接口参考，重点看 `libraries/SITL`
+- `betaflight`
+  轻量 SITL target 参考，重点看 `src/platform/SIMULATOR/target/SITL`
 - `ros2_control_demos`
   ROS 2 控制框架参考，重点看 `bringup / description / hardware / controllers`
 - `iiwa_ros2`

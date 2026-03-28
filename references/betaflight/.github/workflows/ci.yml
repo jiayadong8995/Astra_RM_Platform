@@ -1,0 +1,202 @@
+# Builds Betaflight Firmware.
+#
+
+name: CI
+
+on:
+  workflow_call:
+    inputs:
+      release_build:
+        description: 'Specifies if it is a build that should include commit hash in hex file names or not'
+        default: false
+        required: false
+        type: boolean
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.get-targets.outputs.targets }}
+      sdks: ${{ steps.get-sdks.outputs.sdks }}
+      tools-cache-key: ${{ steps.tools-key.outputs.key }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Init config submodule
+        run: git submodule update --init -- src/config
+
+      - name: Compute tools cache key
+        id: tools-key
+        run: echo "key=${{ runner.os }}-tools-v2-${{ hashFiles('mk/tools.mk', 'src/platform/*/mk/*.mk') }}" >> $GITHUB_OUTPUT
+
+      - name: Get platform SDK list
+        id: get-sdks
+        run: echo "sdks=$(make platform-sdk-list-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
+
+      - name: Hydrate configuration
+        id: get-config
+        run: make configs
+
+      - name: Get all official build targets
+        id: get-targets
+        run: echo "targets=$(make targets-ci-print | jq -R -c 'split(" ")')" >> $GITHUB_OUTPUT
+
+  cache-sdks:
+    name: Cache SDK (${{ matrix.sdk }})
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sdk: ${{ fromJson(needs.setup.outputs.sdks) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Cache tools for this SDK
+        uses: actions/cache@v5
+        id: cache-tools
+        with:
+          path: tools
+          key: ${{ needs.setup.outputs.tools-cache-key }}-${{ matrix.sdk }}
+
+      - name: Restore ARM tools as base
+        if: steps.cache-tools.outputs.cache-hit != 'true' && matrix.sdk != 'arm'
+        uses: actions/cache/restore@v5
+        with:
+          path: tools
+          key: ${{ needs.setup.outputs.tools-cache-key }}-arm
+
+      - name: Get SDK cache info
+        if: matrix.sdk != 'arm'
+        id: sdk-info
+        run: |
+          SUBMODULE=$(make SDK=${{ matrix.sdk }} platform-sdk-cache-paths-print 2>/dev/null | head -1)
+          if [ "$SUBMODULE" != "tools" ]; then
+            echo "has-submodule=true" >> $GITHUB_OUTPUT
+            echo "paths<<EOF" >> $GITHUB_OUTPUT
+            make SDK=${{ matrix.sdk }} platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "key=${{ runner.os }}-sdk-${{ matrix.sdk }}-$(make SDK=${{ matrix.sdk }} platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cache platform SDK
+        if: steps.sdk-info.outputs.has-submodule == 'true'
+        uses: actions/cache@v5
+        id: cache-sdk
+        with:
+          path: ${{ steps.sdk-info.outputs.paths }}
+          key: ${{ steps.sdk-info.outputs.key }}
+
+      - name: Hydrate SDK
+        if: steps.sdk-info.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
+        run: make SDK=${{ matrix.sdk }} platform-sdk-hydrate
+
+      - name: Install tools
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: make SDK=${{ matrix.sdk }} platform-tools-install
+
+  build:
+    name: Build
+    needs: [setup, cache-sdks]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: ${{ fromJson(needs.setup.outputs.targets) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Init config submodule
+        run: git submodule update --init -- src/config
+
+      - name: Detect target SDK
+        id: sdk
+        run: |
+          SDK_NAME=$(make BUILD=${{ matrix.target }} build-sdk-print)
+          echo "name=$SDK_NAME" >> $GITHUB_OUTPUT
+          # Get SDK submodule cache info for platform SDKs (not arm/none)
+          SUBMODULE=$(make SDK=$SDK_NAME platform-sdk-cache-paths-print 2>/dev/null | head -1)
+          if [ "$SUBMODULE" != "tools" ]; then
+            echo "has-submodule=true" >> $GITHUB_OUTPUT
+            echo "paths<<EOF" >> $GITHUB_OUTPUT
+            make SDK=$SDK_NAME platform-sdk-cache-paths-print >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "key=${{ runner.os }}-sdk-${SDK_NAME}-$(make SDK=$SDK_NAME platform-sdk-cache-key-print)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Restore platform SDK from cache
+        if: steps.sdk.outputs.has-submodule == 'true'
+        uses: actions/cache/restore@v5
+        id: cache-sdk
+        with:
+          path: ${{ steps.sdk.outputs.paths }}
+          key: ${{ steps.sdk.outputs.key }}
+
+      - name: Hydrate platform SDK (fallback)
+        if: steps.sdk.outputs.has-submodule == 'true' && steps.cache-sdk.outputs.cache-hit != 'true'
+        run: make SDK=${{ steps.sdk.outputs.name }} platform-sdk-hydrate
+
+      - name: Restore toolchain from cache
+        if: steps.sdk.outputs.name != 'none'
+        uses: actions/cache/restore@v5
+        id: cache-tools
+        with:
+          path: tools
+          key: ${{ needs.setup.outputs.tools-cache-key }}-${{ steps.sdk.outputs.name }}
+
+      - name: Install tools (fallback)
+        if: steps.sdk.outputs.name != 'none' && steps.cache-tools.outputs.cache-hit != 'true'
+        run: make SDK=${{ steps.sdk.outputs.name }} platform-tools-install
+
+      - name: Hydrate configuration
+        id: get-config
+        run: make configs
+
+      - name: Build target (without revision)
+        if: inputs.release_build == true
+        run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}
+
+      - name: Build target (with revision)
+        if: inputs.release_build == false
+        run: make EXTRA_FLAGS=-Werror ${{ matrix.target }}_rev
+
+      - name: Publish build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.target }}
+          path: |
+            obj/*.hex
+            obj/*.uf2
+            obj/*_${{ matrix.target }}*
+          retention-days: 60
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install dependencies
+        run: sudo apt-get install -y libblocksruntime-dev clang-18
+
+      - name: Run sanity checks
+        run: make EXTRA_FLAGS=-Werror checks
+
+      - name: Run all unit tests
+        run: make EXTRA_FLAGS=-Werror test-all
+
+  result:
+    name: Complete
+    needs: [build, test]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check build matrix result
+        if: ${{ needs.build.result != 'success' }}
+        run: exit 1
+
+      - name: Check test result
+        if: ${{ needs.test.result != 'success' }}
+        run: exit 1

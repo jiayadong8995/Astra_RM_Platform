@@ -1,6 +1,6 @@
 # robot_platform
 
-`robot_platform` 是整个仓库的当前主工程，也是平台化迁移项目的主执行面。
+`robot_platform` 是整个仓库的当前主工程，也是平台架构定义与落地的主执行面。
 
 它负责承接：
 
@@ -44,4 +44,4 @@ python3 -m robot_platform.tools.platform_cli.main build sitl
 
 这个 `README` 只负责导航。
 
-架构定义、角色分工、环境约束和迁移边界，统一放在 `docs/` 中维护。
+架构定义、角色分工、环境约束和平台边界，统一放在 `docs/` 中维护。
