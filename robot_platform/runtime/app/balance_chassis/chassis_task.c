@@ -45,6 +45,13 @@ static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_
 static void update_leg_feedback(vmc_leg_t *vmc_r, vmc_leg_t *vmc_l, const Actuator_Feedback_t *feedback);
 static void update_wheel_feedback(chassis_t *chassis, const Actuator_Feedback_t *feedback);
 static void update_attitude_feedback(chassis_t *chassis, const vmc_leg_t *vmc_r, const vmc_leg_t *vmc_l, const INS_t *ins);
+static void compute_turn_and_leg_compensation(chassis_t *chassis, const INS_t *ins);
+static void compute_lqr_outputs(chassis_t *chassis,
+                                vmc_leg_t *vmcr,
+                                vmc_leg_t *vmcl,
+                                const float *LQR_KR,
+                                const float *LQR_KL);
+static void mix_wheel_torque(chassis_t *chassis);
 static void chassis_control_loop(chassis_t * chassis,\
 							      vmc_leg_t *    vmcr,\
 							      vmc_leg_t *    vmcl,\
@@ -298,6 +305,55 @@ static void update_attitude_feedback(chassis_t *chassis, const vmc_leg_t *vmc_r,
     chassis->theta_err = 0.0f - (vmc_r->theta + vmc_l->theta);
 }
 
+static void compute_turn_and_leg_compensation(chassis_t *chassis, const INS_t *ins)
+{
+    chassis->turn_T = turn_pid.Kp * (chassis->turn_set - chassis->total_yaw) - turn_pid.Kd * ins->Gyro[2];
+    chassis->roll_f0 = roll_pid.Kp * (chassis->roll_set - chassis->roll) - roll_pid.Kd * ins->Gyro[1];
+    chassis->leg_tp = PID_Calc(&tp_pid, chassis->theta_err, 0.0f);
+}
+
+static void compute_lqr_outputs(chassis_t *chassis,
+                                vmc_leg_t *vmcr,
+                                vmc_leg_t *vmcl,
+                                const float *LQR_KR,
+                                const float *LQR_KL)
+{
+    chassis->wheel_motor[1].torque_set = (LQR_KR[0] * (vmcr->theta)
+                                       + LQR_KR[1] * (vmcr->d_theta)
+                                       + LQR_KR[2] * (chassis->x_filter - chassis->x_set)
+                                       + LQR_KR[3] * (chassis->v_filter - 0)
+                                       + LQR_KR[4] * (chassis->myPithR - 0.0f)
+                                       + LQR_KR[5] * (chassis->myPithGyroR - 0.0f));
+    vmcr->Tp = (LQR_KR[6] * (vmcr->theta)
+             + LQR_KR[7] * (vmcr->d_theta)
+             + LQR_KR[8] * (chassis->x_filter - chassis->x_set)
+             + LQR_KR[9] * (chassis->v_filter - 0)
+             + LQR_KR[10] * (chassis->myPithR)
+             + LQR_KR[11] * (chassis->myPithGyroR));
+
+    chassis->wheel_motor[0].torque_set = (LQR_KL[0] * (vmcl->theta)
+                                       + LQR_KL[1] * (vmcl->d_theta)
+                                       + LQR_KL[2] * (chassis->x_set - chassis->x_filter)
+                                       + LQR_KL[3] * (0 - chassis->v_filter)
+                                       + LQR_KL[4] * (chassis->myPithL - 0.0f)
+                                       + LQR_KL[5] * (chassis->myPithGyroL - 0.0f));
+    vmcl->Tp = (LQR_KL[6] * (vmcl->theta)
+             + LQR_KL[7] * (vmcl->d_theta)
+             + LQR_KL[8] * (chassis->x_set - chassis->x_filter)
+             + LQR_KL[9] * (0 - chassis->v_filter)
+             + LQR_KL[10] * (chassis->myPithL)
+             + LQR_KL[11] * (chassis->myPithGyroL));
+}
+
+static void mix_wheel_torque(chassis_t *chassis)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        chassis->wheel_motor[i].torque_set = WHEEL_TORQUE_RATIO * chassis->wheel_motor[i].torque_set
+                                           + TURN_TORQUE_RATIO * chassis->turn_T;
+    }
+}
+
 static void chassis_control_loop( chassis_t * chassis,\
 							      vmc_leg_t *    vmcr,\
 							      vmc_leg_t *    vmcl,\
@@ -310,52 +366,9 @@ static void chassis_control_loop( chassis_t * chassis,\
 	
 	VMC_calc_1_right(vmcr,ins,2.0f/1000.0f);//计算theta和d_theta给lqr用，同时也计算右腿长L0,该任务控制周期是4*0.001秒
 	VMC_calc_1_left(vmcl,ins,2.0f/1000.0f);//计算theta和d_theta给lqr用，同时也计算左腿长L0,该任务控制周期是4*0.001秒
-	
-	chassis->turn_T=turn_pid.Kp*(chassis->turn_set-chassis->total_yaw)-turn_pid.Kd*ins->Gyro[2];//这样计算更稳一点
-	
-	chassis->roll_f0=roll_pid.Kp*(chassis->roll_set-chassis->roll)-roll_pid.Kd*ins->Gyro[1];
-	
-	chassis->leg_tp = PID_Calc(&tp_pid, chassis->theta_err,0.0f);//防劈叉pid计算
-
-	chassis->wheel_motor[1].torque_set=(LQR_KR[0]*(vmcr->theta) 
-									   +LQR_KR[1]*(vmcr->d_theta) 
-									   +LQR_KR[2]*(chassis->x_filter - chassis->x_set)
-									   +LQR_KR[3]*(chassis->v_filter - 0)
-									   +LQR_KR[4]*(chassis->myPithR-0.0f)
-									   +LQR_KR[5]*(chassis->myPithGyroR-0.0f));					
-	//右边髋关节输出力矩				
-	vmcr->Tp=(LQR_KR[6]*(vmcr->theta)
-			 +LQR_KR[7]*(vmcr->d_theta)
-			 +LQR_KR[8]*( chassis->x_filter - chassis->x_set) 
-			 +LQR_KR[9]*( chassis->v_filter - 0) 
-			 +LQR_KR[10]*(chassis->myPithR)
-			 +LQR_KR[11]*(chassis->myPithGyroR));
-					
-					
-					
-					
-				
-	//左边髋轮毂关节输出力矩
-    chassis->wheel_motor[0].torque_set=(LQR_KL[0]*(vmcl->theta ) 
-									   +LQR_KL[1]*(vmcl->d_theta)
-									   +LQR_KL[2]*(chassis->x_set - chassis->x_filter)
-									   +LQR_KL[3]*(0 - chassis->v_filter)
-									   +LQR_KL[4]*(chassis->myPithL-0.0f)
-									   +LQR_KL[5]*(chassis->myPithGyroL-0.0f));
-	//左边髋关节输出力矩				
-	vmcl->Tp=(LQR_KL[6] *(vmcl->theta)
-			 +LQR_KL[7] *(vmcl->d_theta)
-			 +LQR_KL[8] *(chassis->x_set - chassis->x_filter)
-			 +LQR_KL[9] *(0 - chassis->v_filter)
-			 +LQR_KL[10]*(chassis->myPithL)
-			 +LQR_KL[11]*(chassis->myPithGyroL));
-
-					
-   //右轮毂电机扭矩设定
-   for(int i=0;i<2;i++)
-   {
-		chassis->wheel_motor[i].torque_set= WHEEL_TORQUE_RATIO * chassis->wheel_motor[i].torque_set+TURN_TORQUE_RATIO * chassis->turn_T;	//轮毂电机输出力矩
-   }
+	compute_turn_and_leg_compensation(chassis, ins);
+    compute_lqr_outputs(chassis, vmcr, vmcl, LQR_KR, LQR_KL);
+    mix_wheel_torque(chassis);
 
     vmcr->Tp = vmcr->Tp+chassis->leg_tp;//右髋关节输出力矩
 	vmcl->Tp = vmcl->Tp+chassis->leg_tp;//左髋关节输出力矩
