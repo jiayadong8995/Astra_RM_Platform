@@ -29,16 +29,16 @@
   - 当前文件：`freertos_app.c`、`task_registry.c`
 - `app_io/`
   - app 级 topic/input/output 适配
-  - 当前文件：`topic_contract.h`、`chassis_topics.*`、`remote_topics.*`
+  - 当前文件：`topic_contract.h`、`chassis_topics.*`、`remote_topics.*`、`observe_topics.*`、`actuator_topics.*`、`ins_topics.*`
 - `app_flow/`
-  - 业务编排 helper
-  - 当前文件：`chassis_runtime_helpers.*`、`remote_runtime.*`
+  - 业务编排与运行态装配
+  - 当前文件：`chassis_orchestration.*`、`chassis_runtime_helpers.*`、`remote_runtime.*`、`observe_runtime.*`、`actuator_runtime.*`、`ins_runtime.*`
 - `app_config/`
-  - 项目参数、topic 结构、业务常量
-  - 当前文件：`robot_def.h`
-- 根目录 `*_task.c`
-  - 仍属于 legacy task 本体
-  - 当前还是过渡区，后续应逐步迁入 `legacy/`
+  - 项目参数、topic 结构、业务常量、app 运行态结构
+  - 当前文件：`robot_def.h`、`runtime_state.h`
+- `legacy/`
+  - 尚未拆完的 task shell 与兼容资产
+  - 当前文件：`INS_task.*`、`chassis_task.*`、`remote_task.*`、`observe_task.*`、`motor_control_task.*`
 
 目标结构仍然是：
 
@@ -95,13 +95,21 @@
 - [x] `app_io/remote_topics.h` 只暴露 app 级 contract，不暴露 remote runtime 类型
 - [x] `topic_contract.h` 已作为 app 级 topic 契约入口引入
 - [x] `observe_task` 已开始拆成 `app_io/observe_topics.* + app_flow/observe_runtime_helpers.* + task shell`
+- [x] `INS_task` 已开始拆成 `app_io/ins_topics.* + app_flow/ins_runtime.* + task shell`
+- [x] `motor_control_task` 已开始拆成 `app_io/actuator_topics.* + app_flow/actuator_runtime.* + task shell`
 
-### 5. `app_bringup` 开始变成装配入口
+### 5. `app_config` 开始承接运行态事实源
+
+- [x] `INS_t` / `chassis_t` 已从 `legacy` 头抽到 `app_config/runtime_state.h`
+- [x] `app_flow` 和 `VMC_calc.h` 不再直接依赖 `legacy/INS_task.h`、`legacy/chassis_task.h`
+- [x] 坐标变换 helper 已从 `legacy/INS_task.c` 收回 `app_flow/ins_runtime.c`
+
+### 6. `app_bringup` 开始变成装配入口
 
 - [x] `freertos_app.c` 已不再直接堆放所有 task wrapper
 - [x] `task_registry.c` 已接管 balance_chassis 的线程注册
 
-### 6. 总线主链已立起来
+### 7. 总线主链已立起来
 
 - [x] `INS_task` 发布 `ins_data`
 - [x] `remote_task` 订阅 `rc_data / ins_data / chassis_state / leg_left / leg_right`，发布 `chassis_cmd`
@@ -113,16 +121,16 @@
 
 ## 仍未完成
 
-### 1. `app_io` 还不是纯 adapter
+### 1. `app_flow` 还承接了一部分过渡运行态
 
-虽然 `app_io` 已经不再在头文件上暴露 legacy task 和算法类型，但 `chassis_task.c` 里仍存在 app-level bundle 到 legacy runtime 的映射逻辑。
+虽然 `app_io` 的边界已经比前面干净很多，但 `app_flow` 里仍存在 app bundle 到 legacy runtime 的映射逻辑。
 
 这说明：
 
-- 旧的 `topic -> legacy runtime` 胶水没有消失
-- 只是从 `app_io` 头文件层面收回到了 task shell 内部
+- 旧的 `topic -> runtime state` 胶水没有消失
+- 只是从 `app_io` 头文件层面收回到了 `app_flow` 和 task shell 内部
 
-下一步应继续把这部分抽成更明确的 app 装配逻辑，而不是继续堆在 `chassis_task.c`。
+下一步应继续把这部分抽成更明确的 app 装配逻辑和 contract，而不是继续堆在 `legacy/chassis_task.c`。
 
 ### 2. `legacy/` 只是位置收口，还不是完成拆分
 
@@ -146,13 +154,15 @@
 
 - `legacy/remote_task.c` 已基本是 shell
 - `legacy/observe_task.c` 已基本是 shell
+- `legacy/INS_task.c` 已基本是 shell
+- `legacy/motor_control_task.c` 已基本是 shell
 - `freertos_app.c` 已基本是入口壳
 
 还没完成：
 
 - `legacy/chassis_task.c`
-- `legacy/INS_task.c`
-- `legacy/motor_control_task.c`
+- `legacy` 头文件的进一步瘦身
+- `app_flow` 内部更细的业务编排拆分
 
 ---
 
@@ -191,4 +201,5 @@
 - app 目录语义明确是 `app_bringup / app_io / app_flow / app_config / legacy`
 - `sim` 不需要依赖 app 内部全局状态
 - `app_io` 不再在边界头文件上暴露 legacy task 和算法类型
+- `app_flow` 和算法模块不再反向依赖 `legacy` 头
 - task 文件逐步退化成装配壳，而不是继续承担平台细节

@@ -1,9 +1,8 @@
 #ifndef BALANCE_CHASSIS_APP_FLOW_CHASSIS_ORCHESTRATION_H
 #define BALANCE_CHASSIS_APP_FLOW_CHASSIS_ORCHESTRATION_H
 
+#include "../app_config/runtime_state.h"
 #include "../app_io/topic_contract.h"
-#include "../legacy/INS_task.h"
-#include "../legacy/chassis_task.h"
 #include "pid.h"
 #include "VMC_calc.h"
 

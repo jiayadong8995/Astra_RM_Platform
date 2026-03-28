@@ -1,9 +1,8 @@
 #ifndef BALANCE_CHASSIS_APP_FLOW_CHASSIS_RUNTIME_HELPERS_H
 #define BALANCE_CHASSIS_APP_FLOW_CHASSIS_RUNTIME_HELPERS_H
 
-#include "../legacy/chassis_task.h"
-#include "../legacy/INS_task.h"
 #include "../app_config/robot_def.h"
+#include "../app_config/runtime_state.h"
 #include "pid.h"
 #include "VMC_calc.h"
 

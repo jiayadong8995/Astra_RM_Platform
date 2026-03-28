@@ -2,7 +2,7 @@
 #define __VMC_CALC_H
 
 #include "main.h"
-#include "legacy/INS_task.h"
+#include "app_config/runtime_state.h"
 #include "robot_def.h"
 
 #define pi 3.1415926f
@@ -71,6 +71,5 @@ extern uint8_t ground_detectionL(vmc_leg_t *vmc,INS_t *ins);//左腿离地检测
 extern float LQR_K_calc(float *coe,float len);
 	
 #endif
-
 
 

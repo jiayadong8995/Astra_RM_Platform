@@ -268,9 +268,11 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/chassis_orchestration.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/actuator_runtime.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/observe_runtime_helpers.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_flow/ins_runtime.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/remote_runtime_helpers.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/actuator_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_io/ins_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/observe_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/legacy/motor_control_task.c

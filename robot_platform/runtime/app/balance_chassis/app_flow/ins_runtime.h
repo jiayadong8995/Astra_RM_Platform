@@ -1,0 +1,28 @@
+#ifndef BALANCE_CHASSIS_APP_FLOW_INS_RUNTIME_H
+#define BALANCE_CHASSIS_APP_FLOW_INS_RUNTIME_H
+
+#include "../app_config/robot_def.h"
+#include "../app_config/runtime_state.h"
+#include "mahony_filter.h"
+
+typedef struct
+{
+    INS_t ins;
+    struct MAHONY_FILTER_t mahony;
+    Axis3f gyro;
+    Axis3f accel;
+    float gravity[3];
+    uint32_t dwt_count;
+    float ins_time;
+} INS_Runtime_State_t;
+
+void ins_runtime_state_init(INS_Runtime_State_t *state);
+
+void ins_runtime_apply_sample(INS_Runtime_State_t *state,
+                              float dt,
+                              const float accel[3],
+                              const float gyro[3]);
+
+void ins_runtime_build_msg(const INS_Runtime_State_t *state, INS_Data_t *msg);
+
+#endif
