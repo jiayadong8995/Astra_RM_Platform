@@ -16,7 +16,7 @@
 #include "observe_task.h"
 #include "kalman_filter.h"
 #include "cmsis_os.h"
-#include "robot_def.h"
+#include "app_config/robot_def.h"
 #include "message_center.h"
 
 KalmanFilter_t vaEstimateKF;	   // 卡尔曼滤波器结构体

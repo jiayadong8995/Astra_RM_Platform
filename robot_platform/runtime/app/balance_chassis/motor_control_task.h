@@ -3,10 +3,9 @@
 
 #include "main.h"
 #include "dm4310_drv.h"
-#include "robot_def.h"
+#include "app_config/robot_def.h"
 
 extern void motor_control_task(void);
 
 #endif
-
 

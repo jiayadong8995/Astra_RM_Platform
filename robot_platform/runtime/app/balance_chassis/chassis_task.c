@@ -23,10 +23,10 @@
 #include "pid.h"
 #include "VMC_calc.h"
 #include "INS_task.h"
-#include "robot_def.h"
+#include "app_config/robot_def.h"
 #include "user_lib.h"
-#include "control/chassis_runtime_helpers.h"
-#include "io/chassis_topics.h"
+#include "app_logic/chassis_runtime_helpers.h"
+#include "app_io/chassis_topics.h"
 
 static float LQR_K_R[12]= LQR_K_MATRIX;
 
@@ -43,7 +43,12 @@ uint32_t CHASSIS_TIME=CHASSIS_TASK_PERIOD;
 
 static void Chassis_init(chassis_t *chassis,vmc_leg_t *vmcr_init,vmc_leg_t *vmcl_init);
 static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidTypeDef *legr,PidTypeDef *legl);
+static void chassis_apply_bus_inputs(chassis_t *chassis, INS_t *ins, const Chassis_Bus_Input_t *inputs);
 static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins,const Actuator_Feedback_t *feedback);
+static void chassis_build_bus_outputs(const chassis_t *chassis,
+                                      const vmc_leg_t *right_leg,
+                                      const vmc_leg_t *left_leg,
+                                      Chassis_Bus_Output_t *outputs);
 static void chassis_control_loop(chassis_t * chassis,\
 							      vmc_leg_t *    vmcr,\
 							      vmc_leg_t *    vmcl,\
@@ -59,26 +64,27 @@ static INS_t ins_runtime;
 
 void Chassis_task(void)
 {
-    INS_Data_t ins_msg = {0};
-    Chassis_Cmd_t cmd_msg = {0};
-    Chassis_Observe_t observe_msg = {0};
-    Actuator_Feedback_t feedback_msg = {0};
+    Chassis_Bus_Input_t inputs = {0};
+    Chassis_Bus_Output_t outputs = {0};
 
     chassis_runtime_bus_init(&runtime_bus);
-    chassis_runtime_bus_wait_ready(&runtime_bus, &chassis_runtime, &ins_runtime, &ins_msg, &cmd_msg, &observe_msg, &feedback_msg);
+    chassis_runtime_bus_wait_ready(&runtime_bus, &inputs);
 
     Chassis_init(&chassis_runtime,&runtime_right_leg,&runtime_left_leg);
     Pensation_init(&roll_pid,&tp_pid,&turn_pid,&leg_r_pid,&leg_l_pid);
+    chassis_apply_bus_inputs(&chassis_runtime, &ins_runtime, &inputs);
 
     osDelay(6);
 
 	while(1)
 	{	
-        chassis_runtime_bus_pull_inputs(&runtime_bus, &chassis_runtime, &ins_runtime, &ins_msg, &cmd_msg, &observe_msg, &feedback_msg);
+        chassis_runtime_bus_pull_inputs(&runtime_bus, &inputs);
+        chassis_apply_bus_inputs(&chassis_runtime, &ins_runtime, &inputs);
 
-		chassis_feedback_update(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,&feedback_msg);
+		chassis_feedback_update(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,&inputs.feedback);
 	    chassis_control_loop(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,LQR_K_R,LQR_K_R,&leg_r_pid,&leg_l_pid);
-        chassis_runtime_bus_publish_outputs(&runtime_bus, &chassis_runtime, &runtime_right_leg, &runtime_left_leg);
+        chassis_build_bus_outputs(&chassis_runtime, &runtime_right_leg, &runtime_left_leg, &outputs);
+        chassis_runtime_bus_publish_outputs(&runtime_bus, &outputs);
 
 		osDelay(CHASSIS_TIME);
 	}
@@ -113,15 +119,66 @@ static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidT
 	PID_init(legl, PID_POSITION,legl_pid, LEG_PID_MAX_OUT, LEG_PID_MAX_IOUT);//腿长pid
 }
 
+static void chassis_apply_bus_inputs(chassis_t *chassis, INS_t *ins, const Chassis_Bus_Input_t *inputs)
+{
+    ins->Pitch = inputs->ins.pitch;
+    ins->Roll = inputs->ins.roll;
+    ins->YawTotalAngle = inputs->ins.yaw_total;
+    ins->Gyro[0] = inputs->ins.gyro[0];
+    ins->Gyro[1] = inputs->ins.gyro[1];
+    ins->Gyro[2] = inputs->ins.gyro[2];
+    ins->MotionAccel_b[0] = inputs->ins.accel_b[0];
+    ins->MotionAccel_b[1] = inputs->ins.accel_b[1];
+    ins->MotionAccel_b[2] = inputs->ins.accel_b[2];
+    ins->ins_flag = inputs->ins.ready;
+
+    chassis->v_set = inputs->cmd.vx_cmd;
+    chassis->turn_set = inputs->cmd.turn_cmd;
+    chassis->leg_set = inputs->cmd.leg_set;
+    chassis->start_flag = inputs->cmd.start_flag;
+    chassis->jump_flag = inputs->cmd.jump_flag;
+    chassis->recover_flag = inputs->cmd.recover_flag;
+
+    chassis->v_filter = inputs->observe.v_filter;
+    chassis->x_filter = inputs->observe.x_filter;
+}
+
 static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins,const Actuator_Feedback_t *feedback)
 {
     chassis_apply_feedback_snapshot(chassis, vmc_r, vmc_l, ins, feedback);
-	
-	if(ins->Pitch<PITCH_FALL_THRESHOLD&&ins->Pitch>-PITCH_FALL_THRESHOLD)
-	{//根据pitch角度判断倒地自起是否完成
-		chassis->recover_flag=0;
-	}
+}
 
+static void chassis_build_bus_outputs(const chassis_t *chassis,
+                                      const vmc_leg_t *right_leg,
+                                      const vmc_leg_t *left_leg,
+                                      Chassis_Bus_Output_t *outputs)
+{
+    outputs->state.v_filter = chassis->v_filter;
+    outputs->state.x_filter = chassis->x_filter;
+    outputs->state.x_set = chassis->x_set;
+    outputs->state.total_yaw = chassis->total_yaw;
+    outputs->state.roll = chassis->roll;
+    outputs->state.turn_set = chassis->turn_set;
+
+    outputs->right_leg.joint_torque[0] = right_leg->torque_set[0];
+    outputs->right_leg.joint_torque[1] = right_leg->torque_set[1];
+    outputs->right_leg.wheel_torque = chassis->wheel_motor[1].torque_set;
+    outputs->right_leg.wheel_current = chassis->wheel_motor[1].give_current;
+    outputs->right_leg.leg_length = right_leg->L0;
+
+    outputs->left_leg.joint_torque[0] = left_leg->torque_set[0];
+    outputs->left_leg.joint_torque[1] = left_leg->torque_set[1];
+    outputs->left_leg.wheel_torque = chassis->wheel_motor[0].torque_set;
+    outputs->left_leg.wheel_current = chassis->wheel_motor[0].give_current;
+    outputs->left_leg.leg_length = left_leg->L0;
+
+    outputs->actuator_cmd.joint_torque[0] = right_leg->torque_set[0];
+    outputs->actuator_cmd.joint_torque[1] = right_leg->torque_set[1];
+    outputs->actuator_cmd.joint_torque[2] = left_leg->torque_set[0];
+    outputs->actuator_cmd.joint_torque[3] = left_leg->torque_set[1];
+    outputs->actuator_cmd.wheel_current[0] = chassis->wheel_motor[0].give_current;
+    outputs->actuator_cmd.wheel_current[1] = chassis->wheel_motor[1].give_current;
+    outputs->actuator_cmd.start_flag = chassis->start_flag;
 }
 
 static void chassis_control_loop( chassis_t * chassis,\

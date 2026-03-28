@@ -263,10 +263,10 @@ if(PLATFORM_TARGET_SIM)
   set(BALANCE_CHASSIS_LEGACY_APP_SOURCES
     ${PLATFORM_LEGACY_APP_DIR}/INS_task.c
     ${PLATFORM_LEGACY_APP_DIR}/chassis_task.c
-    ${PLATFORM_LEGACY_APP_DIR}/control/chassis_runtime_helpers.c
-    ${PLATFORM_LEGACY_APP_DIR}/control/remote_runtime_helpers.c
-    ${PLATFORM_LEGACY_APP_DIR}/io/chassis_topics.c
-    ${PLATFORM_LEGACY_APP_DIR}/io/remote_topics.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_logic/chassis_runtime_helpers.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_logic/remote_runtime_helpers.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/motor_control_task.c
     ${PLATFORM_LEGACY_APP_DIR}/observe_task.c
     ${PLATFORM_LEGACY_APP_DIR}/remote_task.c
@@ -320,7 +320,7 @@ if(PLATFORM_TARGET_SIM)
 
   add_executable(balance_chassis_sitl
     ${PLATFORM_SITL_BSP_DIR}/main_sitl.c
-    ${PLATFORM_LEGACY_APP_DIR}/freertos_legacy.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_main/freertos_app.c
     ${BALANCE_CHASSIS_FREERTOS_SOURCES}
     ${BALANCE_CHASSIS_SITL_BSP_SOURCES}
     ${BALANCE_CHASSIS_LEGACY_APP_SOURCES}

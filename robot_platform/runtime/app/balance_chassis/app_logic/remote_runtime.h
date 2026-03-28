@@ -1,7 +1,7 @@
-#ifndef BALANCE_CHASSIS_CONTROL_REMOTE_RUNTIME_H
-#define BALANCE_CHASSIS_CONTROL_REMOTE_RUNTIME_H
+#ifndef BALANCE_CHASSIS_APP_LOGIC_REMOTE_RUNTIME_H
+#define BALANCE_CHASSIS_APP_LOGIC_REMOTE_RUNTIME_H
 
-#include "../robot_def.h"
+#include "../app_config/robot_def.h"
 
 typedef struct
 {

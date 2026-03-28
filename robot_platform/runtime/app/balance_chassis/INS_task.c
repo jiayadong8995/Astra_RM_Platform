@@ -13,13 +13,13 @@
   *********************************************************************
   */
 	
-#include "ins_task.h"
+#include "INS_task.h"
 #include "controller.h"
 #include "QuaternionEKF.h"
 #include "bsp_PWM.h"
 #include "mahony_filter.h"
 #include "message_center.h"
-#include "robot_def.h"
+#include "app_config/robot_def.h"
 
 static INS_t ins_runtime;
 static Publisher_t *ins_pub;
@@ -189,6 +189,5 @@ void EarthFrameToBodyFrame(const float *vecEF, float *vecBF, float *q)
                        (q[2] * q[3] - q[0] * q[1]) * vecEF[1] +
                        (0.5f - q[1] * q[1] - q[2] * q[2]) * vecEF[2]);
 }
-
 
 

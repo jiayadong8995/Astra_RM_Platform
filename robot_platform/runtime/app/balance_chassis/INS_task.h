@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    ins_task.h
+ * @file    INS_task.h
  * @author  Wang Hongxi
  * @version V2.0.0
  * @date    2022/2/23
@@ -81,5 +81,4 @@ void BodyFrameToEarthFrame(const float *vecBF, float *vecEF, float *q);
 void EarthFrameToBodyFrame(const float *vecEF, float *vecBF, float *q);
 
 #endif
-
 

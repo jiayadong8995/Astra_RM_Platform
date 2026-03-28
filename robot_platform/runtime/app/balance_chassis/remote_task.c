@@ -16,9 +16,9 @@
 	
 #include "remote_task.h"
 #include "cmsis_os.h"
-#include "control/remote_runtime.h"
-#include "control/remote_runtime_helpers.h"
-#include "io/remote_topics.h"
+#include "app_logic/remote_runtime.h"
+#include "app_logic/remote_runtime_helpers.h"
+#include "app_io/remote_topics.h"
 
 void remote_task(void)
 {	
@@ -37,11 +37,10 @@ void remote_task(void)
 	{	
         remote_runtime_bus_pull_inputs(&runtime_bus, &rc_msg, &ins_msg, &state_msg, &right_msg, &left_msg);
         remote_runtime_apply_inputs(&cmd_state, &rc_msg, &ins_msg, &state_msg);
-        remote_runtime_limit_leg_set(&cmd_state, &right_msg, &left_msg);
+		remote_runtime_limit_leg_set(&cmd_state, &right_msg, &left_msg);
         cmd_msg = remote_runtime_build_cmd(&cmd_state);
         remote_runtime_bus_publish_cmd(&runtime_bus, &cmd_msg);
 
 		osDelay(REMOTE_TASK_PERIOD);
-		osDelay(50);
 	}
 }

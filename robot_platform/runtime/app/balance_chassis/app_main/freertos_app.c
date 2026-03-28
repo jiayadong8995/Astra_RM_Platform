@@ -50,13 +50,11 @@ void MX_FREERTOS_Init(void)
     osThreadDef(OBSERVE_TASK, OBSERVE_Task, osPriorityHigh, 0, OBSERVE_TASK_STACK_BYTES);
     OBSERVE_TASKHandle = osThreadCreate(osThread(OBSERVE_TASK), NULL);
 
-#if !defined(SITL_BUILD)
     osThreadDef(RC_INPUT_TASK, RC_Input_Task, osPriorityAboveNormal, 0, RC_INPUT_TASK_STACK_BYTES);
     RC_INPUT_TASKHandle = osThreadCreate(osThread(RC_INPUT_TASK), NULL);
 
     osThreadDef(REMOTE_TASK, Remote_Task, osPriorityAboveNormal, 0, REMOTE_TASK_STACK_BYTES);
     REMOTE_TASKHandle = osThreadCreate(osThread(REMOTE_TASK), NULL);
-#endif
 }
 
 static void StartDefaultTask(void const *argument)

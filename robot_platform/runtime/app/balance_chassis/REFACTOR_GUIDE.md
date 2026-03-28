@@ -1,186 +1,179 @@
 # `balance_chassis` Runtime Refactor Guide
 
-## 当前结论
+## 当前定位
 
-`balance_chassis` 这一轮重构已经不再是“先设计一套新架构”，而是把现有控制链收成可执行、可验证、可对接的 runtime 主线。
+`balance_chassis` 现在处于“legacy task 已迁入平台，但 app 还没完全收成装配层”的阶段。
 
-当前主线可以压成：
+这一层最终只应承担 4 件事：
+
+1. 任务调度
+2. 项目业务装配
+3. app 边界输入输出适配
+4. 模式与生命周期管理
+
+它不应继续承担：
+
+- 算法实现
+- 板级设备细节
+- 大量 legacy 结构体转换
+- 消息总线实现细节
+
+---
+
+## 当前目录语义
+
+当前目录已经开始向目标结构收口：
+
+- `app_main/`
+  - 线程创建和 app 入口
+  - 当前文件：`freertos_app.c`
+- `app_io/`
+  - app 级 topic/input/output 适配
+  - 当前文件：`topic_contract.h`、`chassis_topics.*`、`remote_topics.*`
+- `app_logic/`
+  - 业务编排 helper
+  - 当前文件：`chassis_runtime_helpers.*`、`remote_runtime.*`
+- `app_config/`
+  - 项目参数、topic 结构、业务常量
+  - 当前文件：`robot_def.h`
+- 根目录 `*_task.c`
+  - 仍属于 legacy task 本体
+  - 当前还是过渡区，后续应逐步迁入 `legacy/`
+
+目标结构仍然是：
+
+`app_main + app_io + app_logic + app_config + legacy`
+
+---
+
+## 当前主链
+
+当前运行时主链是：
 
 `rc_data / ins_data -> chassis_cmd / chassis_observe -> chassis_state / leg_left / leg_right -> actuator_cmd`
 
-执行反馈现在也开始收口成总线：
+执行反馈链是：
 
 `motor_control_task / device feedback -> actuator_feedback -> observe_task / chassis_task`
 
-其中：
+当前边界口径：
 
-- `rc_data` 是板级输入收口 topic
-- `ins_data` / `chassis_cmd` 是正式输入边界
-- `chassis_state` / `leg_left` / `leg_right` 是当前正式输出边界
-- `chassis_observe` / `actuator_cmd` 仍属于过渡或内部执行边界
-
-更完整的对接口径以 [platform_architecture.md](/home/xbd/workspace/codes/Astra_RM_Platform/robot_platform/docs/platform_architecture.md) 为准。
+- 正式输入：`ins_data`、`chassis_cmd`
+- 正式输出：`chassis_state`、`leg_left`、`leg_right`
+- 过渡或内部边界：`rc_data`、`chassis_observe`、`actuator_cmd`、`actuator_feedback`
 
 ---
 
 ## 已完成
 
-### 1. 构建链收口
+### 1. 主线收口
 
 - [x] 删除 `legacy_full` / `legacy_obj`
 - [x] 当前公开主线只保留 `hw_elf` 与 `sitl`
 - [x] `python3 -m robot_platform.tools.platform_cli.main build hw_elf` 可通过
 - [x] `python3 -m robot_platform.tools.platform_cli.main build sitl` 可通过
 
-### 2. 运行时总线主链立起来
+### 2. 行为问题修复
+
+- [x] `remote_task` 去掉额外 `osDelay(50)`
+- [x] `freertos_app` 在 `SITL_BUILD` 下也创建 `REMOTE_TASK` 与 `RC_INPUT_TASK`
+- [x] `INS_task.h` / `ins_task.h` 兼容双头文件已收掉，只保留 `INS_task.h`
+
+### 3. 目录语义迁移
+
+- [x] `control/` 已改为 `app_logic/`
+- [x] `io/` 已改为 `app_io/`
+- [x] `freertos_legacy.c` 已迁到 `app_main/freertos_app.c`
+- [x] `robot_def.h` 已迁到 `app_config/robot_def.h`
+
+### 4. `app_io` 依赖面收窄
+
+- [x] `app_io/chassis_topics.h` 不再直接依赖 `chassis_task.h`
+- [x] `app_io/chassis_topics.h` 不再直接依赖 `INS_task.h`
+- [x] `app_io/chassis_topics.h` 不再直接依赖 `VMC_calc.h`
+- [x] `app_io/remote_topics.h` 只暴露 app 级 contract，不暴露 remote runtime 类型
+- [x] `topic_contract.h` 已作为 app 级 topic 契约入口引入
+
+### 5. 总线主链已立起来
 
 - [x] `INS_task` 发布 `ins_data`
 - [x] `remote_task` 订阅 `rc_data / ins_data / chassis_state / leg_left / leg_right`，发布 `chassis_cmd`
 - [x] `observe_task` 订阅 `chassis_cmd / actuator_feedback`，发布 `chassis_observe`
 - [x] `chassis_task` 订阅 `ins_data / chassis_cmd / chassis_observe / actuator_feedback`，发布 `chassis_state / leg_left / leg_right / actuator_cmd`
-- [x] `motor_control_task` 改为订阅单一 `actuator_cmd`，并发布 `actuator_feedback`
-
-### 3. legacy 全局状态显式依赖减少
-
-- [x] `remote_task` 不再直接读 `rc_ctrl / INS / left / right / chassis_move`
-- [x] `observe_task` 不再直接读 `INS / left / right / chassis_move`
-- [x] `motor_control_task` 不再直接拼 `left/right/chassis_move`
-- [x] `INS_task` 的 `INS` 运行态已收进文件内部
-- [x] `chassis_task` 的 `chassis_move / right / left / PID` 运行态已收进文件内部
-
-### 4. 输入注入层与控制层拆开
-
-- [x] `rc_input_task` 已从 app 逻辑中移出，迁到 `runtime/bsp/devices/remote_control/rc_input_bridge.c`
-- [x] app 目录中的重复 `remote_control.c/.h` 已删除
-- [x] 遥控输入统一走 `runtime/bsp/devices/remote_control`
-
-### 5. 执行层边界更清楚
-
-- [x] 新增 `actuator_cmd`
-- [x] `motor_control_task` 从“订阅多个 topic 再拼执行命令”改为“只订阅末端执行命令 topic”
-- [x] 新增 `actuator_feedback`
-- [x] `observe_task / chassis_task` 不再通过 accessor 读取 `chassis_task` 内部执行反馈
+- [x] `motor_control_task` 订阅 `actuator_cmd`，发布 `actuator_feedback`
 
 ---
 
-## 当前边界
+## 仍未完成
 
-### 正式输入边界
+### 1. `app_io` 还不是纯 adapter
 
-- `ins_data`
-- `chassis_cmd`
+虽然 `app_io` 已经不再在头文件上暴露 legacy task 和算法类型，但 `chassis_task.c` 里仍存在 app-level bundle 到 legacy runtime 的映射逻辑。
 
-### 正式输出边界
+这说明：
 
-- `chassis_state`
-- `leg_left`
-- `leg_right`
+- 旧的 `topic -> legacy runtime` 胶水没有消失
+- 只是从 `app_io` 头文件层面收回到了 task shell 内部
 
-### 过渡或内部边界
+下一步应继续把这部分抽成更明确的 app 装配逻辑，而不是继续堆在 `chassis_task.c`。
 
-- `rc_data`
-- `chassis_observe`
-- `actuator_cmd`
-- `actuator_feedback`
+### 2. 根目录 `*_task.c` 还未迁到 `legacy/`
 
-### 当前明确禁止的对接方式
+现在的 task 文件已经比以前更像 shell，但还没有完成目录级隔离。
 
-- 直接依赖 `INS`
-- 直接依赖 `chassis_move`
-- 直接依赖 `left / right`
-- 直接依赖 `rc_ctrl`
+下一步需要逐步收成：
 
----
+- `legacy/INS_task.c`
+- `legacy/chassis_task.c`
+- `legacy/remote_task.c`
+- `legacy/observe_task.c`
+- `legacy/motor_control_task.c`
 
-## 仍在进行
+### 3. `chassis_task.c` 仍然偏重
 
-### A. `chassis_task` 仍然是控制大文件
+虽然它已经变成“拉输入 -> 调控制 -> 发输出”的主干，但里面仍保留：
 
-虽然运行态已经收进文件内部，但 `chassis_task.c` 仍然同时承载：
+- app bundle 到 legacy runtime 的装配
+- 控制周期内的部分 legacy 状态更新
+- 输出封装
 
-- 反馈更新
-- LQR 与补偿控制
-- 跳跃状态机
-- 离地检测
-- 执行命令封装
-
-这意味着当前的“总线边界”已经比之前清楚，但“控制内部职责拆分”还没完成。
-
-### B. `chassis_observe` 仍是过渡 topic
-
-它现在已经是 `observe_task` 唯一正式输出，不再回写 `chassis_move` 关键观测状态。  
-但它还没有被升级为正式外部观测接口，所以不建议固化进 `sim/report/replay` 协议。
-
-### C. 执行反馈总线刚落地
-
-`actuator_feedback` 现在已经取代 app 层通过 accessor 偷读控制任务内部状态的做法。  
-但它暂时还是内部执行反馈 topic，还没有升级成对 `sim/report/replay` 的正式输出承诺。
+它还没彻底退化成薄调度壳。
 
 ---
 
-## 下一步优先级
+## 下一步顺序
 
-### P0. 拆 `chassis_task.c` 内部职责
+### P0. 继续把 task 壳层和 legacy 本体拆开
 
-目标：
+优先顺序：
 
-- `feedback_update`
-- `balance_controller`
-- `jump_fsm`
-- `ground_detect`
+1. `chassis_task.c`
+2. `observe_task.c`
+3. `INS_task.c`
+4. `motor_control_task.c`
 
-要求：
+目标是把 task shell、app logic、app io 拆开，让根目录 task 只剩调度骨架。
 
-- `chassis_task.c` 逐步退化成“订阅输入 -> 调用控制模块 -> 发布输出”的薄调度层
+### P1. 把根目录 task 迁入 `legacy/`
 
-### P1. 明确 `actuator_cmd / actuator_feedback` 的长期命运
+当 task shell 足够薄之后，再做目录级迁移，避免先搬目录再继续在里面堆逻辑。
 
-两种路线二选一：
+### P2. 再收 `app_io` 的 contract
 
-1. 保持它们为内部执行边界，只给执行层和反馈桥使用
-2. 升级它们为统一执行 I/O 接口，让硬件执行层和 SITL bridge 都接这一层
+重点是明确：
 
-当前还没有最终定论，所以文档里仍把它定义为过渡 topic。
-
-### P2. 统一 replay / sim / bridge 的边界口径
-
-当前 sim 应优先对接：
-
-- 输入：`ins_data`、`chassis_cmd`
-- 输出：`chassis_state`、`leg_left`、`leg_right`
-
-不要直接依赖：
-
-- `rc_data`
-- `chassis_observe`
-- `actuator_cmd`
-- `actuator_feedback`
-
-除非后续明确把其中某一项升级为正式边界。
-
----
-
-## 不再作为当前执行面的旧计划
-
-下面这些内容不再适合作为本文件的当前主计划：
-
-- 回到 Keil 工程组织方式继续重排目录
-- 先做一套新的 topic enum/ID 总线再说
-- 把所有内容一次性抽成大量小模块后再验证
-- 以 `legacy_full` 为主验证链
-
-这些要么已经过时，要么会稀释当前最重要的交付目标。
+- 哪些 topic 是长期正式契约
+- 哪些 topic 只是内部执行桥
+- 哪些 struct 还能继续出现在 app 装配层
 
 ---
 
 ## 当前交付标准
 
-当下这一阶段的 `balance_chassis` runtime 重构，至少要满足：
+当前阶段要算完成，至少需要满足：
 
-- `hw_elf` 和 `sitl` 共用同一条控制主链
-- `sim` 不需要直接读写 app 内部全局状态
-- 输入注入留在 `bsp / 注入层`
-- 控制逻辑留在 `app`
-- 正式边界、过渡边界、内部边界有明确口径
-
-如果不满足这几条，就还不能算交付完成。
+- `hw_elf` 和 `sitl` 持续可构建
+- app 目录语义明确是 `app_main / app_io / app_logic / app_config`
+- `sim` 不需要依赖 app 内部全局状态
+- `app_io` 不再在边界头文件上暴露 legacy task 和算法类型
+- task 文件逐步退化成装配壳，而不是继续承担平台细节
