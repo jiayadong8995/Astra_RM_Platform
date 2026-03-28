@@ -3,10 +3,6 @@
 
 #include "main.h"
 #include "dm4310_drv.h"
-#include "pid.h"
-#include "VMC_calc.h"
-#include "INS_task.h"
-#include "robot_def.h"
 
 typedef struct
 {
@@ -52,4 +48,3 @@ void Chassis_task(void);
 void mySaturate(float *in,float min,float max);
 
 #endif
-

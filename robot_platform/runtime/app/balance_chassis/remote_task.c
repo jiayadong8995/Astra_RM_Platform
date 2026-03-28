@@ -36,18 +36,34 @@
 //速度斜坡
 #define SPEED_STEP RC_SPEED_SLOPE
 
+typedef struct
+{
+    float v_set;
+    float x_set;
+    float x_filter;
+    float turn_set;
+    float total_yaw;
+    float leg_set;
+    float myPithR;
+    uint8_t start_flag;
+    uint8_t jump_flag;
+    uint8_t recover_flag;
+    uint8_t last_recover_flag;
+} Remote_Runtime_t;
+
 float leg_add = 0;
 int leg_set_flag = 0;
 
 
-static void remote_data_process(const RC_Data_t *rc_data, chassis_t *chassis);
+static void remote_data_process(const RC_Data_t *rc_data, Remote_Runtime_t *runtime);
 static void slope_following(float *target,float *set,float acc);
+static void local_saturate(float *in,float min,float max);
 
 static Publisher_t *cmd_pub;
 
 void remote_task(void)
 {	
-    chassis_t cmd_state = {0};
+    Remote_Runtime_t cmd_state = {0};
     Subscriber_t *rc_sub = SubRegister("rc_data", sizeof(RC_Data_t));
     Subscriber_t *ins_sub = SubRegister("ins_data", sizeof(INS_Data_t));
     Subscriber_t *chassis_state_sub = SubRegister("chassis_state", sizeof(Chassis_State_t));
@@ -114,84 +130,84 @@ void remote_task(void)
 	}
 }
 
-static void remote_data_process(const RC_Data_t *rc_data,chassis_t *chassis)
+static void remote_data_process(const RC_Data_t *rc_data, Remote_Runtime_t *runtime)
 {
-	chassis->last_recover_flag = chassis->recover_flag;
+	runtime->last_recover_flag = runtime->recover_flag;
 	if(!rc_data->online)
 	{
-		chassis->start_flag = 0;
-		chassis->recover_flag = 0;
-		chassis->jump_flag = 0;
+		runtime->start_flag = 0;
+		runtime->recover_flag = 0;
+		runtime->jump_flag = 0;
 	}
 	else if(switch_is_mid(rc_data->sw[0]))
 	{
-		chassis->start_flag = 1;
-		if(chassis->myPithR > PITCH_RECOVER_THRESHOLD ||chassis->myPithR < -PITCH_RECOVER_THRESHOLD)//原0.28
+		runtime->start_flag = 1;
+		if(runtime->myPithR > PITCH_RECOVER_THRESHOLD ||runtime->myPithR < -PITCH_RECOVER_THRESHOLD)//原0.28
 		{
 			if(rc_data->sw[1] == RC_SW_MID)
 			{
-			chassis->recover_flag = 0;
+			runtime->recover_flag = 0;
 			}else
 			{
-			chassis->recover_flag = 1;
+			runtime->recover_flag = 1;
 			}
 		}
 		
 	}
 	else if(switch_is_down(rc_data->sw[0]))
 	{
-		chassis->start_flag = 0;
-		chassis->recover_flag = 0;
-		chassis->jump_flag = 0;
+		runtime->start_flag = 0;
+		runtime->recover_flag = 0;
+		runtime->jump_flag = 0;
 	}
 	
 	
-    if(chassis->start_flag == 1)
+    if(runtime->start_flag == 1)
     {
 		if(switch_is_mid(rc_data->sw[1]))
 		{
 			if(660 == rc_data->ch[3])
 			{
-				chassis->jump_flag = 1;
+				runtime->jump_flag = 1;
 			}else
 			{
-				chassis->jump_flag = 0;
+				runtime->jump_flag = 0;
 			}
 		}
 		else if(switch_is_down(rc_data->sw[1]))
 		{
-			chassis->jump_flag = 0;
+			runtime->jump_flag = 0;
 		}
 		
-		chassis->leg_set =  BEGIN_LEG_LENGTH;
+		runtime->leg_set =  BEGIN_LEG_LENGTH;
 //		if(rc_data->sw[1] == 3)
 //		{
-		chassis->turn_set = chassis->turn_set - rc_data->ch[2] * RC_TO_TURN_RATIO;
+		runtime->turn_set = runtime->turn_set - rc_data->ch[2] * RC_TO_TURN_RATIO;
 //		}else{
-//		chassis->turn_set = chassis->turn_set - rc_data->ch[0] * RC_TO_TURN_RATIO;
+//		runtime->turn_set = runtime->turn_set - rc_data->ch[0] * RC_TO_TURN_RATIO;
 		//}
 		//速度斜坡控制
 		float vx_speed_cmd = -rc_data->ch[1] * RC_TO_VX_RATIO;//遥控器相反（现加负号）
 		//float vx_speed_cmd = rc_data->ch[1] * RC_TO_VX;//遥控器相反（现加负号）
-		slope_following(&vx_speed_cmd,&chassis->v_set,RC_SPEED_SLOPE);
-		mySaturate(&chassis->v_set,-VX_MAX,VX_MAX);
+		slope_following(&vx_speed_cmd,&runtime->v_set,RC_SPEED_SLOPE);
+		local_saturate(&runtime->v_set,-VX_MAX,VX_MAX);
 
-		chassis->x_set = chassis->x_set + chassis->v_set * (float)REMOTE_TIME/1000.0f;
+		runtime->x_set = runtime->x_set + runtime->v_set * (float)REMOTE_TIME/1000.0f;
 
   	}
-	else if(chassis->start_flag == 0)
+	else if(runtime->start_flag == 0)
 	{
-		chassis->v_set=0.0f;//清零
-		chassis->x_set=chassis->x_filter;//保存
-		chassis->turn_set=chassis->total_yaw;//保存
+		runtime->v_set=0.0f;//清零
+		runtime->x_set=runtime->x_filter;//保存
+		runtime->turn_set=runtime->total_yaw;//保存
 	}
 
 	//转向限幅
-	if(fabsf(chassis->turn_set - chassis->total_yaw) > 0.3f){
-		chassis->turn_set = ((chassis->turn_set - chassis->total_yaw) > 0) ? (chassis->total_yaw + 0.3f) : (chassis->total_yaw - 0.3f);
+	if(fabsf(runtime->turn_set - runtime->total_yaw) > 0.3f){
+		runtime->turn_set = ((runtime->turn_set - runtime->total_yaw) > 0) ? (runtime->total_yaw + 0.3f) : (runtime->total_yaw - 0.3f);
 	}
 
-	mySaturate(&chassis->leg_set,LEG_LENGTH_MIN,LEG_LENGTH_MAX);//限制腿长范围
+	local_saturate(&runtime->leg_set,LEG_LENGTH_MIN,LEG_LENGTH_MAX);//限制腿长范围
 
 }
 
@@ -208,5 +224,17 @@ static void slope_following(float *target,float *set,float acc)
 		*set = *set - acc ;
 		if(*set <= *target)
 		*set = *target;
+	}
+}
+
+static void local_saturate(float *in,float min,float max)
+{
+	if(*in < min)
+	{
+		*in = min;
+	}
+	else if(*in > max)
+	{
+		*in = max;
 	}
 }

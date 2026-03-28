@@ -20,6 +20,10 @@
 #include "cmsis_os.h"
 #include "can_bsp.h"
 #include "message_center.h"
+#include "pid.h"
+#include "VMC_calc.h"
+#include "INS_task.h"
+#include "robot_def.h"
 
 static float LQR_K_R[12]= LQR_K_MATRIX;
 
