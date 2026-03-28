@@ -37,7 +37,6 @@ robot_platform/
 ```bash
 python3 -m robot_platform.tools.platform_cli.main generate
 python3 -m robot_platform.tools.platform_cli.main build hw_elf
-python3 -m robot_platform.tools.platform_cli.main build legacy_full
 python3 -m robot_platform.tools.platform_cli.main build sitl
 ```
 

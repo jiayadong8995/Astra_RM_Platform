@@ -10,5 +10,3 @@ void remote_task(void);
 
 #endif
 
-
-

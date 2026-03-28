@@ -21,7 +21,7 @@
 #include "message_center.h"
 #include "robot_def.h"
 
-INS_t INS;
+static INS_t ins_runtime;
 static Publisher_t *ins_pub;
 
 struct MAHONY_FILTER_t mahony;
@@ -36,7 +36,7 @@ int stop_time;
 void INS_Init(void)
 { 
    mahony_init(&mahony,1.0f,0.0f,0.001f);
-   INS.AccelLPF = 0.0089f;
+   ins_runtime.AccelLPF = 0.0089f;
 }
 
 void INS_task(void)
@@ -52,15 +52,15 @@ void INS_task(void)
 
     BMI088_Read(&BMI088);
 
-    INS.Accel[X] = BMI088.Accel[X];
-    INS.Accel[Y] = BMI088.Accel[Y];
-    INS.Accel[Z] = BMI088.Accel[Z];
+    ins_runtime.Accel[X] = BMI088.Accel[X];
+    ins_runtime.Accel[Y] = BMI088.Accel[Y];
+    ins_runtime.Accel[Z] = BMI088.Accel[Z];
 	Accel.x=BMI088.Accel[0];
 	Accel.y=BMI088.Accel[1];
 	Accel.z=BMI088.Accel[2];
-    INS.Gyro[X] = BMI088.Gyro[X];
-    INS.Gyro[Y] = BMI088.Gyro[Y];
-    INS.Gyro[Z] = BMI088.Gyro[Z];
+    ins_runtime.Gyro[X] = BMI088.Gyro[X];
+    ins_runtime.Gyro[Y] = BMI088.Gyro[Y];
+    ins_runtime.Gyro[Z] = BMI088.Gyro[Z];
   	Gyro.x=BMI088.Gyro[0];
 	Gyro.y=BMI088.Gyro[1];
 	Gyro.z=BMI088.Gyro[2];
@@ -70,57 +70,57 @@ void INS_task(void)
 	mahony_output(&mahony);
 	RotationMatrix_update(&mahony);
 				
-	INS.q[0]=mahony.q0;
-	INS.q[1]=mahony.q1;
-	INS.q[2]=mahony.q2;
-	INS.q[3]=mahony.q3;
+	ins_runtime.q[0]=mahony.q0;
+	ins_runtime.q[1]=mahony.q1;
+	ins_runtime.q[2]=mahony.q2;
+	ins_runtime.q[3]=mahony.q3;
 
       // 将重力从导航坐标系n转换到机体系b,随后根据加速度计数据计算运动加速度
 	float gravity_b[3];
-    EarthFrameToBodyFrame(gravity, gravity_b, INS.q);
+    EarthFrameToBodyFrame(gravity, gravity_b, ins_runtime.q);
     for (uint8_t i = 0; i < 3; i++) // 同样过一个低通滤波
     {
-      INS.MotionAccel_b[i] = (INS.Accel[i] - gravity_b[i]) * ins_dt / (INS.AccelLPF + ins_dt) 
-														+ INS.MotionAccel_b[i] * INS.AccelLPF / (INS.AccelLPF + ins_dt); 
-//			INS.MotionAccel_b[i] = (INS.Accel[i] ) * dt / (INS.AccelLPF + dt) 
-//														+ INS.MotionAccel_b[i] * INS.AccelLPF / (INS.AccelLPF + dt);			
+      ins_runtime.MotionAccel_b[i] = (ins_runtime.Accel[i] - gravity_b[i]) * ins_dt / (ins_runtime.AccelLPF + ins_dt) 
+														+ ins_runtime.MotionAccel_b[i] * ins_runtime.AccelLPF / (ins_runtime.AccelLPF + ins_dt); 
+//			ins_runtime.MotionAccel_b[i] = (ins_runtime.Accel[i] ) * dt / (ins_runtime.AccelLPF + dt) 
+//														+ ins_runtime.MotionAccel_b[i] * ins_runtime.AccelLPF / (ins_runtime.AccelLPF + dt);			
 	}
-	BodyFrameToEarthFrame(INS.MotionAccel_b, INS.MotionAccel_n, INS.q); // 转换回导航系n
+	BodyFrameToEarthFrame(ins_runtime.MotionAccel_b, ins_runtime.MotionAccel_n, ins_runtime.q); // 转换回导航系n
 	
 	//死区处理
-	if(fabsf(INS.MotionAccel_n[0])<0.02f)
+	if(fabsf(ins_runtime.MotionAccel_n[0])<0.02f)
 	{
-	  INS.MotionAccel_n[0]=0.0f;	//x轴
+	  ins_runtime.MotionAccel_n[0]=0.0f;	//x轴
 	}
-	if(fabsf(INS.MotionAccel_n[1])<0.02f)
+	if(fabsf(ins_runtime.MotionAccel_n[1])<0.02f)
 	{
-	  INS.MotionAccel_n[1]=0.0f;	//y轴
+	  ins_runtime.MotionAccel_n[1]=0.0f;	//y轴
 	}
-	if(fabsf(INS.MotionAccel_n[2])<0.04f)
+	if(fabsf(ins_runtime.MotionAccel_n[2])<0.04f)
 	{
-	  INS.MotionAccel_n[2]=0.0f;//z轴
+	  ins_runtime.MotionAccel_n[2]=0.0f;//z轴
 	}
 	
 	if(ins_time>3000.0f)
 	{
-		INS.ins_flag=1;//四元数基本收敛，加速度也基本收敛，可以开始底盘任务
+		ins_runtime.ins_flag=1;//四元数基本收敛，加速度也基本收敛，可以开始底盘任务
 		// 获取最终数据
-		INS.Pitch= mahony.roll - PITCH_OFFSET;  //安装存在误差，减去初始角度
-		INS.Roll= mahony.pitch - ROLL_OFFSET;
-		INS.Yaw=mahony.yaw;
+		ins_runtime.Pitch= mahony.roll - PITCH_OFFSET;  //安装存在误差，减去初始角度
+		ins_runtime.Roll= mahony.pitch - ROLL_OFFSET;
+		ins_runtime.Yaw=mahony.yaw;
 
-//INS.YawTotalAngle=INS.YawTotalAngle+INS.Gyro[2]*0.001f;
+//ins_runtime.YawTotalAngle=ins_runtime.YawTotalAngle+ins_runtime.Gyro[2]*0.001f;
 		
-		if (INS.Yaw - INS.YawAngleLast > 3.1415926f)
+		if (ins_runtime.Yaw - ins_runtime.YawAngleLast > 3.1415926f)
 		{
-			INS.YawRoundCount--;
+			ins_runtime.YawRoundCount--;
 		}
-		else if (INS.Yaw - INS.YawAngleLast < -3.1415926f)
+		else if (ins_runtime.Yaw - ins_runtime.YawAngleLast < -3.1415926f)
 		{
-			INS.YawRoundCount++;
+			ins_runtime.YawRoundCount++;
 		}
-			INS.YawTotalAngle = 6.283f* INS.YawRoundCount + INS.Yaw;
-			INS.YawAngleLast = INS.Yaw;
+			ins_runtime.YawTotalAngle = 6.283f* ins_runtime.YawRoundCount + ins_runtime.Yaw;
+			ins_runtime.YawAngleLast = ins_runtime.Yaw;
 		}
 		else
 		{
@@ -130,16 +130,16 @@ void INS_task(void)
 		/* publish INS data to message bus */
 		{
 			INS_Data_t msg;
-			msg.pitch     = INS.Pitch;
-			msg.roll      = INS.Roll;
-			msg.yaw_total = INS.YawTotalAngle;
-			msg.gyro[0]   = INS.Gyro[0];
-			msg.gyro[1]   = INS.Gyro[1];
-			msg.gyro[2]   = INS.Gyro[2];
-			msg.accel_b[0] = INS.MotionAccel_b[0];
-			msg.accel_b[1] = INS.MotionAccel_b[1];
-			msg.accel_b[2] = INS.MotionAccel_b[2];
-			msg.ready     = INS.ins_flag;
+			msg.pitch     = ins_runtime.Pitch;
+			msg.roll      = ins_runtime.Roll;
+			msg.yaw_total = ins_runtime.YawTotalAngle;
+			msg.gyro[0]   = ins_runtime.Gyro[0];
+			msg.gyro[1]   = ins_runtime.Gyro[1];
+			msg.gyro[2]   = ins_runtime.Gyro[2];
+			msg.accel_b[0] = ins_runtime.MotionAccel_b[0];
+			msg.accel_b[1] = ins_runtime.MotionAccel_b[1];
+			msg.accel_b[2] = ins_runtime.MotionAccel_b[2];
+			msg.ready     = ins_runtime.ins_flag;
 			PubPushMessage(ins_pub, &msg);
 		}
 
@@ -189,7 +189,6 @@ void EarthFrameToBodyFrame(const float *vecEF, float *vecBF, float *q)
                        (q[2] * q[3] - q[0] * q[1]) * vecEF[1] +
                        (0.5f - q[1] * q[1] - q[2] * q[2]) * vecEF[2]);
 }
-
 
 
 

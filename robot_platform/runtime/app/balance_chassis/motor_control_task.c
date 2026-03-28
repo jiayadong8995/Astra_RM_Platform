@@ -26,69 +26,87 @@
 #include "message_center.h"
 #include "robot_def.h"
 
-extern int enable_flag[4];
 uint32_t systick;
-extern vmc_leg_t left;
-extern vmc_leg_t right;
-extern INS_t INS;
-
-extern chassis_t chassis_move;
 				
 void motor_control_task(void)
 {
-    while(INS.ins_flag==0)
-	{//等待加速度收敛
-	  osDelay(1);	
+    Subscriber_t *ins_sub;
+    Subscriber_t *actuator_cmd_sub;
+    INS_Data_t ins_msg = {0};
+    Actuator_Cmd_t actuator_msg = {0};
+    uint8_t ins_ready = 0;
+    Joint_Motor_t *joint_motor[4];
+
+    ins_sub = SubRegister("ins_data", sizeof(INS_Data_t));
+    actuator_cmd_sub = SubRegister("actuator_cmd", sizeof(Actuator_Cmd_t));
+
+    while(ins_ready == 0)
+	{
+        if (SubGetMessage(ins_sub, &ins_msg))
+        {
+            ins_ready = ins_msg.ready;
+        }
+	    osDelay(1);
 	}
+
+    joint_motor[0] = chassis_joint_motor_state(0);
+    joint_motor[1] = chassis_joint_motor_state(1);
+    joint_motor[2] = chassis_joint_motor_state(2);
+    joint_motor[3] = chassis_joint_motor_state(3);
 	
-	joint_motor_init(& chassis_move.joint_motor[0],1,MIT_MODE);//发送id为1,控制模式 MIT
-	joint_motor_init(& chassis_move.joint_motor[1],2,MIT_MODE);//发送id为2,控制模式 MIT
-	joint_motor_init(& chassis_move.joint_motor[2],3,MIT_MODE);//发送id为3,控制模式 MIT
-	joint_motor_init(& chassis_move.joint_motor[3],4,MIT_MODE);//发送id为4,控制模式 MIT
+	joint_motor_init(joint_motor[0],1,MIT_MODE);//发送id为1,控制模式 MIT
+	joint_motor_init(joint_motor[1],2,MIT_MODE);//发送id为2,控制模式 MIT
+	joint_motor_init(joint_motor[2],3,MIT_MODE);//发送id为3,控制模式 MIT
+	joint_motor_init(joint_motor[3],4,MIT_MODE);//发送id为4,控制模式 MIT
   //需要对4个关节电机进行零点重置
-	enable_flag[0] = enable_motor_mode(&hfdcan1, chassis_move.joint_motor[0].para.id, chassis_move.joint_motor[0].mode);
-	//DM_motor_zeroset(&hfdcan1,chassis_move.joint_motor[0].para.id);
+	chassis_set_joint_enable_flag(0, enable_motor_mode(&hfdcan1, joint_motor[0]->para.id, joint_motor[0]->mode));
+	//DM_motor_zeroset(&hfdcan1, joint_motor[0]->para.id);
 	osDelay(1); 
-	enable_flag[1] = enable_motor_mode(&hfdcan1, chassis_move.joint_motor[1].para.id, chassis_move.joint_motor[1].mode);
-	//DM_motor_zeroset(&hfdcan1,chassis_move.joint_motor[1].para.id);
+	chassis_set_joint_enable_flag(1, enable_motor_mode(&hfdcan1, joint_motor[1]->para.id, joint_motor[1]->mode));
+	//DM_motor_zeroset(&hfdcan1, joint_motor[1]->para.id);
 	osDelay(1);
-	enable_flag[2] = enable_motor_mode(&hfdcan1, chassis_move.joint_motor[2].para.id, chassis_move.joint_motor[2].mode);
-	//DM_motor_zeroset(&hfdcan1,chassis_move.joint_motor[2].para.id);
+	chassis_set_joint_enable_flag(2, enable_motor_mode(&hfdcan1, joint_motor[2]->para.id, joint_motor[2]->mode));
+	//DM_motor_zeroset(&hfdcan1, joint_motor[2]->para.id);
 	osDelay(1);
-	enable_flag[3] = enable_motor_mode(&hfdcan1, chassis_move.joint_motor[3].para.id,chassis_move.joint_motor[3].mode);
-	//DM_motor_zeroset(&hfdcan1,chassis_move.joint_motor[3].para.id);
+	chassis_set_joint_enable_flag(3, enable_motor_mode(&hfdcan1, joint_motor[3]->para.id, joint_motor[3]->mode));
+	//DM_motor_zeroset(&hfdcan1, joint_motor[3]->para.id);
 	osDelay(1);
 	osDelay(2);
 
 	while(1)
 	{	
+        if (SubGetMessage(actuator_cmd_sub, &actuator_msg))
+        {
+            /* latest actuator command cached in topic subscriber */
+        }
+
 		systick = osKernelSysTick();
-	   if(chassis_move.start_flag==0){
+	   if(actuator_msg.start_flag==0){
 
 			if(systick%2==0)//左腿
 			{
-				mit_ctrl(&hfdcan1,chassis_move.joint_motor[0].para.id, 0.0f, 0.0f,0.0f, 0.0f,0.0f);//right.torque_set[0]
-				mit_ctrl(&hfdcan1,chassis_move.joint_motor[1].para.id, 0.0f, 0.0f,0.0f, 0.0f,0.0f);//right.torque_set[1]
+				mit_ctrl(&hfdcan1,joint_motor[0]->para.id, 0.0f, 0.0f,0.0f, 0.0f,0.0f);//right.torque_set[0]
+				mit_ctrl(&hfdcan1,joint_motor[1]->para.id, 0.0f, 0.0f,0.0f, 0.0f,0.0f);//right.torque_set[1]
 				CAN_cmd_chassis(&hfdcan2,0,0,0,0);		
 			}
 			else
 			{
-				mit_ctrl(&hfdcan1,chassis_move.joint_motor[2].para.id, 0.0f, 0.0f,0.0f, 0.0f,0.0f);//left.torque_set[0]
-				mit_ctrl(&hfdcan1,chassis_move.joint_motor[3].para.id, 0.0f, 0.0f,0.0f, 0.0f,0.0f);//left.torque_set[1]		
+				mit_ctrl(&hfdcan1,joint_motor[2]->para.id, 0.0f, 0.0f,0.0f, 0.0f,0.0f);//left.torque_set[0]
+				mit_ctrl(&hfdcan1,joint_motor[3]->para.id, 0.0f, 0.0f,0.0f, 0.0f,0.0f);//left.torque_set[1]		
 			}
 		}
-		else if(chassis_move.start_flag==1)	
+		else if(actuator_msg.start_flag==1)	
 		{
 			if(systick%2==0)
 			{
-				mit_ctrl(&hfdcan1,chassis_move.joint_motor[0].para.id, 0.0f, 0.0f,0.0f, 0.0f,right.torque_set[0]);//right.torque_set[0]		
-				mit_ctrl(&hfdcan1,chassis_move.joint_motor[1].para.id, 0.0f, 0.0f,0.0f, 0.0f,right.torque_set[1]);//right.torque_set[1]
-				CAN_cmd_chassis(&hfdcan2,chassis_move.wheel_motor[0].give_current,chassis_move.wheel_motor[1].give_current,0,0);
+				mit_ctrl(&hfdcan1,joint_motor[0]->para.id, 0.0f, 0.0f,0.0f, 0.0f,actuator_msg.joint_torque[0]);
+				mit_ctrl(&hfdcan1,joint_motor[1]->para.id, 0.0f, 0.0f,0.0f, 0.0f,actuator_msg.joint_torque[1]);
+				CAN_cmd_chassis(&hfdcan2,actuator_msg.wheel_current[0],actuator_msg.wheel_current[1],0,0);
 			}
 			else
 			{
-				mit_ctrl(&hfdcan1,chassis_move.joint_motor[2].para.id, 0.0f, 0.0f,0.0f, 0.0f,left.torque_set[0]);//left.torque_set[0]				
-				mit_ctrl(&hfdcan1,chassis_move.joint_motor[3].para.id, 0.0f, 0.0f,0.0f, 0.0f,left.torque_set[1]);//left	.torque_set[1]
+				mit_ctrl(&hfdcan1,joint_motor[2]->para.id, 0.0f, 0.0f,0.0f, 0.0f,actuator_msg.joint_torque[2]);
+				mit_ctrl(&hfdcan1,joint_motor[3]->para.id, 0.0f, 0.0f,0.0f, 0.0f,actuator_msg.joint_torque[3]);
 			}	
 		}
 		osDelay(1);
@@ -97,7 +115,3 @@ void motor_control_task(void)
 		
 	}
 }
-
-
-
-

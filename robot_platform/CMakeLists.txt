@@ -38,8 +38,6 @@ set(PLATFORM_DM_MOTOR_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/dm_motor)
 set(PLATFORM_SEED_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis_seed)
 set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
 set(PLATFORM_BMI088_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/bmi088)
-set(PLATFORM_DSP_LIB ${CHASSIS_CMSIS_DIR}/DSP/Lib/GCC/libarm_cortexM7lfdp_math.a)
-
 if(PLATFORM_TARGET_HW)
 
 
@@ -101,17 +99,10 @@ set(BALANCE_CHASSIS_BSP_SEED_SOURCES
   ${PLATFORM_BOARD_BSP_DIR}/bsp_PWM.c
   ${PLATFORM_BOARD_BSP_DIR}/bsp_uart.c
   ${PLATFORM_BOARD_BSP_DIR}/can_bsp.c
+  ${PLATFORM_REMOTE_CONTROL_DIR}/rc_input_bridge.c
   ${PLATFORM_REMOTE_CONTROL_DIR}/remote_control.c
   ${PLATFORM_DM_MOTOR_DIR}/dm4310_drv.c
   ${PLATFORM_SEED_APP_DIR}/legacy_seed_state.c
-)
-
-set(BALANCE_CHASSIS_BSP_FULL_SOURCES
-  ${PLATFORM_BOARD_BSP_DIR}/bsp_dwt.c
-  ${PLATFORM_BOARD_BSP_DIR}/bsp_PWM.c
-  ${PLATFORM_BOARD_BSP_DIR}/bsp_uart.c
-  ${PLATFORM_BOARD_BSP_DIR}/can_bsp.c
-  ${PLATFORM_DM_MOTOR_DIR}/dm4310_drv.c
 )
 
 add_library(balance_chassis_generated_raw STATIC
@@ -161,6 +152,11 @@ target_include_directories(balance_chassis_bsp_seed
     ${PLATFORM_REMOTE_CONTROL_DIR}
     ${PLATFORM_DM_MOTOR_DIR}
     ${PLATFORM_SEED_APP_DIR}
+    ${PLATFORM_LEGACY_APP_DIR}
+    ${CHASSIS_FREERTOS_DIR}/include
+    ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS
+    ${PLATFORM_FREERTOS_PORT_DIR}
+    ${PLATFORM_RUNTIME_DIR}/module/message_center
 )
 
 target_compile_options(balance_chassis_bsp_seed
@@ -184,74 +180,11 @@ set(BALANCE_CHASSIS_FREERTOS_SOURCES
   ${CHASSIS_FREERTOS_DIR}/timers.c
 )
 
-set(BALANCE_CHASSIS_LEGACY_APP_SOURCES
-  ${PLATFORM_LEGACY_APP_DIR}/INS_task.c
-  ${PLATFORM_LEGACY_APP_DIR}/chassis_task.c
-  ${PLATFORM_LEGACY_APP_DIR}/motor_control_task.c
-  ${PLATFORM_LEGACY_APP_DIR}/observe_task.c
-  ${PLATFORM_LEGACY_APP_DIR}/remote_control.c
-  ${PLATFORM_LEGACY_APP_DIR}/remote_task.c
-  ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
-  ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
-  ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC/VMC_calc.c
-  ${PLATFORM_RUNTIME_DIR}/module/algorithm/kalman/kalman_filter.c
-  ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony/mahony_filter.c
-  ${PLATFORM_RUNTIME_DIR}/module/controller/controller.c
-  ${PLATFORM_RUNTIME_DIR}/module/lib/user_lib.c
-  ${PLATFORM_RUNTIME_DIR}/module/message_center/message_center.c
-  ${PLATFORM_BMI088_DIR}/BMI088Middleware.c
-  ${PLATFORM_BMI088_DIR}/BMI088driver.c
-)
-
 add_executable(balance_chassis_hw_seed.elf
   ${GENERATED_RAW_DIR}/Src/main.c
   ${GENERATED_RAW_DIR}/Src/freertos.c
   ${CHASSIS_ROOT}/Drivers/CMSIS/Device/ST/STM32H7xx/Source/Templates/gcc/startup_stm32h723xx.s
   ${BALANCE_CHASSIS_FREERTOS_SOURCES}
-)
-
-add_library(balance_chassis_legacy_full_obj OBJECT
-  ${BALANCE_CHASSIS_LEGACY_APP_SOURCES}
-)
-
-target_include_directories(balance_chassis_legacy_full_obj
-  PRIVATE
-    ${GENERATED_RAW_DIR}/Inc
-    ${CHASSIS_HAL_DIR}/Inc
-    ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
-    ${CHASSIS_CMSIS_DIR}/Include
-    ${CHASSIS_CMSIS_DIR}/DSP/Include
-    ${CHASSIS_FREERTOS_DIR}/include
-    ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS
-    ${PLATFORM_FREERTOS_PORT_DIR}
-    ${PLATFORM_BOARD_BSP_DIR}
-    ${PLATFORM_DM_MOTOR_DIR}
-    ${PLATFORM_SEED_APP_DIR}
-    ${PLATFORM_LEGACY_APP_DIR}
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/kalman
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony
-    ${PLATFORM_RUNTIME_DIR}/module/controller
-    ${PLATFORM_RUNTIME_DIR}/module/lib
-    ${PLATFORM_RUNTIME_DIR}/module/message_center
-    ${PLATFORM_BMI088_DIR}
-    ${PLATFORM_REMOTE_CONTROL_DIR}
-)
-
-target_compile_definitions(balance_chassis_legacy_full_obj
-  PRIVATE
-    USE_HAL_DRIVER
-    STM32H723xx
-)
-
-target_compile_options(balance_chassis_legacy_full_obj
-  PRIVATE
-    ${BALANCE_CHASSIS_COMMON_FLAGS}
-    -Wall
-    -Wextra
-    -Wno-unused-parameter
 )
 
 target_link_libraries(balance_chassis_hw_seed.elf
@@ -296,86 +229,6 @@ add_custom_command(TARGET balance_chassis_hw_seed.elf POST_BUILD
   COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:balance_chassis_hw_seed.elf> ${CMAKE_CURRENT_BINARY_DIR}/balance_chassis_hw_seed.bin
 )
 
-add_library(balance_chassis_bsp_full STATIC
-  ${BALANCE_CHASSIS_BSP_FULL_SOURCES}
-)
-
-target_link_libraries(balance_chassis_bsp_full
-  PUBLIC
-    balance_chassis_generated_raw
-)
-
-target_include_directories(balance_chassis_bsp_full
-  PUBLIC
-    ${PLATFORM_BOARD_BSP_DIR}
-    ${PLATFORM_DM_MOTOR_DIR}
-    ${PLATFORM_LEGACY_APP_DIR}
-    ${PLATFORM_REMOTE_CONTROL_DIR}
-)
-
-target_compile_options(balance_chassis_bsp_full
-  PRIVATE
-    ${BALANCE_CHASSIS_COMMON_FLAGS}
-    -Wall
-    -Wextra
-    -Wno-unused-parameter
-)
-
-add_executable(balance_chassis_legacy_full.elf
-  ${GENERATED_RAW_DIR}/Src/main.c
-  ${PLATFORM_LEGACY_APP_DIR}/freertos_legacy.c
-  ${CHASSIS_ROOT}/Drivers/CMSIS/Device/ST/STM32H7xx/Source/Templates/gcc/startup_stm32h723xx.s
-  ${BALANCE_CHASSIS_FREERTOS_SOURCES}
-  $<TARGET_OBJECTS:balance_chassis_legacy_full_obj>
-)
-
-target_link_libraries(balance_chassis_legacy_full.elf
-  PRIVATE
-    balance_chassis_generated_raw
-    balance_chassis_bsp_full
-    ${PLATFORM_DSP_LIB}
-    m
-)
-
-target_include_directories(balance_chassis_legacy_full.elf
-  PRIVATE
-    ${CHASSIS_FREERTOS_DIR}/include
-    ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS
-    ${PLATFORM_FREERTOS_PORT_DIR}
-    ${PLATFORM_BOARD_BSP_DIR}
-    ${PLATFORM_LEGACY_APP_DIR}
-    ${PLATFORM_REMOTE_CONTROL_DIR}
-)
-
-target_compile_definitions(balance_chassis_legacy_full.elf
-  PRIVATE
-    USE_HAL_DRIVER
-    STM32H723xx
-)
-
-target_compile_options(balance_chassis_legacy_full.elf
-  PRIVATE
-    ${BALANCE_CHASSIS_COMMON_FLAGS}
-    -Wall
-    -Wextra
-    -Wno-unused-parameter
-)
-
-target_link_options(balance_chassis_legacy_full.elf
-  PRIVATE
-    ${BALANCE_CHASSIS_CPU_FLAGS}
-    -T${PLATFORM_LINKER_SCRIPT}
-    -Wl,--gc-sections
-    -Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/balance_chassis_legacy_full.map
-    --specs=nano.specs
-    --specs=nosys.specs
-)
-
-add_custom_command(TARGET balance_chassis_legacy_full.elf POST_BUILD
-  COMMAND ${CMAKE_SIZE} $<TARGET_FILE:balance_chassis_legacy_full.elf>
-  COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:balance_chassis_legacy_full.elf> ${CMAKE_CURRENT_BINARY_DIR}/balance_chassis_legacy_full.bin
-)
-
 endif() # end of PLATFORM_TARGET_HW
 
 if(PLATFORM_TARGET_SIM)
@@ -405,6 +258,8 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_SITL_BSP_DIR}/can_bsp_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/BMI088driver_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
+    ${PLATFORM_REMOTE_CONTROL_DIR}/remote_control.c
+    ${PLATFORM_REMOTE_CONTROL_DIR}/rc_input_bridge.c
   )
 
   set(BALANCE_CHASSIS_LEGACY_APP_SOURCES
@@ -412,7 +267,6 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_LEGACY_APP_DIR}/chassis_task.c
     ${PLATFORM_LEGACY_APP_DIR}/motor_control_task.c
     ${PLATFORM_LEGACY_APP_DIR}/observe_task.c
-    ${PLATFORM_LEGACY_APP_DIR}/remote_control.c
     ${PLATFORM_LEGACY_APP_DIR}/remote_task.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
@@ -516,4 +370,3 @@ if(PLATFORM_TARGET_SIM)
       m
   )
 endif()
-

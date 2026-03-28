@@ -1,181 +1,191 @@
-# Astra_RM2025_Balance 底盘重构指南
+# `balance_chassis` Runtime Refactor Guide
+
+## 当前结论
+
+`balance_chassis` 这一轮重构已经不再是“先设计一套新架构”，而是把现有控制链收成可执行、可验证、可对接的 runtime 主线。
+
+当前主线可以压成：
+
+`rc_data / ins_data -> chassis_cmd / chassis_observe -> chassis_state / leg_left / leg_right -> actuator_cmd`
+
+其中：
+
+- `rc_data` 是板级输入收口 topic
+- `ins_data` / `chassis_cmd` 是正式输入边界
+- `chassis_state` / `leg_left` / `leg_right` 是当前正式输出边界
+- `chassis_observe` / `actuator_cmd` 仍属于过渡或内部执行边界
+
+更完整的对接口径以 [platform_architecture.md](/home/xbd/workspace/codes/Astra_RM_Platform/robot_platform/docs/platform_architecture.md) 为准。
+
+---
 
 ## 已完成
 
-- [x] **Step 0**: GBK→UTF-8 编码转换 (19 文件) + .editorconfig + .gitignore
-- [x] **Step 1**: 创建 `robot_def.h`，收拢全部 magic number
+### 1. 构建链收口
+
+- [x] 删除 `legacy_full` / `legacy_obj`
+- [x] 当前公开主线只保留 `hw_elf` 与 `sitl`
+- [x] `python3 -m robot_platform.tools.platform_cli.main build hw_elf` 可通过
+- [x] `python3 -m robot_platform.tools.platform_cli.main build sitl` 可通过
+
+### 2. 运行时总线主链立起来
+
+- [x] `INS_task` 发布 `ins_data`
+- [x] `remote_task` 订阅 `rc_data / ins_data / chassis_state / leg_left / leg_right`，发布 `chassis_cmd`
+- [x] `observe_task` 订阅 `chassis_cmd`，发布 `chassis_observe`
+- [x] `chassis_task` 订阅 `ins_data / chassis_cmd / chassis_observe`，发布 `chassis_state / leg_left / leg_right / actuator_cmd`
+- [x] `motor_control_task` 改为订阅单一 `actuator_cmd`
+
+### 3. legacy 全局状态显式依赖减少
+
+- [x] `remote_task` 不再直接读 `rc_ctrl / INS / left / right / chassis_move`
+- [x] `observe_task` 不再直接读 `INS / left / right / chassis_move`
+- [x] `motor_control_task` 不再直接拼 `left/right/chassis_move`
+- [x] `INS_task` 的 `INS` 运行态已收进文件内部
+- [x] `chassis_task` 的 `chassis_move / right / left / PID` 运行态已收进文件内部
+
+### 4. 输入注入层与控制层拆开
+
+- [x] `rc_input_task` 已从 app 逻辑中移出，迁到 `runtime/bsp/devices/remote_control/rc_input_bridge.c`
+- [x] app 目录中的重复 `remote_control.c/.h` 已删除
+- [x] 遥控输入统一走 `runtime/bsp/devices/remote_control`
+
+### 5. 执行层边界更清楚
+
+- [x] 新增 `actuator_cmd`
+- [x] `motor_control_task` 从“订阅多个 topic 再拼执行命令”改为“只订阅末端执行命令 topic”
 
 ---
 
-## Step 2: 合并 VMC 左右腿 + 修复左腿滤波 bug
+## 当前边界
 
-**目标**: 消除 `VMC_calc_1_right` / `VMC_calc_1_left` 的代码重复，同时修复左腿缺失滤波的 bug。
+### 正式输入边界
 
-**现状问题**:
-- `VMC_calc_1_left` 缺少 `d_phi0` 一阶滤波、`dd_L0` 一阶滤波、`dd_theta` 一阶滤波
-- `VMC_calc_1_left` 的 `first_flag` 分支没有初始化 `last_d_phi0`、`last_d_L0`、`last_dd_L0`、`last_d_theta`、`last_dd_theta`
-- 两个函数 95% 代码相同，只有 pitch 符号和 theta_offset 不同
+- `ins_data`
+- `chassis_cmd`
 
-**操作**:
-1. 合并为统一函数:
-   ```c
-   void VMC_calc_1(vmc_leg_t *vmc, float pitch, float gyro_pitch, float dt, float theta_offset);
-   ```
-2. 调用处改为:
-   ```c
-   VMC_calc_1(&right, INS.Pitch,  INS.Gyro[0], dt, THETA_OFFSET_R);
-   VMC_calc_1(&left, -INS.Pitch, -INS.Gyro[0], dt, THETA_OFFSET_L);
-   ```
-3. 同理合并 `ground_detectionR` / `ground_detectionL` 为 `ground_detection(vmc_leg_t *vmc)`
-4. 删除 `User/APP/remote_control.c/h`（与 `User/Devices/Remote_Control/` 下完全重复）
+### 正式输出边界
 
-**验证**: 合并后左腿自动获得完整滤波链，左右腿行为对称。
+- `chassis_state`
+- `leg_left`
+- `leg_right`
 
----
+### 过渡或内部边界
 
-## Step 3: 引入 message_center 发布-订阅
+- `rc_data`
+- `chassis_observe`
+- `actuator_cmd`
 
-**目标**: 用 pub-sub 替代 extern 全局变量，解耦模块间数据流。
+### 当前明确禁止的对接方式
 
-**现状问题**:
-- `chassis_move`、`right`、`left`、`INS`、`rc_ctrl` 通过 extern 被 5+ 个文件直接访问
-- 任何文件都能读写任何全局状态，无法追踪数据流向
-
-**操作**:
-1. 从 basic_framework 移植 `modules/message_center/message_center.c/h`
-2. 定义 topic 枚举和数据结构:
-   ```c
-   // robot_def.h 中添加
-   typedef enum {
-       TOPIC_INS_DATA,      // INS_t
-       TOPIC_RC_DATA,       // RC_ctrl_t
-       TOPIC_CHASSIS_CMD,   // chassis_cmd_t (v_set, turn_set, leg_set, jump_flag...)
-       TOPIC_CHASSIS_STATE, // chassis_state_t (v_filter, x_filter, pitch, gyro...)
-       TOPIC_LEG_STATE,     // leg_state_t (left/right 的 theta, L0, torque_set...)
-   } TopicID;
-   ```
-3. 各任务改为:
-   - `INS_task`: publish `TOPIC_INS_DATA`
-   - `remote_task`: subscribe `TOPIC_INS_DATA` + `TOPIC_CHASSIS_STATE`, publish `TOPIC_CHASSIS_CMD`
-   - `chassis_task`: subscribe `TOPIC_CHASSIS_CMD` + `TOPIC_INS_DATA`, publish `TOPIC_CHASSIS_STATE` + `TOPIC_LEG_STATE`
-   - `motor_control_task`: subscribe `TOPIC_LEG_STATE` + `TOPIC_CHASSIS_STATE`
-   - `observe_task`: subscribe `TOPIC_LEG_STATE`, publish 到 `TOPIC_CHASSIS_STATE`
-
-4. 逐步删除 extern 声明，改为 subscribe 获取数据
-
-**注意**: message_center 是内存拷贝方式（不是指针），适合 FreeRTOS 多任务环境，天然线程安全。
+- 直接依赖 `INS`
+- 直接依赖 `chassis_move`
+- 直接依赖 `left / right`
+- 直接依赖 `rc_ctrl`
 
 ---
 
-## Step 4: 拆分 chassis_task 为独立模块
+## 仍在进行
 
-**目标**: 把 chassis_task.c 从 300 行上帝函数拆成职责单一的模块。
+### A. `chassis_task` 仍然是控制大文件
 
-**现状问题**:
-- `chassis_task.c` 混合了: VMC 调用、LQR 计算、腿长 PD、跳跃状态机、离地检测、力矩分配
-- 改任何一个功能都要在这个大文件里翻找
+虽然运行态已经收进文件内部，但 `chassis_task.c` 仍然同时承载：
 
-**目标目录结构**:
-```
-User/
-├── bsp/                    (现有，小写重命名)
-├── modules/
-│   ├── motor/              (Step 5 做)
-│   ├── imu/                (INS_task 移入)
-│   ├── remote/             (remote_control 移入)
-│   ├── algorithm/          (现有 Algorithm/ 移入)
-│   └── message_center/     (Step 3 新增)
-├── app/
-│   ├── robot_def.h         (已有)
-│   ├── chassis/
-│   │   ├── chassis_task.c  (只做调度: subscribe → 调用模块 → publish)
-│   │   ├── balance_controller.c  (LQR + 各补偿 PD 计算)
-│   │   ├── leg_model.c     (VMC 正运动学 + 逆力矩, 从 VMC_calc 重命名)
-│   │   ├── jump_fsm.c      (跳跃状态机, 从 chassis_jump_loop 抽出)
-│   │   └── fly_detect.c    (离地检测, 从 chassis_ground_detection 抽出)
-│   ├── cmd/
-│   │   └── robot_cmd.c     (遥控器数据处理, 从 remote_task 演化)
-│   └── observe/
-│       └── observe_task.c  (速度观测)
-└── lib/                    (现有 Lib/)
-```
+- 反馈更新
+- LQR 与补偿控制
+- 跳跃状态机
+- 离地检测
+- 执行命令封装
 
-**拆分顺序**:
-1. 先抽 `jump_fsm.c` — 最独立，只需要 vmc 和 leg_set
-2. 再抽 `fly_detect.c` — 只需要 vmc 和 INS
-3. 再抽 `balance_controller.c` — LQR + PD 计算
-4. 最后 `chassis_task.c` 变成纯调度
+这意味着当前的“总线边界”已经比之前清楚，但“控制内部职责拆分”还没完成。
+
+### B. `chassis_observe` 仍是过渡 topic
+
+它现在已经是 `observe_task` 唯一正式输出，不再回写 `chassis_move` 关键观测状态。  
+但它还没有被升级为正式外部观测接口，所以不建议固化进 `sim/report/replay` 协议。
+
+### C. 执行层仍保留少量 accessor
+
+当前仍有少量窄 accessor 供执行层或观测层读取内部运行态，例如：
+
+- `chassis_joint_motor_state()`
+- `chassis_wheel_speed()`
+- `chassis_set_joint_enable_flag()`
+
+这些比 extern 全局状态已经好很多，但仍不是最终理想状态。
 
 ---
 
-## Step 5: 电机驱动抽象
+## 下一步优先级
 
-**目标**: DM4310 和 M3508 统一接口，motor_control_task 简化。
+### P0. 继续压缩 `chassis_task` 对外 accessor
 
-**现状问题**:
-- `motor_control_task.c` 直接调用 `mit_ctrl()` 和 `CAN_cmd_chassis()`，硬编码了电机类型
-- 用 `systick%2` 做分时发送，不够可靠
-- 添加新电机类型需要改动多处
+目标：
 
-**操作**:
-1. 定义统一电机接口:
-   ```c
-   typedef struct {
-       void (*set_torque)(void *motor, float torque);
-       void (*send)(void *motor);  // 实际 CAN 发送
-       // feedback 在 CAN 中断里自动更新
-   } MotorInterface;
-   ```
-2. DM4310 和 M3508 各自实现该接口
-3. `motor_control_task` 改为遍历电机数组，按优先级/时序调用 send
-4. CAN 接收回调通过电机 ID 查表分发，不再 switch-case
+- 能转成 topic 的继续转成 topic
+- 执行层不要继续依赖控制层内部结构体地址
+- 让 accessor 只保留确实无法立刻 topic 化的硬件执行接口
 
----
+### P1. 拆 `chassis_task.c` 内部职责
 
-## Step 6: 恢复卡尔曼观测器 + 守护机制
+建议拆分方向：
 
-**目标**: 恢复速度融合估计，添加离线检测。
+- `balance_controller.c`
+- `jump_fsm.c`
+- `ground_detect.c`
+- `feedback_update.c`
 
-**现状问题**:
-- `observe_task.c` 的 KF 融合全部被注释，直接用轮速，打滑时速度估计错误
-- 没有任何掉线检测：遥控器断连、电机离线、IMU 异常都不会触发保护
+要求：
 
-**操作**:
+- `chassis_task.c` 逐步退化成“订阅输入 -> 调用控制模块 -> 发布输出”的薄调度层
 
-### 6a: 恢复卡尔曼观测器
-1. 取消 `observe_task.c` 中被注释的 KF 代码
-2. 调参 Q/R 矩阵使融合效果合理
-3. 保留直接轮速作为 fallback（KF 发散时切换）
+### P2. 明确 `actuator_cmd` 的长期命运
 
-### 6b: 添加 daemon 守护模块
-1. 从 basic_framework 移植 `modules/daemon/daemon.c/h`
-2. 为每个关键外设注册守护:
-   - 遥控器: 超过 100ms 无数据 → 停机
-   - DM4310: 超过 20ms 无反馈 → 该电机标记离线
-   - M3508: 超过 20ms 无反馈 → 该电机标记离线
-   - BMI088: 超过 5ms 无更新 → IMU 异常
-3. 任何守护触发 → 所有电机输出清零，进入安全模式
-4. 遥控器恢复后可重新启动
+两种路线二选一：
+
+1. 保持它为内部执行边界，只给 `motor_control_task` 使用
+2. 升级它为统一执行输出接口，让硬件执行层和 SITL bridge 都接这一层
+
+当前还没有最终定论，所以文档里仍把它定义为过渡 topic。
+
+### P3. 统一 replay / sim / bridge 的边界口径
+
+当前 sim 应优先对接：
+
+- 输入：`ins_data`、`chassis_cmd`
+- 输出：`chassis_state`、`leg_left`、`leg_right`
+
+不要直接依赖：
+
+- `rc_data`
+- `chassis_observe`
+- `actuator_cmd`
+
+除非后续明确把其中某一项升级为正式边界。
 
 ---
 
-## 已知 Bug 清单
+## 不再作为当前执行面的旧计划
 
-| # | 严重度 | 描述 | 修复时机 |
-|---|--------|------|----------|
-| 1 | 🔴 | 左腿 VMC 缺少 d_phi0/dd_L0/dd_theta 滤波和 first_flag 完整初始化 | Step 2 |
-| 2 | 🟡 | LQR K 矩阵左右共用 `LQR_K_R, LQR_K_R`，应分别传入或确认对称性 | Step 4 |
-| 3 | 🟡 | 卡尔曼观测器被注释，直接用轮速，打滑时失效 | Step 6 |
-| 4 | 🟢 | `remote_control.c/h` 存了两份（APP/ 和 Devices/Remote_Control/） | Step 2 |
-| 5 | 🟢 | `chassis_task.h` 中 `WHEEL_R` 定义带分号 `0.0675f;` 是语法错误（碰巧被宏展开掩盖） | Step 1 ✅ 已修复 |
-| 6 | 🟢 | Controller/ 下的模糊 PID 未使用，可考虑删除或替换简单 PID | Step 4 |
+下面这些内容不再适合作为本文件的当前主计划：
+
+- 回到 Keil 工程组织方式继续重排目录
+- 先做一套新的 topic enum/ID 总线再说
+- 把所有内容一次性抽成大量小模块后再验证
+- 以 `legacy_full` 为主验证链
+
+这些要么已经过时，要么会稀释当前最重要的交付目标。
 
 ---
 
-## 注意事项
+## 当前交付标准
 
-- 每步完成后 `git commit`，保持历史可回溯
-- Keil MDK 的 .uvprojx 文件需要手动添加新建/移动的源文件到工程
-- 移动文件后 Keil 的 Include Path 也需要同步更新
-- `robot_def.h` 中的关节偏移量是每台车独立标定的，换车需要重新测量
-- LQR K 矩阵目前是固定值，后续可改为腿长插值（`LQR_K_calc` 函数已预留）
+当下这一阶段的 `balance_chassis` runtime 重构，至少要满足：
+
+- `hw_elf` 和 `sitl` 共用同一条控制主链
+- `sim` 不需要直接读写 app 内部全局状态
+- 输入注入留在 `bsp / 注入层`
+- 控制逻辑留在 `app`
+- 正式边界、过渡边界、内部边界有明确口径
+
+如果不满足这几条，就还不能算交付完成。

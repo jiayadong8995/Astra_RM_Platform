@@ -51,9 +51,10 @@ typedef struct
 
 void Chassis_task(void);
 void mySaturate(float *in,float min,float max);
+Joint_Motor_t *chassis_joint_motor_state(uint8_t index);
+float chassis_wheel_speed(uint8_t index);
+void chassis_set_joint_enable_flag(uint8_t index, int value);
 
 #endif
-
-
 
 

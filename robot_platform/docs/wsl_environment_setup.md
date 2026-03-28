@@ -17,7 +17,6 @@
 
 - `generate`
 - `build hw_elf`
-- `build legacy_full`
 - `build sitl`
 
 ## 2. 环境前提
@@ -80,7 +79,6 @@ python3 -m robot_platform.tools.platform_cli.main generate
 
 ```bash
 python3 -m robot_platform.tools.platform_cli.main build hw_elf
-python3 -m robot_platform.tools.platform_cli.main build legacy_full
 ```
 
 ### 4.3 SITL 构建

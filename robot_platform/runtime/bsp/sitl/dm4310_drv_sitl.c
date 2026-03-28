@@ -103,7 +103,7 @@ void DM_Motor_Init(void) {
     ensure_sock_init();
 }
 
-const chassis_motor_measure_t *get_chassis_motor_measure_point(uint8_t i) {
+chassis_motor_measure_t *get_chassis_motor_measure_point(uint8_t i) {
     poll_motor_feedback();
     if (i < 4) return &motor_measures[i];
     return &motor_measures[0];

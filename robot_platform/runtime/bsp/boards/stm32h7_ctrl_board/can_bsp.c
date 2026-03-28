@@ -11,7 +11,6 @@ uint8_t g_Can1RxData[64];
 
 FDCAN_RxHeaderTypeDef RxHeader2;
 uint8_t g_Can2RxData[64];
-chassis_motor_measure_t chassis_motor[2];
 
 void FDCAN1_Config(void)
 {
@@ -133,10 +132,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
             switch (RxHeader1.Identifier)
             {
-            case 0x11: dm4310_fbdata(&chassis_move.joint_motor[0], g_Can1RxData, RxHeader1.DataLength); break;
-            case 0x12: dm4310_fbdata(&chassis_move.joint_motor[1], g_Can1RxData, RxHeader1.DataLength); break;
-            case 0x13: dm4310_fbdata(&chassis_move.joint_motor[2], g_Can1RxData, RxHeader1.DataLength); break;
-            case 0x14: dm4310_fbdata(&chassis_move.joint_motor[3], g_Can1RxData, RxHeader1.DataLength); break;
+            case 0x11: dm4310_fbdata(platform_joint_motor_state(0), g_Can1RxData, RxHeader1.DataLength); break;
+            case 0x12: dm4310_fbdata(platform_joint_motor_state(1), g_Can1RxData, RxHeader1.DataLength); break;
+            case 0x13: dm4310_fbdata(platform_joint_motor_state(2), g_Can1RxData, RxHeader1.DataLength); break;
+            case 0x14: dm4310_fbdata(platform_joint_motor_state(3), g_Can1RxData, RxHeader1.DataLength); break;
             default: break;
             }
         }
@@ -154,8 +153,8 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 
             switch (RxHeader2.Identifier)
             {
-            case 0x201: get_motor_measure(&chassis_motor[0], g_Can2RxData, RxHeader2.DataLength); break;
-            case 0x202: get_motor_measure(&chassis_motor[1], g_Can2RxData, RxHeader2.DataLength); break;
+            case 0x201: get_motor_measure(get_chassis_motor_measure_point(0), g_Can2RxData, RxHeader2.DataLength); break;
+            case 0x202: get_motor_measure(get_chassis_motor_measure_point(1), g_Can2RxData, RxHeader2.DataLength); break;
             default: break;
             }
         }

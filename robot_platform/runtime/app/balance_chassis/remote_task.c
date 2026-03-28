@@ -36,57 +36,75 @@
 //速度斜坡
 #define SPEED_STEP RC_SPEED_SLOPE
 
-extern chassis_t chassis_move;
-extern INS_t INS;
-extern RC_ctrl_t rc_ctrl;
-extern vmc_leg_t right;			
-extern vmc_leg_t left;	
 float leg_add = 0;
 int leg_set_flag = 0;
 
 
-static void remote_data_process(RC_ctrl_t *rc_ctrl,chassis_t *chassis,float dt);
+static void remote_data_process(const RC_Data_t *rc_data, chassis_t *chassis);
 static void slope_following(float *target,float *set,float acc);
-
-
-//创建初始化函数
-void remote_init(void)
-{
-	chassis_move.start_flag = 0;
-	chassis_move.x_filter = 0;
-	chassis_move.x_set = chassis_move.x_filter;
-	chassis_move.v_set = 0.0f;
-	chassis_move.turn_set = chassis_move.total_yaw;
-	chassis_move.leg_set = BEGIN_LEG_LENGTH;
-}
-
-extern UART_HandleTypeDef huart1;
-extern DMA_HandleTypeDef hdma_usart1_tx;
-
-uint8_t buffer[18];
-
-#include "bsp_uart.h"
 
 static Publisher_t *cmd_pub;
 
 void remote_task(void)
 {	
-	remote_init();
+    chassis_t cmd_state = {0};
+    Subscriber_t *rc_sub = SubRegister("rc_data", sizeof(RC_Data_t));
+    Subscriber_t *ins_sub = SubRegister("ins_data", sizeof(INS_Data_t));
+    Subscriber_t *chassis_state_sub = SubRegister("chassis_state", sizeof(Chassis_State_t));
+    Subscriber_t *leg_right_sub = SubRegister("leg_right", sizeof(Leg_Output_t));
+    Subscriber_t *leg_left_sub = SubRegister("leg_left", sizeof(Leg_Output_t));
+    RC_Data_t rc_msg = {0};
+    INS_Data_t ins_msg = {0};
+    Chassis_State_t state_msg = {0};
+    Leg_Output_t right_msg = {0};
+    Leg_Output_t left_msg = {0};
+
+	cmd_state.start_flag = 0;
+	cmd_state.x_filter = 0;
+	cmd_state.x_set = cmd_state.x_filter;
+	cmd_state.v_set = 0.0f;
+	cmd_state.turn_set = 0.0f;
+	cmd_state.leg_set = BEGIN_LEG_LENGTH;
+
 	cmd_pub = PubRegister("chassis_cmd", sizeof(Chassis_Cmd_t));
-	memset(buffer,5,sizeof(buffer));
 	while(1)
 	{	
-		remote_data_process(&rc_ctrl,&chassis_move,(REMOTE_TIME/1000.0f));
+        if (SubGetMessage(ins_sub, &ins_msg))
+        {
+            cmd_state.myPithR = ins_msg.pitch;
+        }
+        if (SubGetMessage(chassis_state_sub, &state_msg))
+        {
+            cmd_state.x_filter = state_msg.x_filter;
+            cmd_state.total_yaw = state_msg.total_yaw;
+            if (cmd_state.turn_set == 0.0f)
+            {
+                cmd_state.turn_set = state_msg.total_yaw;
+            }
+        }
+        SubGetMessage(leg_right_sub, &right_msg);
+        SubGetMessage(leg_left_sub, &left_msg);
+        SubGetMessage(rc_sub, &rc_msg);
+
+		remote_data_process(&rc_msg, &cmd_state);
+
+        {
+            float leg_length = (left_msg.leg_length + right_msg.leg_length) / 2.0f;
+            float leg_cmd = cmd_state.leg_set - leg_length;
+            if(fabsf(leg_cmd) > 0.1f){
+                cmd_state.leg_set = (leg_cmd > 0.0f) ? (leg_length + 0.1f) : (leg_length - 0.1f);
+            }
+        }
 
 		/* publish chassis command */
 		{
 			Chassis_Cmd_t cmd = {
-				.vx_cmd       = chassis_move.v_set,
-				.turn_cmd     = chassis_move.turn_set,
-				.leg_set      = chassis_move.leg_set,
-				.start_flag   = chassis_move.start_flag,
-				.jump_flag    = chassis_move.jump_flag,
-				.recover_flag = chassis_move.recover_flag,
+				.vx_cmd       = cmd_state.v_set,
+				.turn_cmd     = cmd_state.turn_set,
+				.leg_set      = cmd_state.leg_set,
+				.start_flag   = cmd_state.start_flag,
+				.jump_flag    = cmd_state.jump_flag,
+				.recover_flag = cmd_state.recover_flag,
 			};
 			PubPushMessage(cmd_pub, &cmd);
 		}
@@ -96,15 +114,21 @@ void remote_task(void)
 	}
 }
 
-static void remote_data_process(RC_ctrl_t *rc_ctrl,chassis_t *chassis,float dt)
+static void remote_data_process(const RC_Data_t *rc_data,chassis_t *chassis)
 {
 	chassis->last_recover_flag = chassis->recover_flag;
-	if(switch_is_mid(rc_ctrl->rc.s[0]))
+	if(!rc_data->online)
+	{
+		chassis->start_flag = 0;
+		chassis->recover_flag = 0;
+		chassis->jump_flag = 0;
+	}
+	else if(switch_is_mid(rc_data->sw[0]))
 	{
 		chassis->start_flag = 1;
 		if(chassis->myPithR > PITCH_RECOVER_THRESHOLD ||chassis->myPithR < -PITCH_RECOVER_THRESHOLD)//原0.28
 		{
-			if(rc_ctrl->rc.s[1] == 3)
+			if(rc_data->sw[1] == RC_SW_MID)
 			{
 			chassis->recover_flag = 0;
 			}else
@@ -114,18 +138,19 @@ static void remote_data_process(RC_ctrl_t *rc_ctrl,chassis_t *chassis,float dt)
 		}
 		
 	}
-	else if(switch_is_down(rc_ctrl->rc.s[0]))
+	else if(switch_is_down(rc_data->sw[0]))
 	{
 		chassis->start_flag = 0;
 		chassis->recover_flag = 0;
+		chassis->jump_flag = 0;
 	}
 	
 	
     if(chassis->start_flag == 1)
     {
-		if(switch_is_mid(rc_ctrl->rc.s[1]))
+		if(switch_is_mid(rc_data->sw[1]))
 		{
-			if( 660 == rc_ctrl->rc.ch[3] )
+			if(660 == rc_data->ch[3])
 			{
 				chassis->jump_flag = 1;
 			}else
@@ -133,21 +158,21 @@ static void remote_data_process(RC_ctrl_t *rc_ctrl,chassis_t *chassis,float dt)
 				chassis->jump_flag = 0;
 			}
 		}
-		else if(switch_is_down(rc_ctrl->rc.s[1]))
+		else if(switch_is_down(rc_data->sw[1]))
 		{
 			chassis->jump_flag = 0;
 		}
 		
-		chassis_move.leg_set =  BEGIN_LEG_LENGTH;
-//		if(rc_ctrl->rc.s[1] == 3)
+		chassis->leg_set =  BEGIN_LEG_LENGTH;
+//		if(rc_data->sw[1] == 3)
 //		{
-		chassis->turn_set = chassis->turn_set - rc_ctrl->rc.ch[2] * RC_TO_TURN_RATIO;
+		chassis->turn_set = chassis->turn_set - rc_data->ch[2] * RC_TO_TURN_RATIO;
 //		}else{
-//		chassis->turn_set = chassis->turn_set - rc_ctrl->rc.ch[0] * RC_TO_TURN_RATIO;
+//		chassis->turn_set = chassis->turn_set - rc_data->ch[0] * RC_TO_TURN_RATIO;
 		//}
 		//速度斜坡控制
-		float vx_speed_cmd = -rc_ctrl->rc.ch[1] * RC_TO_VX_RATIO;//遥控器相反（现加负号）
-		//float vx_speed_cmd = rc_ctrl->rc.ch[1] * RC_TO_VX;//遥控器相反（现加负号）
+		float vx_speed_cmd = -rc_data->ch[1] * RC_TO_VX_RATIO;//遥控器相反（现加负号）
+		//float vx_speed_cmd = rc_data->ch[1] * RC_TO_VX;//遥控器相反（现加负号）
 		slope_following(&vx_speed_cmd,&chassis->v_set,RC_SPEED_SLOPE);
 		mySaturate(&chassis->v_set,-VX_MAX,VX_MAX);
 
@@ -161,20 +186,12 @@ static void remote_data_process(RC_ctrl_t *rc_ctrl,chassis_t *chassis,float dt)
 		chassis->turn_set=chassis->total_yaw;//保存
 	}
 
-	float legLength = (left.L0+right.L0)/2.0f;
-	
-	//腿长步长限幅
-	float leg_cmd = chassis_move.leg_set - legLength;
-	if(fabs(leg_cmd) > 0.1f){
-	    chassis_move.leg_set = (leg_cmd > 0) ? (legLength + 0.1f) : (legLength - 0.1f); 
-	}
-
 	//转向限幅
 	if(fabsf(chassis->turn_set - chassis->total_yaw) > 0.3f){
 		chassis->turn_set = ((chassis->turn_set - chassis->total_yaw) > 0) ? (chassis->total_yaw + 0.3f) : (chassis->total_yaw - 0.3f);
 	}
 
-	mySaturate(&chassis_move.leg_set,LEG_LENGTH_MIN,LEG_LENGTH_MAX);//限制腿长范围
+	mySaturate(&chassis->leg_set,LEG_LENGTH_MIN,LEG_LENGTH_MAX);//限制腿长范围
 
 }
 

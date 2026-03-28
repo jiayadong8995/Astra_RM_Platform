@@ -1,18 +1,17 @@
 #include "dm4310_drv.h"
 
 #include "arm_math.h"
+#include "chassis_state_bridge.h"
 
-extern int Begin_flag;
-extern chassis_motor_measure_t chassis_motor[2];
+static chassis_motor_measure_t chassis_motor[2];
 
 #define ABS(x) ( (x > 0) ? (x) : (-(x)) )
 
 void get_total_angle(chassis_motor_measure_t *p)
 {
-    if (Begin_flag == 1)
+    if (platform_consume_begin_flag() == 1U)
     {
         p->total_angle = 0.0f;
-        Begin_flag = 0;
     }
 
     int res1, res2, delta;
@@ -215,7 +214,7 @@ void get_motor_measure(chassis_motor_measure_t *ptr, uint8_t *data, uint32_t dat
     get_total_angle(ptr);
 }
 
-const chassis_motor_measure_t *get_chassis_motor_measure_point(uint8_t i)
+chassis_motor_measure_t *get_chassis_motor_measure_point(uint8_t i)
 {
     return &chassis_motor[i];
 }

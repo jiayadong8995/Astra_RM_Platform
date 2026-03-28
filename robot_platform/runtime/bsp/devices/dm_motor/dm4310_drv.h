@@ -111,7 +111,7 @@ int float_to_uint(float x_float, float x_min, float x_max, int bits);
 void CAN_cmd_chassis(hcan_t *hcan, int16_t motor1, int16_t motor2, int16_t rev1, int16_t rev2);
 void get_motor_measure(chassis_motor_measure_t *ptr, uint8_t *data, uint32_t data_len);
 void get_total_angle(chassis_motor_measure_t *p);
-const chassis_motor_measure_t *get_chassis_motor_measure_point(uint8_t i);
+chassis_motor_measure_t *get_chassis_motor_measure_point(uint8_t i);
 float motor_speed_to_angle(MotorData *motors, float *speed);
 void DM_motor_zeroset(hcan_t *hcan, uint16_t motor_id);
 

@@ -140,12 +140,23 @@ typedef struct {
 } INS_Data_t;
 
 /**
- * @brief  Remote control data published by remote_task
+ * @brief  Raw remote/operator input normalized by BSP-side bridge
  *         Topic name: "rc_data"
  */
 typedef struct {
+    int16_t ch[4];      // RC channels after SBUS normalization
+    uint8_t sw[2];      // switch positions
+    uint8_t online;     // 1=valid frame stream, 0=offline/error
+    uint8_t reserved;
+} RC_Data_t;
+
+/**
+ * @brief  Chassis command published by remote_task
+ *         Topic name: "chassis_cmd"
+ */
+typedef struct {
     float vx_cmd;       // m/s, forward speed command
-    float turn_cmd;     // rad/s, yaw rate command
+    float turn_cmd;     // rad, accumulated yaw setpoint
     float leg_set;      // m, desired leg length
     uint8_t start_flag; // 1=enabled, 0=disabled
     uint8_t jump_flag;  // 1=jump requested
@@ -166,6 +177,15 @@ typedef struct {
 } Chassis_State_t;
 
 /**
+ * @brief  Chassis observer output published by observe_task
+ *         Topic name: "chassis_observe"
+ */
+typedef struct {
+    float v_filter;     // m/s, estimated body velocity
+    float x_filter;     // m, estimated position
+} Chassis_Observe_t;
+
+/**
  * @brief  Single leg output from chassis_task to motor_control_task
  *         Topic name: "leg_right" / "leg_left"
  */
@@ -173,6 +193,18 @@ typedef struct {
     float joint_torque[2]; // Nm, [front, back] joint motor torque
     float wheel_torque;    // Nm, wheel motor torque
     int16_t wheel_current; // M3508 current value
+    float leg_length;      // m, current leg length estimate
 } Leg_Output_t;
+
+/**
+ * @brief  Consolidated actuator command published by chassis_task
+ *         Topic name: "actuator_cmd"
+ */
+typedef struct {
+    float joint_torque[4]; // Nm, [r_front, r_back, l_front, l_back]
+    int16_t wheel_current[2]; // [left, right] wheel current command
+    uint8_t start_flag;    // 1=enable output, 0=hold zero
+    uint8_t reserved[3];
+} Actuator_Cmd_t;
 
 #endif // ROBOT_DEF_H

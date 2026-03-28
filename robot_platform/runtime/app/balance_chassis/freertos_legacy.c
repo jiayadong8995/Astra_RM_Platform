@@ -2,6 +2,7 @@
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
+#include "rc_input_bridge.h"
 
 osThreadId defaultTaskHandle;
 osThreadId INS_TASKHandle;
@@ -9,6 +10,7 @@ osThreadId CHASSIS_TASKHandle;
 osThreadId MOTOR_CONTROL_TASKHandle;
 osThreadId OBSERVE_TASKHandle;
 osThreadId REMOTE_TASKHandle;
+osThreadId RC_INPUT_TASKHandle;
 
 static void StartDefaultTask(void const *argument);
 static void INS_Task(void const *argument);
@@ -16,13 +18,13 @@ static void Chassis_Task(void const *argument);
 static void Motor_Control_Task(void const *argument);
 static void OBSERVE_Task(void const *argument);
 static void Remote_Task(void const *argument);
+static void RC_Input_Task(void const *argument);
 
 void INS_task(void);
 void Chassis_task(void);
 void motor_control_task(void);
 void Observe_task(void);
 void remote_task(void);
-
 void MX_FREERTOS_Init(void)
 {
     osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
@@ -39,6 +41,9 @@ void MX_FREERTOS_Init(void)
 
     osThreadDef(OBSERVE_TASK, OBSERVE_Task, osPriorityHigh, 0, 512);
     OBSERVE_TASKHandle = osThreadCreate(osThread(OBSERVE_TASK), NULL);
+
+    osThreadDef(RC_INPUT_TASK, RC_Input_Task, osPriorityAboveNormal, 0, 384);
+    RC_INPUT_TASKHandle = osThreadCreate(osThread(RC_INPUT_TASK), NULL);
 
     osThreadDef(REMOTE_TASK, Remote_Task, osPriorityAboveNormal, 0, 512);
     REMOTE_TASKHandle = osThreadCreate(osThread(REMOTE_TASK), NULL);
@@ -95,5 +100,14 @@ static void Remote_Task(void const *argument)
     for (;;)
     {
         remote_task();
+    }
+}
+
+static void RC_Input_Task(void const *argument)
+{
+    (void)argument;
+    for (;;)
+    {
+        rc_input_task();
     }
 }

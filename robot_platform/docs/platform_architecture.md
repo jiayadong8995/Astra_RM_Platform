@@ -42,9 +42,8 @@
 1. `STM32CubeMX` 生成链已经接入 CLI
 2. `CMake + arm-none-eabi-gcc` 的硬件构建链已经可用
 3. `balance_chassis_hw_seed.elf` 可构建
-4. `balance_chassis_legacy_full.elf` 可构建
-5. `linux-gcc + FreeRTOS POSIX port` 的 SITL 目标 `balance_chassis_sitl` 可构建
-6. `runtime/bsp/sitl` 和 `sim/bridge` 已经具备最小 SITL 骨架
+4. `linux-gcc + FreeRTOS POSIX port` 的 SITL 目标 `balance_chassis_sitl` 可构建
+5. `runtime/bsp/sitl` 和 `sim/bridge` 已经具备最小 SITL 骨架
 
 ### 2.2 仍未闭环的部分
 
@@ -86,7 +85,7 @@ robot_platform/
 当前状态：
 
 - `generate` 已接 `CubeMX`
-- `build hw_elf / legacy_full / sitl` 已可用
+- `build hw_elf / sitl` 已可用
 - 其余命令仍在收口中
 
 ### 3.2 `runtime/generated/`
@@ -306,3 +305,58 @@ project config
 在不引入新抽象层和新验证分支的前提下，把 `balance_chassis` 稳定迁入 `robot_platform`，完成新消息总线体系落地，并先把 `hw + sitl` 这条最小平台闭环跑稳。
 
 达到这个目标后，项目才算真正从“迁移中的平台骨架”进入“可持续演进的平台工程”。
+
+## 9. 当前正式对接面
+
+为了让 `sim / bridge / report / replay` 不再依赖 legacy 内部全局变量，当前阶段先把 runtime 对外边界固定如下。
+
+### 9.1 正式输入 topic
+
+- `ins_data`
+- `chassis_cmd`
+
+说明：
+
+- `ins_data` 是姿态与惯导输入边界
+- `chassis_cmd` 是遥控/上层控制命令输入边界
+
+### 9.2 正式输出 topic
+
+- `chassis_state`
+- `leg_left`
+- `leg_right`
+
+说明：
+
+- `chassis_state` 是当前对外状态摘要
+- `leg_left / leg_right` 是当前对外电机控制输出边界
+- 在当前阶段，`sim` 应优先接这三类输出，而不是读取 `chassis_move`、`left/right` 一类内部全局状态
+
+### 9.3 过渡 topic
+
+- `chassis_observe`
+- `rc_data`
+- `actuator_cmd`
+
+说明：
+
+- `chassis_observe` 当前仍属于控制链内部中间量
+- 它用于把 `observe_task` 的估计结果显式送入控制链
+- `rc_data` 仅用于板级遥控输入向 app 的单点收口
+- `actuator_cmd` 是当前 app 到执行层的内部末端命令 topic，暂不作为 sim/report 的正式输出边界
+- 现阶段不应把它当成长期稳定的外部报告边界固化到 replay/report 协议中，除非后续明确升级为正式观测接口
+
+### 9.4 禁止的对接方式
+
+当前确认不应作为 `sim` 正式对接面的内容：
+
+- `INS`
+- `chassis_move`
+- `left / right`
+- `rc_ctrl`
+
+原则：
+
+- `hw` 与 `sitl` 共用同一条主控制链
+- 环境差异只允许留在 `bsp` 和注入层
+- `sim` 不应为了读状态或写输入而直接依赖 app 内部结构

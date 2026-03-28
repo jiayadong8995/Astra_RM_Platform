@@ -21,39 +21,17 @@
 #include "can_bsp.h"
 #include "message_center.h"
 
-//-15.2927   -1.2844   -7.4831   -4.5426   13.4664    1.9690
-//   22.4682    2.6679   22.1886   12.1150   34.9348    2.9753
-//-14.5354   -1.1578   -7.1281   -4.3071   14.0014    2.0200
-//   22.7326    2.6070   23.0702   12.5308   33.2775    2.7684（0.16）
-//-17.7188   -1.7148   -8.4302   -5.1792   11.7744    1.7642
-//   21.5827    2.8661   19.4008   10.7767   39.3566    3.5794（0.22）
-//-18.0188,   -2.0148,   -9.9302,   -6.5892,   11.7744,    1.7642,
-//  21.5827,    2.8661,   20.2008,   11.2767,   40.3566,    4.0794（0.22较完善）
 static float LQR_K_R[12]= LQR_K_MATRIX;
-//{-13.1027, -1.0044, -11.8831, -8.8426, 14.0664, 2.0690,
-//20.0682, 2.0679, 26.7886, 15.9150, 33.4348, 3.2053};
-////{
-//    -17.4503,   -1.9640,   -4.8365,   -4.4086,    6.2068,    1.4190,
-//     14.0360,    2.1759,    7.1015,    5.9832,   16.9087,    2.6989
-//};//0.20
-vmc_leg_t right;
-vmc_leg_t left;
 
-extern INS_t INS;
-
-int enable_flag[4]= {1,1,1,1};
-int Begin_flag = 0;
-
-float leg_G = LEG_GRAVITY_COMP;
-float Joint_T_Max = JOINT_TORQUE_MAX;
-																
-chassis_t chassis_move;
-															
-PidTypeDef LegR_Pid;//右腿的腿长pd
-PidTypeDef LegL_Pid;//左腿的腿长pd
-PidTypeDef Tp_Pid;//防劈叉补偿pd
-PidTypeDef Turn_Pid;//转向pd
-PidTypeDef Roll_Pid;//横滚角补偿pd
+static vmc_leg_t runtime_right_leg;
+static vmc_leg_t runtime_left_leg;
+static int joint_enable_flag[4] = {1, 1, 1, 1};
+static chassis_t chassis_runtime;
+static PidTypeDef leg_r_pid;//右腿的腿长pd
+static PidTypeDef leg_l_pid;//左腿的腿长pd
+static PidTypeDef tp_pid;//防劈叉补偿pd
+static PidTypeDef turn_pid;//转向pd
+static PidTypeDef roll_pid;//横滚角补偿pd
 
 uint32_t CHASSIS_TIME=CHASSIS_TASK_PERIOD;
 
@@ -83,63 +61,170 @@ static void chassis_ground_detection(chassis_t * chassis,\
 static Publisher_t  *chassis_state_pub;
 static Publisher_t  *leg_right_pub;
 static Publisher_t  *leg_left_pub;
+static Publisher_t  *actuator_cmd_pub;
 static Subscriber_t *ins_sub;
 static Subscriber_t *cmd_sub;
+static Subscriber_t *observe_sub;
+static INS_t ins_runtime;
+
+static void update_ins_runtime(INS_t *ins, const INS_Data_t *msg);
+static void apply_chassis_cmd(chassis_t *chassis, const Chassis_Cmd_t *cmd);
+static void apply_observe_state(chassis_t *chassis, const Chassis_Observe_t *observe);
 
 void Chassis_task(void)
 {
-	while(INS.ins_flag==0)
-	{// wait for IMU convergence
-	  osDelay(1);	
+    INS_Data_t ins_msg = {0};
+    Chassis_Cmd_t cmd_msg = {0};
+    Chassis_Observe_t observe_msg = {0};
+
+    ins_sub           = SubRegister("ins_data",      sizeof(INS_Data_t));
+    cmd_sub           = SubRegister("chassis_cmd",   sizeof(Chassis_Cmd_t));
+    observe_sub       = SubRegister("chassis_observe", sizeof(Chassis_Observe_t));
+
+	while(ins_runtime.ins_flag == 0)
+	{
+        if (SubGetMessage(ins_sub, &ins_msg))
+        {
+            update_ins_runtime(&ins_runtime, &ins_msg);
+        }
+	    osDelay(1);
 	}
 
-    Chassis_init(&chassis_move,&right,&left);
-    Pensation_init(&Roll_Pid,&Tp_Pid,&Turn_Pid,&LegR_Pid,&LegL_Pid);
+    Chassis_init(&chassis_runtime,&runtime_right_leg,&runtime_left_leg);
+    Pensation_init(&roll_pid,&tp_pid,&turn_pid,&leg_r_pid,&leg_l_pid);
 
     /* register pub-sub */
     chassis_state_pub = PubRegister("chassis_state", sizeof(Chassis_State_t));
     leg_right_pub     = PubRegister("leg_right",     sizeof(Leg_Output_t));
     leg_left_pub      = PubRegister("leg_left",      sizeof(Leg_Output_t));
-    ins_sub           = SubRegister("ins_data",      sizeof(INS_Data_t));
-    cmd_sub           = SubRegister("chassis_cmd",   sizeof(Chassis_Cmd_t));
+    actuator_cmd_pub  = PubRegister("actuator_cmd",  sizeof(Actuator_Cmd_t));
 
     osDelay(6);
 
 	while(1)
 	{	
-		chassis_feedback_update(&chassis_move,&right,&left,&INS);
-	    chassis_control_loop(&chassis_move,&right,&left,&INS,LQR_K_R,LQR_K_R,&LegR_Pid,&LegL_Pid);
+        if (SubGetMessage(ins_sub, &ins_msg))
+        {
+            update_ins_runtime(&ins_runtime, &ins_msg);
+        }
+        if (SubGetMessage(cmd_sub, &cmd_msg))
+        {
+            apply_chassis_cmd(&chassis_runtime, &cmd_msg);
+        }
+        if (SubGetMessage(observe_sub, &observe_msg))
+        {
+            apply_observe_state(&chassis_runtime, &observe_msg);
+        }
+
+		chassis_feedback_update(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime);
+	    chassis_control_loop(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,LQR_K_R,LQR_K_R,&leg_r_pid,&leg_l_pid);
 
 		/* publish chassis state */
 		{
 			Chassis_State_t state_msg = {
-				.v_filter  = chassis_move.v_filter,
-				.x_filter  = chassis_move.x_filter,
-				.x_set     = chassis_move.x_set,
-				.total_yaw = chassis_move.total_yaw,
-				.roll      = chassis_move.roll,
-				.turn_set  = chassis_move.turn_set,
+				.v_filter  = chassis_runtime.v_filter,
+				.x_filter  = chassis_runtime.x_filter,
+				.x_set     = chassis_runtime.x_set,
+				.total_yaw = chassis_runtime.total_yaw,
+				.roll      = chassis_runtime.roll,
+				.turn_set  = chassis_runtime.turn_set,
 			};
 			PubPushMessage(chassis_state_pub, &state_msg);
 		}
 		/* publish leg outputs for motor_control_task */
 		{
 			Leg_Output_t r_msg = {
-				.joint_torque = {right.torque_set[0], right.torque_set[1]},
-				.wheel_torque = chassis_move.wheel_motor[1].torque_set,
-				.wheel_current = chassis_move.wheel_motor[1].give_current,
+				.joint_torque = {runtime_right_leg.torque_set[0], runtime_right_leg.torque_set[1]},
+				.wheel_torque = chassis_runtime.wheel_motor[1].torque_set,
+				.wheel_current = chassis_runtime.wheel_motor[1].give_current,
+                .leg_length = runtime_right_leg.L0,
 			};
 			Leg_Output_t l_msg = {
-				.joint_torque = {left.torque_set[0], left.torque_set[1]},
-				.wheel_torque = chassis_move.wheel_motor[0].torque_set,
-				.wheel_current = chassis_move.wheel_motor[0].give_current,
+				.joint_torque = {runtime_left_leg.torque_set[0], runtime_left_leg.torque_set[1]},
+				.wheel_torque = chassis_runtime.wheel_motor[0].torque_set,
+				.wheel_current = chassis_runtime.wheel_motor[0].give_current,
+                .leg_length = runtime_left_leg.L0,
 			};
 			PubPushMessage(leg_right_pub, &r_msg);
 			PubPushMessage(leg_left_pub,  &l_msg);
+
+            {
+                Actuator_Cmd_t actuator_msg = {
+                    .joint_torque = {
+                        runtime_right_leg.torque_set[0],
+                        runtime_right_leg.torque_set[1],
+                        runtime_left_leg.torque_set[0],
+                        runtime_left_leg.torque_set[1],
+                    },
+                    .wheel_current = {
+                        chassis_runtime.wheel_motor[0].give_current,
+                        chassis_runtime.wheel_motor[1].give_current,
+                    },
+                    .start_flag = chassis_runtime.start_flag,
+                };
+                PubPushMessage(actuator_cmd_pub, &actuator_msg);
+            }
 		}
 
 		osDelay(CHASSIS_TIME);
 	}
+}
+
+Joint_Motor_t *chassis_joint_motor_state(uint8_t index)
+{
+    if (index >= 4U)
+    {
+        return &chassis_runtime.joint_motor[0];
+    }
+    return &chassis_runtime.joint_motor[index];
+}
+
+float chassis_wheel_speed(uint8_t index)
+{
+    if (index >= 2U)
+    {
+        return chassis_runtime.wheel_motor[0].speed;
+    }
+    return chassis_runtime.wheel_motor[index].speed;
+}
+
+void chassis_set_joint_enable_flag(uint8_t index, int value)
+{
+    if (index >= 4U)
+    {
+        return;
+    }
+    joint_enable_flag[index] = value;
+}
+
+static void update_ins_runtime(INS_t *ins, const INS_Data_t *msg)
+{
+    ins->Pitch = msg->pitch;
+    ins->Roll = msg->roll;
+    ins->YawTotalAngle = msg->yaw_total;
+    ins->Gyro[0] = msg->gyro[0];
+    ins->Gyro[1] = msg->gyro[1];
+    ins->Gyro[2] = msg->gyro[2];
+    ins->MotionAccel_b[0] = msg->accel_b[0];
+    ins->MotionAccel_b[1] = msg->accel_b[1];
+    ins->MotionAccel_b[2] = msg->accel_b[2];
+    ins->ins_flag = msg->ready;
+}
+
+static void apply_chassis_cmd(chassis_t *chassis, const Chassis_Cmd_t *cmd)
+{
+    chassis->v_set = cmd->vx_cmd;
+    chassis->turn_set = cmd->turn_cmd;
+    chassis->leg_set = cmd->leg_set;
+    chassis->start_flag = cmd->start_flag;
+    chassis->jump_flag = cmd->jump_flag;
+    chassis->recover_flag = cmd->recover_flag;
+}
+
+static void apply_observe_state(chassis_t *chassis, const Chassis_Observe_t *observe)
+{
+    chassis->v_filter = observe->v_filter;
+    chassis->x_filter = observe->x_filter;
 }
 
 
@@ -147,26 +232,24 @@ static void Chassis_init(chassis_t *chassis,vmc_leg_t *vmcr_init,vmc_leg_t *vmcl
 {
 	for(int i = 0;i < 2; i++)
 	{
-		chassis_move.wheel_motor[i].chassis_x = 0.0f;
-		chassis_move.wheel_motor[i].chassis_motor_measure = get_chassis_motor_measure_point(i);
+		chassis->wheel_motor[i].chassis_x = 0.0f;
+		chassis->wheel_motor[i].chassis_motor_measure = get_chassis_motor_measure_point(i);
 	}  
 	VMC_init(vmcr_init);//给杆长赋值
 	VMC_init(vmcl_init);//给杆长赋值
 	
-	chassis_feedback_update(&chassis_move,&right,&left,&INS);//更新数据
-
-	Begin_flag =1;
+	chassis_feedback_update(chassis, vmcr_init, vmcl_init, &ins_runtime);//更新数据
 }
 
 static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidTypeDef *legr,PidTypeDef *legl)
 {
 	//腿长pid初始化
-	const static float roll_pid[3] = {ROLL_PID_KP,ROLL_PID_KI,ROLL_PID_KD};
-    const static float legr_pid[3] = {LEG_PID_KP, LEG_PID_KI,LEG_PID_KD};
-    const static float legl_pid[3] = {LEG_PID_KP, LEG_PID_KI,LEG_PID_KD};
+	static const float roll_pid[3] = {ROLL_PID_KP,ROLL_PID_KI,ROLL_PID_KD};
+    static const float legr_pid[3] = {LEG_PID_KP, LEG_PID_KI,LEG_PID_KD};
+    static const float legl_pid[3] = {LEG_PID_KP, LEG_PID_KI,LEG_PID_KD};
     //补偿pid初始化：防劈叉补偿、偏航角补偿
-	const static float tp_pid[3] = {TP_PID_KP, TP_PID_KI, TP_PID_KD};
-	const static float turn_pid[3] = {TURN_PID_KP, TURN_PID_KI, TURN_PID_KD};
+	static const float tp_pid[3] = {TP_PID_KP, TP_PID_KI, TP_PID_KD};
+	static const float turn_pid[3] = {TURN_PID_KP, TURN_PID_KI, TURN_PID_KD};
 	
     PID_init(roll, PID_POSITION, roll_pid, ROLL_PID_MAX_OUT, ROLL_PID_MAX_IOUT);
 	PID_init(Tp,   PID_POSITION, tp_pid,   TP_PID_MAX_OUT,   TP_PID_MAX_IOUT);
@@ -183,14 +266,14 @@ static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_
 	vmc_l->phi1=pi/2.0f+chassis->joint_motor[2].para.pos+JOINT2_OFFSET;
 	vmc_l->phi4=pi/2.0f+chassis->joint_motor[3].para.pos+JOINT3_OFFSET;
 
-	chassis_move.wheel_motor[0].chassis_x = chassis_move.wheel_motor[0].chassis_motor_measure->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;		
-	chassis_move.wheel_motor[1].chassis_x = chassis_move.wheel_motor[1].chassis_motor_measure->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;
+	chassis->wheel_motor[0].chassis_x = chassis->wheel_motor[0].chassis_motor_measure->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;		
+	chassis->wheel_motor[1].chassis_x = chassis->wheel_motor[1].chassis_motor_measure->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;
 
-	chassis_move.wheel_motor[0].w_speed = chassis_move.wheel_motor[0].chassis_motor_measure->speed_rpm * M3508_RPM_TO_RADS; 		
-	chassis_move.wheel_motor[1].w_speed = chassis_move.wheel_motor[1].chassis_motor_measure->speed_rpm * M3508_RPM_TO_RADS; 
+	chassis->wheel_motor[0].w_speed = chassis->wheel_motor[0].chassis_motor_measure->speed_rpm * M3508_RPM_TO_RADS; 		
+	chassis->wheel_motor[1].w_speed = chassis->wheel_motor[1].chassis_motor_measure->speed_rpm * M3508_RPM_TO_RADS; 
 	
-	chassis_move.wheel_motor[0].speed = chassis_move.wheel_motor[0].w_speed * WHEEL_RADIUS;		
-	chassis_move.wheel_motor[1].speed = chassis_move.wheel_motor[1].w_speed * WHEEL_RADIUS;		
+	chassis->wheel_motor[0].speed = chassis->wheel_motor[0].w_speed * WHEEL_RADIUS;		
+	chassis->wheel_motor[1].speed = chassis->wheel_motor[1].w_speed * WHEEL_RADIUS;		
 
   chassis->myPithGyroL = - ins->Gyro[0];
 	chassis->myPithL = - ins->Pitch;//-0.05 //+0.05
@@ -221,11 +304,11 @@ static void chassis_control_loop( chassis_t * chassis,\
 	VMC_calc_1_right(vmcr,ins,2.0f/1000.0f);//计算theta和d_theta给lqr用，同时也计算右腿长L0,该任务控制周期是4*0.001秒
 	VMC_calc_1_left(vmcl,ins,2.0f/1000.0f);//计算theta和d_theta给lqr用，同时也计算左腿长L0,该任务控制周期是4*0.001秒
 	
-  chassis->turn_T=Turn_Pid.Kp*(chassis->turn_set-chassis->total_yaw)-Turn_Pid.Kd*ins->Gyro[2];//这样计算更稳一点
+	chassis->turn_T=turn_pid.Kp*(chassis->turn_set-chassis->total_yaw)-turn_pid.Kd*ins->Gyro[2];//这样计算更稳一点
 	
-	chassis->roll_f0=Roll_Pid.Kp*(chassis->roll_set-chassis->roll)-Roll_Pid.Kd*ins->Gyro[1];
+	chassis->roll_f0=roll_pid.Kp*(chassis->roll_set-chassis->roll)-roll_pid.Kd*ins->Gyro[1];
 	
-    chassis->leg_tp = PID_Calc(&Tp_Pid, chassis->theta_err,0.0f);//防劈叉pid计算
+	chassis->leg_tp = PID_Calc(&tp_pid, chassis->theta_err,0.0f);//防劈叉pid计算
 
 	chassis->wheel_motor[1].torque_set=(LQR_KR[0]*(vmcr->theta) 
 									   +LQR_KR[1]*(vmcr->d_theta) 
@@ -287,12 +370,12 @@ static void chassis_control_loop( chassis_t * chassis,\
 	 
 	//额定扭矩
 	mySaturate(&vmcr->F0,-100.0f,100.0f);//限幅 
-    mySaturate(&vmcr->torque_set[1],-Joint_T_Max,Joint_T_Max);//3	
-	mySaturate(&vmcr->torque_set[0],-Joint_T_Max,Joint_T_Max);
+    mySaturate(&vmcr->torque_set[1],-JOINT_TORQUE_MAX,JOINT_TORQUE_MAX);//3	
+	mySaturate(&vmcr->torque_set[0],-JOINT_TORQUE_MAX,JOINT_TORQUE_MAX);
 	
 	mySaturate(&vmcl->F0,-100.0f,100.0f);//限幅
-	mySaturate(&vmcl->torque_set[1],-Joint_T_Max,Joint_T_Max);//3
-	mySaturate(&vmcl->torque_set[0],-Joint_T_Max,Joint_T_Max);
+	mySaturate(&vmcl->torque_set[1],-JOINT_TORQUE_MAX,JOINT_TORQUE_MAX);//3
+	mySaturate(&vmcl->torque_set[0],-JOINT_TORQUE_MAX,JOINT_TORQUE_MAX);
 	
 }
 
@@ -320,8 +403,8 @@ static void chassis_jump_loop(chassis_t * chassis,\
 		{
 			if(chassis->jump_status == 0)
 			{
-				vmcr->F0= leg_G + PID_Calc(legr,vmcr->L0,0.18f);
-				vmcl->F0= leg_G + PID_Calc(legl,vmcl->L0,0.18f);
+				vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,0.18f);
+				vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,0.18f);
 				if(vmcr->L0<0.185f&&vmcl->L0<0.185f)//0.18
 				{
 					chassis->jump_time++;
@@ -333,8 +416,8 @@ static void chassis_jump_loop(chassis_t * chassis,\
 				}
 			}else if(chassis->jump_status == 1)
 			{
-				vmcr->F0= leg_G + PID_Calc(legr,vmcr->L0,0.3f);//暂时定为0.30，测试跳跃
-				vmcl->F0= leg_G + PID_Calc(legl,vmcl->L0,0.3f);
+				vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,0.3f);//暂时定为0.30，测试跳跃
+				vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,0.3f);
 				if(vmcr->L0>0.22f&&vmcl->L0>0.22f)
 				{
 					chassis->jump_time++;					
@@ -346,8 +429,8 @@ static void chassis_jump_loop(chassis_t * chassis,\
 				}
 			}else if(chassis->jump_status == 2)
 			{
-				vmcr->F0= leg_G + PID_Calc(legr,vmcr->L0,0.18f);//右前馈+pd
-				vmcl->F0= leg_G + PID_Calc(legl,vmcl->L0,0.18f);//左前馈+pd
+				vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,0.18f);//右前馈+pd
+				vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,0.18f);//左前馈+pd
 				if(vmcr->L0<0.250f&&vmcl->L0<0.250f)
 				{
 					chassis->jump_time++;			
@@ -360,8 +443,8 @@ static void chassis_jump_loop(chassis_t * chassis,\
 //收腿的两个逻辑，在状态2最后加一个时间判断回到设定值，或者在3状态加一个腿长判断，或者判断支持力				
 			}else if(chassis->jump_status == 3)
 			{
-				vmcr->F0= leg_G + PID_Calc(legr,vmcr->L0,chassis->leg_set);//右前馈+pd
-				vmcl->F0= leg_G + PID_Calc(legl,vmcl->L0,chassis->leg_set);//左前馈+pd
+				vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,chassis->leg_set);//右前馈+pd
+				vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,chassis->leg_set);//左前馈+pd
 //				vmcr->F0= leg_G + PID_Calc(legr,vmcr->L0,0.13);
 //				vmcl->F0= leg_G + PID_Calc(legl,vmcl->L0,0.13);
 //				if(vmcr->L0 < 0.17 && vmcl->L0 < 0.17)
@@ -372,8 +455,8 @@ static void chassis_jump_loop(chassis_t * chassis,\
 			}
 		}else if(chassis->jump_flag == 0)
 		{
-			vmcr->F0= leg_G + PID_Calc(legr,vmcr->L0,chassis->leg_set)+ chassis->roll_f0;//右前馈+pd
-			vmcl->F0= leg_G + PID_Calc(legl,vmcl->L0,chassis->leg_set)- chassis->roll_f0;//左前馈+pd
+			vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,chassis->leg_set)+ chassis->roll_f0;//右前馈+pd
+			vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,chassis->leg_set)- chassis->roll_f0;//左前馈+pd
 			
 			chassis->jump_time = 0;
 			chassis->jump_status = 0;			
