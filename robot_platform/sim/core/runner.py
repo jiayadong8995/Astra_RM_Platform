@@ -368,6 +368,7 @@ def run_profile_session(
         "duration_s": duration_s,
         "report_path": str(report_path),
         "sitl_binary": str(sitl_bin),
+        "sim_backend_module": profile.backend_module,
         "backend_command": [sys.executable, "-u", "-m", profile.backend_module, "--project", profile.name],
         "bridge_command": [sys.executable, "-u", "-m", profile.backend_module, "--project", profile.name],
         "sitl_command": [str(sitl_bin)],
@@ -488,6 +489,7 @@ def run_profile_session(
             print(
                 "sim summary: "
                 f"project={profile.name} "
+                f"backend={profile.backend_module} "
                 f"status={smoke_result.get('status')} "
                 f"passed={smoke_result.get('passed')} "
                 f"failure={smoke_result.get('primary_failure')}"

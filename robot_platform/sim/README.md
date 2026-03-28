@@ -45,6 +45,7 @@ python3 -m robot_platform.tools.platform_cli.main test sim
 当前 smoke report 至少记录：
 
 - 运行状态和进程退出信息
+- 当前 session 使用的 backend module
 - runner 声明的 runtime 正式边界
 - runner 声明的传输端口
 - bridge 成功运行时观察到的 runtime 边界 / 传输端口
