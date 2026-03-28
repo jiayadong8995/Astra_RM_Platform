@@ -38,6 +38,7 @@ set(PLATFORM_BOARD_BSP_DIR ${PLATFORM_RUNTIME_DIR}/bsp/boards/stm32h7_ctrl_board
 set(PLATFORM_REMOTE_CONTROL_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/remote_control)
 set(PLATFORM_DM_MOTOR_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/dm_motor)
 set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
+set(PLATFORM_RUNTIME_SERVICE_DIR ${PLATFORM_RUNTIME_DIR}/runtime_service)
 set(PLATFORM_BMI088_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/bmi088)
 if(PLATFORM_TARGET_HW)
 
@@ -266,16 +267,16 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/chassis_control_support.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/chassis_orchestration.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_flow/actuator_runtime.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/observe_orchestration.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/ins_runtime.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/remote_orchestration.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_io/actuator_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/ins_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/observe_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
-    ${PLATFORM_LEGACY_APP_DIR}/legacy/motor_control_task.c
+    ${PLATFORM_RUNTIME_SERVICE_DIR}/actuator/actuator_runtime.c
+    ${PLATFORM_RUNTIME_SERVICE_DIR}/actuator/actuator_topics.c
+    ${PLATFORM_RUNTIME_SERVICE_DIR}/actuator/motor_control_task.c
     ${PLATFORM_LEGACY_APP_DIR}/legacy/observe_task.c
     ${PLATFORM_LEGACY_APP_DIR}/legacy/remote_task.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
@@ -344,6 +345,7 @@ if(PLATFORM_TARGET_SIM)
       ${PLATFORM_BMI088_DIR}
       ${PLATFORM_REMOTE_CONTROL_DIR}
       ${PLATFORM_LEGACY_APP_DIR}
+      ${PLATFORM_RUNTIME_SERVICE_DIR}
       # CMSIS / Core headers needed by FreeRTOS CMSIS wrapper and others
       ${CHASSIS_HAL_DIR}/Inc
       ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include

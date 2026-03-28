@@ -2,7 +2,7 @@
 
 ## 当前定位
 
-`balance_chassis` 现在处于“legacy task 已迁入平台，但 app 还没完全收成装配层”的阶段。
+`balance_chassis` 现在处于“app 目录语义已立住，但 runtime 分层还在回正”的阶段。
 
 这一层最终只应承担 4 件事：
 
@@ -22,27 +22,42 @@
 
 ## 当前目录语义
 
-当前目录已经开始向目标结构收口：
+当前目录的长期定位仍是：
 
 - `app_bringup/`
   - 线程创建和 app 入口
   - 当前文件：`freertos_app.c`、`task_registry.c`
 - `app_io/`
   - app 级 topic/input/output 适配
-  - 当前文件：`topic_contract.h`、`chassis_topics.*`、`remote_topics.*`、`observe_topics.*`、`actuator_topics.*`、`ins_topics.*`
+  - 当前文件：`topic_contract.h`、`chassis_topics.*`、`remote_topics.*`
 - `app_flow/`
   - 业务编排与运行态装配
-  - 当前文件：`chassis_orchestration.*`、`chassis_control_support.*`、`remote_orchestration.*`、`remote_runtime.*`、`observe_orchestration.*`、`observe_runtime.*`、`actuator_runtime.*`、`ins_runtime.*`
+  - 当前文件：`chassis_orchestration.*`、`remote_orchestration.*`、`remote_runtime.*`
 - `app_config/`
   - 项目参数、topic 结构、业务常量、app 运行态结构
   - 当前文件：`robot_def.h`、`runtime_state.h`、`app_params.h`
 - `legacy/`
   - 尚未拆完的 task shell 与兼容资产
-  - 当前文件：`INS_task.*`、`chassis_task.*`、`remote_task.*`、`observe_task.*`、`motor_control_task.*`
+  - 当前文件：`INS_task.*`、`chassis_task.*`、`remote_task.*`、`observe_task.*`
 
-目标结构仍然是：
+`runtime_service/`
 
-`app_bringup + app_io + app_flow + app_config + legacy`
+- `actuator/`
+  - 执行器运行时链路
+  - 当前文件：`actuator_runtime.*`、`actuator_topics.*`、`motor_control_task.*`
+- `sensing/`
+  - 传感器输入整理
+  - 当前为新建空层，等待迁入 `ins_runtime.*`
+- `observe/`
+  - 观测运行时组织
+  - 当前为新建空层，等待迁入 `observe_*`
+- `control_runtime/`
+  - 控制运行态 glue
+  - 当前为新建空层，等待迁入 `chassis_control_support.*`
+
+当前平台目标结构是：
+
+`generated + bsp + device + runtime_service + module + app + sim`
 
 ---
 
@@ -86,8 +101,11 @@
 - [x] `freertos_legacy.c` 已迁到 `app_bringup/freertos_app.c`
 - [x] `robot_def.h` 已迁到 `app_config/robot_def.h`
 - [x] 根目录 `*_task.c/.h` 已迁到 `legacy/`
+- [x] `runtime/device/` 已创建首批空层
+- [x] `runtime/runtime_service/` 已创建首批空层
+- [x] actuator 线首批文件已迁入 `runtime_service/actuator/`
 
-### 4. `app_io` 依赖面收窄
+### 4. `app` 依赖面收窄
 
 - [x] `app_io/chassis_topics.h` 不再直接依赖 `chassis_task.h`
 - [x] `app_io/chassis_topics.h` 不再直接依赖 `INS_task.h`
@@ -96,7 +114,7 @@
 - [x] `topic_contract.h` 已作为 app 级 topic 契约入口引入
 - [x] `observe_task` 已开始拆成 `app_io/observe_topics.* + app_flow/observe_orchestration.* + task shell`
 - [x] `INS_task` 已开始拆成 `app_io/ins_topics.* + app_flow/ins_runtime.* + task shell`
-- [x] `motor_control_task` 已开始拆成 `app_io/actuator_topics.* + app_flow/actuator_runtime.* + task shell`
+- [x] `motor_control_task` 已从 `app` 迁入 `runtime_service/actuator/`
 
 ### 5. `app_config` 开始承接运行态事实源
 
@@ -122,16 +140,19 @@
 
 ## 仍未完成
 
-### 1. `app_flow` 还承接了一部分过渡运行态
+### 1. `runtime_service` 还没完全接住 sensing / observe / control_runtime
 
-虽然 `app_io` 的边界已经比前面干净很多，但 `app_flow` 里仍存在 app bundle 到 legacy runtime 的映射逻辑。
+目前只有 actuator 线开始从 `app` 拔出。
 
-这说明：
+还没迁的重点是：
 
-- 旧的 `topic -> runtime state` 胶水没有消失
-- 只是从 `app_io` 头文件层面收回到了 `app_flow` 和 task shell 内部
+- `app_flow/ins_runtime.*`
+- `app_io/ins_topics.*`
+- `app_flow/observe_orchestration.*`
+- `app_io/observe_topics.*`
+- `app_flow/chassis_control_support.*`
 
-下一步应继续把这部分抽成更明确的 app 装配逻辑和 contract，而不是继续堆在 `legacy/chassis_task.c`。
+这说明 app 仍然吃进了一部分 sensing / observe / control runtime glue。
 
 ### 2. `legacy/` 只是位置收口，还不是完成拆分
 
@@ -156,7 +177,6 @@
 - `legacy/remote_task.c` 已基本是 shell
 - `legacy/observe_task.c` 已基本是 shell
 - `legacy/INS_task.c` 已基本是 shell
-- `legacy/motor_control_task.c` 已基本是 shell
 - `freertos_app.c` 已基本是入口壳
 - `legacy/observe_task.c` 里的未使用卡尔曼残留已清掉
 
@@ -170,22 +190,31 @@
 
 ## 下一步顺序
 
-### P0. 继续把 task 壳层和 legacy 本体拆开
+### P0. 先把 runtime_service 其余三条线立起来
+
+优先顺序：
+
+1. `sensing`
+2. `observe`
+3. `control_runtime`
+
+目标是先把 `app` 吃进去的运行时 glue 拔出去。
+
+### P1. 再继续把 task 壳层和 legacy 本体拆开
 
 优先顺序：
 
 1. `chassis_task.c`
 2. `observe_task.c`
 3. `INS_task.c`
-4. `motor_control_task.c`
 
 目标是把 task shell、app logic、app io 拆开，让根目录 task 只剩调度骨架。
 
-### P1. 继续拆薄 `legacy/` 里的 task
+### P2. 继续拆薄 `legacy/` 里的 task
 
 重点是把“任务壳 / app_flow / app_io / legacy runtime”再切清楚，而不是停在目录重命名。
 
-### P2. 再收 `app_io` 的 contract
+### P3. 再收 `app_io` 的 contract
 
 重点是明确：
 
@@ -201,6 +230,7 @@
 
 - `hw_elf` 和 `sitl` 持续可构建
 - app 目录语义明确是 `app_bringup / app_io / app_flow / app_config / legacy`
+- `runtime_service` 至少具备 `actuator / sensing / observe / control_runtime` 四条服务线
 - `sim` 不需要依赖 app 内部全局状态
 - `app_io` 不再在边界头文件上暴露 legacy task 和算法类型
 - `app_flow` 和算法模块不再反向依赖 `legacy` 头

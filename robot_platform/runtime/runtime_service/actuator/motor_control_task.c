@@ -22,11 +22,12 @@
 
 #include "motor_control_task.h"
 #include "cmsis_os.h"
-#include "../app_config/robot_def.h"
-#include "../app_flow/actuator_runtime.h"
-#include "../app_io/actuator_topics.h"
+#include "../../app/balance_chassis/app_config/app_params.h"
+#include "../../app/balance_chassis/app_config/robot_def.h"
+#include "actuator_runtime.h"
+#include "actuator_topics.h"
 
-uint32_t systick;
+static uint32_t systick;
 				
 void motor_control_task(void)
 {
@@ -38,7 +39,7 @@ void motor_control_task(void)
     actuator_runtime_bus_init(&runtime_bus);
     actuator_runtime_bus_wait_ready(&runtime_bus, &ins_msg);
     actuator_runtime_init(&runtime);
-    osDelay(6);
+    osDelay(APP_CHASSIS_STARTUP_DELAY_MS);
 
 	while(1)
 	{	
@@ -47,6 +48,6 @@ void motor_control_task(void)
         actuator_runtime_bus_publish_feedback(&runtime_bus, &feedback_msg);
 		systick = osKernelSysTick();
         actuator_runtime_dispatch_command(&runtime, &actuator_msg, systick);
-		osDelay(1);
+		osDelay(MOTOR_CONTROL_TASK_PERIOD_MS);
 	}
 }

@@ -5,6 +5,7 @@
 
 #define INS_TASK_PERIOD_MS               1U
 #define CHASSIS_TASK_PERIOD_MS           2U
+#define MOTOR_CONTROL_TASK_PERIOD_MS     1U
 #define OBSERVE_TASK_PERIOD_MS           3U
 #define REMOTE_TASK_PERIOD_MS            10U
 
