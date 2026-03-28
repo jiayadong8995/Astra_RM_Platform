@@ -7,7 +7,6 @@
 ```text
 .
 ├── Chassis/
-├── Framework/
 └── Gimbal/
 ```
 
@@ -15,7 +14,6 @@
 
 - `Chassis/` 是 STM32H7 底盘控制固件
 - `Gimbal/` 是 STM32F4 云台控制固件
-- `Framework/` 是尚未完全落地的轻量框架尝试
 
 ## 2. 第一版迁移对象
 
@@ -90,7 +88,6 @@ runtime/bsp/boards/stm32h7_ctrl_board/
 - `Chassis/User/Algorithm/`
 - `Chassis/User/Controller/`
 - `Chassis/User/modules/`
-- `Framework/`
 
 新位置建议：
 
@@ -106,7 +103,6 @@ runtime/module/
 迁移建议：
 
 - `message_center` 先作为 `message_bus` 原型
-- `Framework/arf_topic.h` 作为第二方案保留，不直接并进主线
 - `kalman` / `mahony` / `PID` / `VMC` 等作为 module 迁移候选
 
 ### 3.4 app
@@ -162,7 +158,7 @@ runtime/app/balance_chassis/
 
 1. 全局变量
 2. `Chassis/User/modules/message_center`
-3. `Framework/arf_topic.h`
+3. 历史上的 `ARF topic` 试验方案
 
 第一版原则：
 
@@ -229,4 +225,3 @@ runtime/app/balance_chassis/
 - log adapter
 - report
 - scenario
-

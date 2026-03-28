@@ -211,9 +211,8 @@ yaml config -> internal board model -> generator backend -> generated tree
 
 ### 决策 4
 
-`Framework/` 不直接视为现成平台；它当前更像消息总线试验田。
+历史上的 `Framework/` 已从仓库中移除；相关思路只作为迁移背景，不再作为可复用资产保留。
 
 ### 决策 5
 
 现有 `message_center`、`ARF topic`、全局变量数据流三套机制，后续必须收敛成一套。
-
