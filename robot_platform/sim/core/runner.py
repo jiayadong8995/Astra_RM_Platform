@@ -473,11 +473,19 @@ def run_profile_session(
         write_report(report_path, summary)
         smoke_result = summary.get("smoke_result", {})
         if isinstance(smoke_result, dict):
+            validation_suffix = ""
+            validation = smoke_result.get("validation")
+            if isinstance(validation, dict):
+                observed = validation.get("observed_count")
+                required = validation.get("required_count")
+                validation_suffix = f" validation={observed}/{required}"
             print(
                 "sim summary: "
+                f"project={profile.name} "
                 f"status={smoke_result.get('status')} "
                 f"passed={smoke_result.get('passed')} "
                 f"failure={smoke_result.get('primary_failure')}"
+                f"{validation_suffix}"
             )
         print(f"sim report: {report_path}")
 
