@@ -30,6 +30,39 @@ def _run(cmd: list[str], cwd: Path) -> int:
     return completed.returncode
 
 
+def _parse_sim_args(args: list[str]) -> tuple[str, float, bool]:
+    scenario = "sitl"
+    duration_s = 3.0
+    skip_build = False
+
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--duration":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --duration")
+            try:
+                duration_s = float(args[i + 1])
+            except ValueError as exc:
+                raise ValueError("invalid value for --duration") from exc
+            if duration_s <= 0.0:
+                raise ValueError("--duration must be positive")
+            i += 2
+            continue
+        if arg == "--skip-build":
+            skip_build = True
+            i += 1
+            continue
+        if arg.startswith("--"):
+            raise ValueError(f"unknown sim option: {arg}")
+        if scenario != "sitl":
+            raise ValueError(f"unexpected extra sim argument: {arg}")
+        scenario = arg
+        i += 1
+
+    return scenario, duration_s, skip_build
+
+
 def _generate_balance_chassis() -> int:
     repo_root = _repo_root()
     ioc_path = repo_root / "Astra_RM2025_Balance" / "Chassis" / "CtrlBoard-H7_IMU.ioc"
@@ -101,7 +134,7 @@ def _build_sitl(target: str) -> int:
     return _run(build_cmd, cwd=repo_root)
 
 
-def _run_sim(scenario: str) -> int:
+def _run_sim(scenario: str, *, duration_s: float = 3.0, skip_build: bool = False) -> int:
     if scenario != "sitl":
         summary = {
             "sim_mode": "sitl",
@@ -112,10 +145,11 @@ def _run_sim(scenario: str) -> int:
         print(json.dumps(summary, indent=2, ensure_ascii=False))
         return 2
 
-    rc = _build_sitl("balance_chassis_sitl")
-    if rc != 0:
-        return rc
-    return run_sitl_session(repo_root=_repo_root())
+    if not skip_build:
+        rc = _build_sitl("balance_chassis_sitl")
+        if rc != 0:
+            return rc
+    return run_sitl_session(repo_root=_repo_root(), duration_s=duration_s)
 
 
 def _run_tests(scope: str) -> int:
@@ -124,7 +158,14 @@ def _run_tests(scope: str) -> int:
         print(f"unsupported test scope for now: {scope}", file=sys.stderr)
         return 2
     return _run(
-        [sys.executable, "-m", "unittest", "discover", "-s", "robot_platform/sim/tests", "-v"],
+        [
+            sys.executable,
+            "-m",
+            "unittest",
+            "robot_platform.sim.tests.test_runner",
+            "robot_platform.tools.platform_cli.tests.test_main",
+            "-v",
+        ],
         cwd=repo_root,
     )
 
@@ -164,8 +205,12 @@ def main() -> int:
         return _build_hw_seed(supported[mode])
 
     if cmd == "sim":
-        scenario = args[1] if len(args) > 1 else "sitl"
-        return _run_sim(scenario)
+        try:
+            scenario, duration_s, skip_build = _parse_sim_args(args[1:])
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        return _run_sim(scenario, duration_s=duration_s, skip_build=skip_build)
 
     if cmd == "test":
         scope = args[1] if len(args) > 1 else "sim"

@@ -25,6 +25,7 @@ platform test
 - `build sitl`: 构建 Linux 上运行的 `balance_chassis_sitl`
 - `sim`: 自动构建并执行最小 SITL smoke run，输出 `build/sim_reports/sitl_smoke.json`
   并在终端打印一行 smoke summary
+  支持 `--duration <seconds>` 和 `--skip-build`
 - `test sim`: 运行 sim 侧最小单元回归，锁住 bridge 事件解析和 smoke report 汇总逻辑
 
 当前未收口：

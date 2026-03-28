@@ -13,6 +13,7 @@
 
 ```bash
 python3 -m robot_platform.tools.platform_cli.main sim
+python3 -m robot_platform.tools.platform_cli.main sim --duration 5 --skip-build
 python3 -m robot_platform.tools.platform_cli.main test sim
 ```
 
