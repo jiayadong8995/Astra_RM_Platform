@@ -45,6 +45,5 @@ typedef struct
 
 
 void Chassis_task(void);
-void mySaturate(float *in,float min,float max);
 
 #endif
