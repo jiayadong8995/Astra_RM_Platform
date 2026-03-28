@@ -16,9 +16,9 @@
 	
 #include "remote_task.h"
 #include "cmsis_os.h"
-#include "app_logic/remote_runtime.h"
-#include "app_logic/remote_runtime_helpers.h"
-#include "app_io/remote_topics.h"
+#include "../app_flow/remote_runtime.h"
+#include "../app_flow/remote_runtime_helpers.h"
+#include "../app_io/remote_topics.h"
 
 void remote_task(void)
 {	

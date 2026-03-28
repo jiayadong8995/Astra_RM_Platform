@@ -261,15 +261,18 @@ if(PLATFORM_TARGET_SIM)
   )
 
   set(BALANCE_CHASSIS_LEGACY_APP_SOURCES
-    ${PLATFORM_LEGACY_APP_DIR}/INS_task.c
-    ${PLATFORM_LEGACY_APP_DIR}/chassis_task.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_logic/chassis_runtime_helpers.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_logic/remote_runtime_helpers.c
+    ${PLATFORM_LEGACY_APP_DIR}/legacy/INS_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/legacy/chassis_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_flow/chassis_runtime_helpers.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_flow/observe_runtime_helpers.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_flow/remote_runtime_helpers.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_io/observe_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
-    ${PLATFORM_LEGACY_APP_DIR}/motor_control_task.c
-    ${PLATFORM_LEGACY_APP_DIR}/observe_task.c
-    ${PLATFORM_LEGACY_APP_DIR}/remote_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/legacy/motor_control_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/legacy/observe_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/legacy/remote_task.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC/VMC_calc.c
@@ -320,7 +323,7 @@ if(PLATFORM_TARGET_SIM)
 
   add_executable(balance_chassis_sitl
     ${PLATFORM_SITL_BSP_DIR}/main_sitl.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_main/freertos_app.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/freertos_app.c
     ${BALANCE_CHASSIS_FREERTOS_SOURCES}
     ${BALANCE_CHASSIS_SITL_BSP_SOURCES}
     ${BALANCE_CHASSIS_LEGACY_APP_SOURCES}

@@ -1,10 +1,15 @@
+#include "task_registry.h"
+
 #include "FreeRTOS.h"
-#include "task.h"
-#include "main.h"
 #include "cmsis_os.h"
 #include "rc_input_bridge.h"
 
-osThreadId defaultTaskHandle;
+#include "../legacy/INS_task.h"
+#include "../legacy/chassis_task.h"
+#include "../legacy/motor_control_task.h"
+#include "../legacy/observe_task.h"
+#include "../legacy/remote_task.h"
+
 osThreadId INS_TASKHandle;
 osThreadId CHASSIS_TASKHandle;
 osThreadId MOTOR_CONTROL_TASKHandle;
@@ -12,7 +17,6 @@ osThreadId OBSERVE_TASKHandle;
 osThreadId REMOTE_TASKHandle;
 osThreadId RC_INPUT_TASKHandle;
 
-#define DEFAULT_TASK_STACK_BYTES 512
 #define INS_TASK_STACK_BYTES 2048
 #define CHASSIS_TASK_STACK_BYTES 4096
 #define MOTOR_CONTROL_TASK_STACK_BYTES 2048
@@ -20,7 +24,6 @@ osThreadId RC_INPUT_TASKHandle;
 #define RC_INPUT_TASK_STACK_BYTES 1024
 #define REMOTE_TASK_STACK_BYTES 2048
 
-static void StartDefaultTask(void const *argument);
 static void INS_Task(void const *argument);
 static void Chassis_Task(void const *argument);
 static void Motor_Control_Task(void const *argument);
@@ -28,16 +31,8 @@ static void OBSERVE_Task(void const *argument);
 static void Remote_Task(void const *argument);
 static void RC_Input_Task(void const *argument);
 
-void INS_task(void);
-void Chassis_task(void);
-void motor_control_task(void);
-void Observe_task(void);
-void remote_task(void);
-void MX_FREERTOS_Init(void)
+void balance_chassis_start_tasks(void)
 {
-    osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, DEFAULT_TASK_STACK_BYTES);
-    defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-
     osThreadDef(INS_TASK, INS_Task, osPriorityRealtime, 0, INS_TASK_STACK_BYTES);
     INS_TASKHandle = osThreadCreate(osThread(INS_TASK), NULL);
 
@@ -55,15 +50,6 @@ void MX_FREERTOS_Init(void)
 
     osThreadDef(REMOTE_TASK, Remote_Task, osPriorityAboveNormal, 0, REMOTE_TASK_STACK_BYTES);
     REMOTE_TASKHandle = osThreadCreate(osThread(REMOTE_TASK), NULL);
-}
-
-static void StartDefaultTask(void const *argument)
-{
-    (void)argument;
-    for (;;)
-    {
-        osDelay(1);
-    }
 }
 
 static void INS_Task(void const *argument)

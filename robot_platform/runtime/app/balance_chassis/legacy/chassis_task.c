@@ -23,10 +23,10 @@
 #include "pid.h"
 #include "VMC_calc.h"
 #include "INS_task.h"
-#include "app_config/robot_def.h"
+#include "../app_config/robot_def.h"
 #include "user_lib.h"
-#include "app_logic/chassis_runtime_helpers.h"
-#include "app_io/chassis_topics.h"
+#include "../app_flow/chassis_runtime_helpers.h"
+#include "../app_io/chassis_topics.h"
 
 static float LQR_K_R[12]= LQR_K_MATRIX;
 

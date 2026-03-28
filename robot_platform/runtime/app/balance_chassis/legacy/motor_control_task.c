@@ -24,7 +24,7 @@
 #include "fdcan.h"
 #include "cmsis_os.h"
 #include "message_center.h"
-#include "app_config/robot_def.h"
+#include "../app_config/robot_def.h"
 
 uint32_t systick;
 				
