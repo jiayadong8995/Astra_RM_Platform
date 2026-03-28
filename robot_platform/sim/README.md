@@ -40,6 +40,7 @@ python3 -m robot_platform.tools.platform_cli.main test sim
 当前 backend 层：
 
 - `sim/backends/sitl_bridge.py`: 通用 SITL backend，runner 通过 profile 指定项目后启动
+- `sim/backends/sitl_contract.py`: SITL backend 与项目 adapter 之间的正式接口
 - 旧的 `sim/bridge/sim_bridge.py` 只保留为 `balance_chassis` 的兼容 wrapper
 
 当前 smoke report 至少记录：

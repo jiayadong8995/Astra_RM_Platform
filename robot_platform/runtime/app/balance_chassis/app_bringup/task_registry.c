@@ -49,53 +49,35 @@ void balance_chassis_start_tasks(void)
 static void INS_Task(void const *argument)
 {
     (void)argument;
-    for (;;)
-    {
-        INS_task();
-    }
+    INS_task();
 }
 
 static void Chassis_Task(void const *argument)
 {
     (void)argument;
-    for (;;)
-    {
-        Chassis_task();
-    }
+    Chassis_task();
 }
 
 static void Motor_Control_Task(void const *argument)
 {
     (void)argument;
-    for (;;)
-    {
-        motor_control_task();
-    }
+    motor_control_task();
 }
 
 static void OBSERVE_Task(void const *argument)
 {
     (void)argument;
-    for (;;)
-    {
-        Observe_task();
-    }
+    Observe_task();
 }
 
 static void Remote_Task(void const *argument)
 {
     (void)argument;
-    for (;;)
-    {
-        remote_task();
-    }
+    remote_task();
 }
 
 static void RC_Input_Task(void const *argument)
 {
     (void)argument;
-    for (;;)
-    {
-        rc_input_task();
-    }
+    rc_input_task();
 }

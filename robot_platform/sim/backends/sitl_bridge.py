@@ -7,9 +7,9 @@ import socket
 import sys
 import threading
 import time
-from types import ModuleType
 from typing import Sequence
 
+from robot_platform.sim.backends.sitl_contract import SitlBackendAdapter
 from robot_platform.sim.core.protocol import (
     BRIDGE_PROTOCOL_VERSION,
     BridgeStats,
@@ -18,6 +18,8 @@ from robot_platform.sim.core.protocol import (
     WheelCurrentCommand,
 )
 from robot_platform.sim.projects import get_project_profile
+
+STATS_PERIOD_S = 0.1
 
 
 def emit_event(event_type: str, payload: dict[str, object]) -> None:
@@ -30,8 +32,12 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     return parser.parse_args(list(argv) if argv is not None else None)
 
 
-def _load_bridge_adapter(module_name: str) -> ModuleType:
-    return importlib.import_module(module_name)
+def _load_bridge_adapter(module_name: str) -> SitlBackendAdapter:
+    module = importlib.import_module(module_name)
+    adapter = getattr(module, "SITL_BACKEND_ADAPTER", None)
+    if not isinstance(adapter, SitlBackendAdapter):
+        raise TypeError(f"{module_name} does not export SITL_BACKEND_ADAPTER")
+    return adapter
 
 
 def create_socket(*, bind_port: int | None = None) -> socket.socket:
@@ -118,7 +124,7 @@ def stats_thread(stats: BridgeStats) -> None:
             f"wheel_seen={snapshot['wheel_seen']} "
             f"fb_sent={snapshot['fb_sent']}"
         )
-        time.sleep(1.0)
+        time.sleep(STATS_PERIOD_S)
 
 
 def main(argv: Sequence[str] | None = None, *, default_project: str | None = None) -> int:
@@ -132,7 +138,12 @@ def main(argv: Sequence[str] | None = None, *, default_project: str | None = Non
         print(f"[Bridge] Unknown sim project: {args.project}", file=sys.stderr)
         return 2
 
-    adapter = _load_bridge_adapter(profile.bridge_adapter_module)
+    try:
+        adapter = _load_bridge_adapter(profile.bridge_adapter_module)
+    except (ImportError, TypeError) as exc:
+        emit_event("startup_error", {"message": str(exc)})
+        print(f"[Bridge] Failed to load project adapter: {exc}", file=sys.stderr)
+        return 2
     emit_event("protocol_version", {"bridge_protocol_version": BRIDGE_PROTOCOL_VERSION})
     runtime_boundary = {
         "inputs": list(profile.runtime_input_boundary.topics),

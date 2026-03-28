@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from robot_platform.sim.backends.sitl_contract import SitlBackendAdapter
 from robot_platform.sim.runner import (
     _build_smoke_result,
     _detect_runtime_error,
@@ -61,6 +62,8 @@ class RunnerSummaryTests(unittest.TestCase):
             BALANCE_CHASSIS_PROFILE.bridge_adapter_module,
             "robot_platform.sim.projects.balance_chassis.bridge_adapter",
         )
+        adapter_module = __import__(BALANCE_CHASSIS_PROFILE.bridge_adapter_module, fromlist=["SITL_BACKEND_ADAPTER"])
+        self.assertIsInstance(adapter_module.SITL_BACKEND_ADAPTER, SitlBackendAdapter)
         self.assertEqual(BALANCE_CHASSIS_PROFILE.runtime_input_boundary.topics, ("ins_data", "chassis_cmd"))
         self.assertEqual(
             BALANCE_CHASSIS_PROFILE.runtime_output_boundary.topics,

@@ -1,5 +1,4 @@
 #include "VMC_calc.h"
-#include "robot_def.h"
 
 void VMC_init(vmc_leg_t *vmc)//给杆长赋值
 {
@@ -230,5 +229,4 @@ float LQR_K_calc(float *coe,float len)
    
   return coe[0]*len*len*len+coe[1]*len*len+coe[2]*len+coe[3];
 }
-
 
