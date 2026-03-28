@@ -78,6 +78,108 @@ void chassis_mix_wheel_torque(chassis_t *chassis)
     }
 }
 
+void chassis_apply_jump_logic(chassis_t *chassis,
+                              vmc_leg_t *vmcr,
+                              vmc_leg_t *vmcl,
+                              PidTypeDef *legr,
+                              PidTypeDef *legl)
+{
+    if (chassis->start_flag != 1)
+    {
+        return;
+    }
+
+    if (chassis->jump_flag == 1)
+    {
+        if (chassis->jump_status == 0)
+        {
+            vmcr->F0 = LEG_GRAVITY_COMP + PID_Calc(legr, vmcr->L0, 0.18f);
+            vmcl->F0 = LEG_GRAVITY_COMP + PID_Calc(legl, vmcl->L0, 0.18f);
+            if (vmcr->L0 < 0.185f && vmcl->L0 < 0.185f)
+            {
+                chassis->jump_time++;
+            }
+            if (chassis->jump_time > 10)
+            {
+                chassis->jump_time = 0;
+                chassis->jump_status = 1;
+            }
+        }
+        else if (chassis->jump_status == 1)
+        {
+            vmcr->F0 = LEG_GRAVITY_COMP + PID_Calc(legr, vmcr->L0, 0.3f);
+            vmcl->F0 = LEG_GRAVITY_COMP + PID_Calc(legl, vmcl->L0, 0.3f);
+            if (vmcr->L0 > 0.22f && vmcl->L0 > 0.22f)
+            {
+                chassis->jump_time++;
+            }
+            if (chassis->jump_time > 10)
+            {
+                chassis->jump_time = 0;
+                chassis->jump_status = 2;
+            }
+        }
+        else if (chassis->jump_status == 2)
+        {
+            vmcr->F0 = LEG_GRAVITY_COMP + PID_Calc(legr, vmcr->L0, 0.18f);
+            vmcl->F0 = LEG_GRAVITY_COMP + PID_Calc(legl, vmcl->L0, 0.18f);
+            if (vmcr->L0 < 0.250f && vmcl->L0 < 0.250f)
+            {
+                chassis->jump_time++;
+            }
+            if (chassis->jump_time > 10)
+            {
+                chassis->jump_time = 0;
+                chassis->jump_status = 3;
+            }
+        }
+        else if (chassis->jump_status == 3)
+        {
+            vmcr->F0 = LEG_GRAVITY_COMP + PID_Calc(legr, vmcr->L0, chassis->leg_set);
+            vmcl->F0 = LEG_GRAVITY_COMP + PID_Calc(legl, vmcl->L0, chassis->leg_set);
+        }
+    }
+    else
+    {
+        vmcr->F0 = LEG_GRAVITY_COMP + PID_Calc(legr, vmcr->L0, chassis->leg_set) + chassis->roll_f0;
+        vmcl->F0 = LEG_GRAVITY_COMP + PID_Calc(legl, vmcl->L0, chassis->leg_set) - chassis->roll_f0;
+        chassis->jump_time = 0;
+        chassis->jump_status = 0;
+    }
+}
+
+void chassis_apply_ground_detection(chassis_t *chassis,
+                                    vmc_leg_t *vmcr,
+                                    vmc_leg_t *vmcl,
+                                    INS_t *ins)
+{
+    uint8_t right_flag = ground_detectionR(vmcr, ins);
+    uint8_t left_flag = ground_detectionL(vmcl, ins);
+
+    if (chassis->recover_flag == 0)
+    {
+        if (right_flag == 1 && left_flag == 1)
+        {
+            chassis->wheel_motor[0].torque_set = 0.0f;
+            chassis->wheel_motor[1].torque_set = 0.0f;
+            chassis->x_filter = 0.0f;
+            chassis->x_set = chassis->x_filter;
+            chassis->turn_set = chassis->total_yaw;
+            vmcr->Tp = vmcr->Tp + chassis->leg_tp;
+            chassis->text_jump_true = 1;
+        }
+        else
+        {
+            chassis->text_jump_true = 0;
+        }
+    }
+    else if (chassis->recover_flag == 1)
+    {
+        vmcr->Tp = 0.0f;
+        vmcl->Tp = 0.0f;
+    }
+}
+
 void chassis_saturate_outputs(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl)
 {
     saturate_wheel_outputs(chassis);

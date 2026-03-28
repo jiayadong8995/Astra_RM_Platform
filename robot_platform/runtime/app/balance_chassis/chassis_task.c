@@ -51,15 +51,6 @@ static void chassis_control_loop(chassis_t * chassis,\
 						              float *  LQR_KL,\
 							     PidTypeDef *    legr,\
 							     PidTypeDef *    legl);
-static void chassis_jump_loop(chassis_t * chassis,\
-							  vmc_leg_t * vmcr   ,\
-							  vmc_leg_t * vmcl   ,\
-							 PidTypeDef * legr   ,\
-							 PidTypeDef * legl	  );
-static void chassis_ground_detection(chassis_t * chassis,\
-									 vmc_leg_t * vmcr   ,\
-									 vmc_leg_t * vmcl   ,\
-						                 INS_t * ins     );
 
 /* pub-sub handles */
 static Publisher_t  *chassis_state_pub;
@@ -284,9 +275,9 @@ static void chassis_control_loop( chassis_t * chassis,\
 
 	chassis->roll_f0 = 0;
 
-	chassis_jump_loop(chassis,vmcr,vmcl,legr,legl);//有F0的计算过程
+	chassis_apply_jump_logic(chassis, vmcr, vmcl, legr, legl);
    
-	chassis_ground_detection(chassis,vmcr,vmcl,ins);//离地检测
+	chassis_apply_ground_detection(chassis, vmcr, vmcl, ins);
 	
 	VMC_calc_2(vmcr);//计算期望的关节输出力矩
 	VMC_calc_2(vmcl);
@@ -295,112 +286,4 @@ static void chassis_control_loop( chassis_t * chassis,\
 	chassis->wheel_motor[1].give_current = chassis->wheel_motor[1].torque_set * M3508_TORQUE_TO_CURRENT;
 
     chassis_saturate_outputs(chassis, vmcr, vmcl);
-}
-
-static void chassis_jump_loop(chassis_t * chassis,\
-							  vmc_leg_t * vmcr   ,\
-							  vmc_leg_t * vmcl   ,\
-							 PidTypeDef * legr   ,\
-							 PidTypeDef * legl	  )
-{
-	if(chassis->start_flag == 1)
-	{
-		if(chassis->jump_flag == 1)
-		{
-			if(chassis->jump_status == 0)
-			{
-				vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,0.18f);
-				vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,0.18f);
-				if(vmcr->L0<0.185f&&vmcl->L0<0.185f)//0.18
-				{
-					chassis->jump_time++;
-				}
-				if(chassis->jump_time>10)
-				{
-					chassis->jump_time = 0;
-					chassis->jump_status = 1;
-				}
-			}else if(chassis->jump_status == 1)
-			{
-				vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,0.3f);//暂时定为0.30，测试跳跃
-				vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,0.3f);
-				if(vmcr->L0>0.22f&&vmcl->L0>0.22f)
-				{
-					chassis->jump_time++;					
-				}
-				if(chassis->jump_time>10)
-				{
-					chassis->jump_time = 0;
-					chassis->jump_status = 2;
-				}
-			}else if(chassis->jump_status == 2)
-			{
-				vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,0.18f);//右前馈+pd
-				vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,0.18f);//左前馈+pd
-				if(vmcr->L0<0.250f&&vmcl->L0<0.250f)
-				{
-					chassis->jump_time++;			
-				}
-				if(chassis->jump_time>10)
-				{
-					chassis->jump_time = 0;
-					chassis->jump_status = 3;
-				}
-//收腿的两个逻辑，在状态2最后加一个时间判断回到设定值，或者在3状态加一个腿长判断，或者判断支持力				
-			}else if(chassis->jump_status == 3)
-			{
-				vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,chassis->leg_set);//右前馈+pd
-				vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,chassis->leg_set);//左前馈+pd
-//				vmcr->F0= leg_G + PID_Calc(legr,vmcr->L0,0.13);
-//				vmcl->F0= leg_G + PID_Calc(legl,vmcl->L0,0.13);
-//				if(vmcr->L0 < 0.17 && vmcl->L0 < 0.17)
-//				{
-//				vmcr->F0= leg_G + PID_Calc(legr,vmcr->L0,chassis->leg_set);//右前馈+pd
-//				vmcl->F0= leg_G + PID_Calc(legl,vmcl->L0,chassis->leg_set);//左前馈+pd
-//				}
-			}
-		}else if(chassis->jump_flag == 0)
-		{
-			vmcr->F0= LEG_GRAVITY_COMP + PID_Calc(legr,vmcr->L0,chassis->leg_set)+ chassis->roll_f0;//右前馈+pd
-			vmcl->F0= LEG_GRAVITY_COMP + PID_Calc(legl,vmcl->L0,chassis->leg_set)- chassis->roll_f0;//左前馈+pd
-			
-			chassis->jump_time = 0;
-			chassis->jump_status = 0;			
-		}
-	}
-}
-
-static void chassis_ground_detection(chassis_t * chassis,\
-									 vmc_leg_t * vmcr   ,\
-									 vmc_leg_t * vmcl   ,\
-						                 INS_t * ins     )
-{
-	static uint8_t left_flag  = 0;
-	static uint8_t right_flag = 0;
-	
-	right_flag = ground_detectionR(vmcr,ins);//右腿离地检测
-	left_flag  = ground_detectionL(vmcl,ins);
-   
-	if(chassis->recover_flag==0)		
-	{//倒地自起不需要检测是否离地	 
-		if(right_flag==1&&left_flag==1)
-		{//当两腿同时离地并且遥控器没有在控制腿的伸缩时，才认为离地
-			chassis->wheel_motor[0].torque_set=0.0f;
-			chassis->wheel_motor[1].torque_set=0.0f;
-			//vmcr->Tp=(LQR_K_R[6]+1)*(vmcr->theta-0.0f)+ (LQR_K_R[7]+0.2)*(vmcr->d_theta-0.0f); //保证机体与腿部垂直(测试是否可以)
-			chassis->x_filter=0.0f;
-			chassis->x_set=chassis->x_filter;
-			chassis->turn_set=chassis->total_yaw;
-			vmcr->Tp=vmcr->Tp+chassis->leg_tp;
-      chassis->text_jump_true = 1;			
-		}else
-		{
-		chassis->text_jump_true = 0;
-		}
-	}else if(chassis->recover_flag==1)
-	{
-		 vmcr->Tp=0.0f;
-		 vmcl->Tp=0.0f;
-	}
-	
 }

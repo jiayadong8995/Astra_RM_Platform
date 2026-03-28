@@ -27,6 +27,17 @@ void chassis_compute_lqr_outputs(chassis_t *chassis,
 
 void chassis_mix_wheel_torque(chassis_t *chassis);
 
+void chassis_apply_jump_logic(chassis_t *chassis,
+                              vmc_leg_t *vmcr,
+                              vmc_leg_t *vmcl,
+                              PidTypeDef *legr,
+                              PidTypeDef *legl);
+
+void chassis_apply_ground_detection(chassis_t *chassis,
+                                    vmc_leg_t *vmcr,
+                                    vmc_leg_t *vmcl,
+                                    INS_t *ins);
+
 void chassis_saturate_outputs(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl);
 
 #endif
