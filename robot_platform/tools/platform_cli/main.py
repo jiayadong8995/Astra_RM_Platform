@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from robot_platform.sim.projects import get_project_names, get_project_smoke_runner
+from robot_platform.sim.projects import get_project_names, get_project_profile, get_project_smoke_runner
 from robot_platform.sim.runner import run_sitl_session
 from robot_platform.tools.cubemx_backend.main import run_codegen
 
@@ -165,8 +165,13 @@ def _run_sim(project: str, scenario: str, *, duration_s: float = 3.0, skip_build
         print(json.dumps(summary, indent=2, ensure_ascii=False))
         return 2
 
+    profile = get_project_profile(project)
+    if profile is None:
+        print(f"missing profile for project: {project}", file=sys.stderr)
+        return 2
+
     if not skip_build:
-        rc = _build_sitl("balance_chassis_sitl")
+        rc = _build_sitl(profile.sitl_target)
         if rc != 0:
             return rc
 
@@ -175,8 +180,6 @@ def _run_sim(project: str, scenario: str, *, duration_s: float = 3.0, skip_build
         print(f"missing smoke runner for project: {project}", file=sys.stderr)
         return 2
 
-    if project == "balance_chassis":
-        return run_sitl_session(repo_root=_repo_root(), duration_s=duration_s)
     return smoke_runner(repo_root=_repo_root(), duration_s=duration_s)
 
 

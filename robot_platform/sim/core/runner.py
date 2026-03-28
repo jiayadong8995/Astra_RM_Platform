@@ -150,10 +150,11 @@ def _summarize_runtime_boundary(summary: dict[str, object]) -> None:
         summary["transport_ports_match"] = declared_ports == observed_ports
 
 
-def _summarize_smoke_health(summary: dict[str, object]) -> None:
+def _summarize_smoke_health(summary: dict[str, object], profile: SimProjectProfile) -> None:
     sitl_lines = summary.get("sitl_output", [])
     bridge_stats = summary.get("bridge_stats_last")
     sitl_exit_code = summary.get("sitl_exit_code")
+    expectations = profile.smoke_expectations
 
     health: dict[str, object] = {
         "sitl_scheduler_started": False,
@@ -194,12 +195,18 @@ def _summarize_smoke_health(summary: dict[str, object]) -> None:
         required_checks["sitl_remained_alive"] = bool(health["sitl_remained_alive"])
 
     if summary.get("status") == "ok":
-        required_checks["bridge_protocol_observed"] = isinstance(summary.get("bridge_protocol"), dict)
-        required_checks["bridge_startup_complete"] = bool(health["bridge_startup_complete"])
-        required_checks["bridge_runtime_boundary_observed"] = bool(health["bridge_runtime_boundary_observed"])
-        required_checks["bridge_transport_ports_observed"] = bool(health["bridge_transport_ports_observed"])
-        required_checks["bridge_stats_observed"] = bool(health["bridge_stats_observed"])
-        required_checks["imu_stream_active"] = bool(health["imu_stream_active"])
+        if expectations.require_bridge_protocol_observed:
+            required_checks["bridge_protocol_observed"] = isinstance(summary.get("bridge_protocol"), dict)
+        if expectations.require_bridge_startup_complete:
+            required_checks["bridge_startup_complete"] = bool(health["bridge_startup_complete"])
+        if expectations.require_runtime_boundary_observed:
+            required_checks["bridge_runtime_boundary_observed"] = bool(health["bridge_runtime_boundary_observed"])
+        if expectations.require_transport_ports_observed:
+            required_checks["bridge_transport_ports_observed"] = bool(health["bridge_transport_ports_observed"])
+        if expectations.require_bridge_stats_observed:
+            required_checks["bridge_stats_observed"] = bool(health["bridge_stats_observed"])
+        if expectations.require_imu_stream_active:
+            required_checks["imu_stream_active"] = bool(health["imu_stream_active"])
 
     if "bridge_protocol_match" in summary:
         required_checks["bridge_protocol_match"] = bool(summary["bridge_protocol_match"])
@@ -208,10 +215,11 @@ def _summarize_smoke_health(summary: dict[str, object]) -> None:
     if "transport_ports_match" in summary:
         required_checks["transport_ports_match"] = bool(summary["transport_ports_match"])
 
-    optional_checks = {
-        "motor_command_seen": bool(health["motor_command_seen"]),
-        "motor_feedback_active": bool(health["motor_feedback_active"]),
-    }
+    optional_checks: dict[str, bool] = {}
+    if expectations.warn_on_missing_motor_command:
+        optional_checks["motor_command_seen"] = bool(health["motor_command_seen"])
+    if expectations.warn_on_missing_motor_feedback:
+        optional_checks["motor_feedback_active"] = bool(health["motor_feedback_active"])
 
     failures = [name for name, passed in required_checks.items() if not passed]
     warnings = [name for name, passed in optional_checks.items() if not passed]
@@ -388,7 +396,7 @@ def run_profile_session(
 
         _summarize_runtime_boundary(summary)
         _summarize_bridge_stats(summary)
-        _summarize_smoke_health(summary)
+        _summarize_smoke_health(summary, profile)
         _build_smoke_result(summary)
 
         write_report(report_path, summary)

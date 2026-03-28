@@ -59,6 +59,7 @@ class RunnerSummaryTests(unittest.TestCase):
             BALANCE_CHASSIS_PROFILE.runtime_output_boundary.topics,
             ("chassis_state", "leg_left", "leg_right"),
         )
+        self.assertTrue(BALANCE_CHASSIS_PROFILE.smoke_expectations.require_bridge_stats_observed)
 
     def test_summarize_bridge_stats_computes_delta_and_rate(self) -> None:
         summary = {
@@ -113,7 +114,7 @@ class RunnerSummaryTests(unittest.TestCase):
         }
 
         _summarize_runtime_boundary(summary)
-        _summarize_smoke_health(summary)
+        _summarize_smoke_health(summary, BALANCE_CHASSIS_PROFILE)
 
         self.assertFalse(summary["smoke_health"]["passed"])
         self.assertIn("session_status_ok", summary["smoke_health"]["failures"])
@@ -134,7 +135,7 @@ class RunnerSummaryTests(unittest.TestCase):
         }
 
         _summarize_runtime_boundary(summary)
-        _summarize_smoke_health(summary)
+        _summarize_smoke_health(summary, BALANCE_CHASSIS_PROFILE)
         _build_smoke_result(summary)
 
         self.assertTrue(summary["smoke_health"]["passed"])
@@ -151,7 +152,7 @@ class RunnerSummaryTests(unittest.TestCase):
             "sitl_output": ["Starting FreeRTOS POSIX Scheduler..."],
         }
 
-        _summarize_smoke_health(summary)
+        _summarize_smoke_health(summary, BALANCE_CHASSIS_PROFILE)
 
         self.assertTrue(summary["smoke_health"]["sitl_remained_alive"])
         self.assertIn("sitl_remained_alive", summary["smoke_health"]["required_checks"])

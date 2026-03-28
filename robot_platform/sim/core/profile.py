@@ -17,6 +17,18 @@ class TransportPorts:
 
 
 @dataclass(frozen=True)
+class SmokeExpectations:
+    require_bridge_protocol_observed: bool = True
+    require_bridge_startup_complete: bool = True
+    require_runtime_boundary_observed: bool = True
+    require_transport_ports_observed: bool = True
+    require_bridge_stats_observed: bool = True
+    require_imu_stream_active: bool = True
+    warn_on_missing_motor_command: bool = True
+    warn_on_missing_motor_feedback: bool = True
+
+
+@dataclass(frozen=True)
 class SimProjectProfile:
     name: str
     sitl_target: str
@@ -28,4 +40,4 @@ class SimProjectProfile:
     runtime_output_boundary: RuntimeTopicBoundary
     runtime_transitional_topics: RuntimeTopicBoundary
     transport_ports: TransportPorts
-
+    smoke_expectations: SmokeExpectations

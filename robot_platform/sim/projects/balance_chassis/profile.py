@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from robot_platform.sim.core.profile import RuntimeTopicBoundary, SimProjectProfile, TransportPorts
+from robot_platform.sim.core.profile import (
+    RuntimeTopicBoundary,
+    SimProjectProfile,
+    SmokeExpectations,
+    TransportPorts,
+)
 from robot_platform.sim.core.protocol import BRIDGE_PROTOCOL_VERSION
 
 
@@ -40,5 +45,15 @@ BALANCE_CHASSIS_PROFILE = SimProjectProfile(
         imu=9001,
         motor_fb=9002,
         motor_cmd=9003,
+    ),
+    smoke_expectations=SmokeExpectations(
+        require_bridge_protocol_observed=True,
+        require_bridge_startup_complete=True,
+        require_runtime_boundary_observed=True,
+        require_transport_ports_observed=True,
+        require_bridge_stats_observed=True,
+        require_imu_stream_active=True,
+        warn_on_missing_motor_command=True,
+        warn_on_missing_motor_feedback=True,
     ),
 )
