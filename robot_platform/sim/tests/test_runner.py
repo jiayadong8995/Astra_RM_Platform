@@ -23,6 +23,7 @@ class RunnerMetadataTests(unittest.TestCase):
                 '[BridgeEvent] {"type":"protocol_version","payload":{"bridge_protocol_version":1}}',
                 '[BridgeEvent] {"type":"runtime_boundary","payload":{"inputs":["ins_data","chassis_cmd"],"outputs":["chassis_state","leg_left","leg_right"],"transitional":["chassis_observe"]}}',
                 '[BridgeEvent] {"type":"transport_ports","payload":{"imu":9001,"motor_fb":9002,"motor_cmd":9003}}',
+                '[BridgeEvent] {"type":"runtime_output_observation","payload":{"topic":"chassis_state","sample_count":1}}',
                 '[BridgeEvent] {"type":"stats","payload":{"imu_sent":1,"mit_seen":0,"wheel_seen":0,"fb_sent":0}}',
                 "[Bridge] stats imu_sent=1 mit_seen=0 wheel_seen=0 fb_sent=0",
                 '[BridgeEvent] {"type":"stats","payload":{"imu_sent":5,"mit_seen":2,"wheel_seen":1,"fb_sent":2}}',
@@ -46,6 +47,10 @@ class RunnerMetadataTests(unittest.TestCase):
                 {"imu_sent": 1, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
                 {"imu_sent": 5, "mit_seen": 2, "wheel_seen": 1, "fb_sent": 2},
             ],
+        )
+        self.assertEqual(
+            metadata["runtime_output_observations"],
+            [{"topic": "chassis_state", "sample_count": 1}],
         )
 
     def test_detect_runtime_error_catches_bridge_and_sitl_tracebacks(self) -> None:
@@ -186,6 +191,7 @@ class RunnerSummaryTests(unittest.TestCase):
                 "required_count": 2,
                 "observed_count": 0,
                 "pending_count": 2,
+                "runtime_output_observation_count": 0,
             },
         )
         self.assertEqual(
@@ -199,6 +205,7 @@ class RunnerSummaryTests(unittest.TestCase):
                     "required_for_smoke": True,
                     "status": "declared_only",
                     "observed": False,
+                    "observed_source_topics": [],
                 },
                 {
                     "name": "leg_output_pair",
@@ -208,6 +215,54 @@ class RunnerSummaryTests(unittest.TestCase):
                     "required_for_smoke": True,
                     "status": "declared_only",
                     "observed": False,
+                    "observed_source_topics": [],
+                },
+            ],
+        )
+
+    def test_validation_targets_consume_runtime_output_observations(self) -> None:
+        summary: dict[str, object] = {
+            "runtime_output_observations": [
+                {"topic": "chassis_state", "sample_count": 4},
+                {"topic": "leg_left", "sample_count": 4},
+                {"topic": "leg_right", "sample_count": 4},
+            ]
+        }
+
+        _summarize_validation_targets(summary, BALANCE_CHASSIS_PROFILE)
+
+        self.assertEqual(
+            summary["validation_summary"],
+            {
+                "declared_count": 2,
+                "required_count": 2,
+                "observed_count": 2,
+                "pending_count": 0,
+                "runtime_output_observation_count": 3,
+            },
+        )
+        self.assertEqual(
+            summary["validation_targets_status"],
+            [
+                {
+                    "name": "chassis_state_summary",
+                    "kind": "runtime_output",
+                    "source_topics": ["chassis_state"],
+                    "description": "Primary chassis runtime state summary exposed to sim/report consumers.",
+                    "required_for_smoke": True,
+                    "status": "observed",
+                    "observed": True,
+                    "observed_source_topics": ["chassis_state"],
+                },
+                {
+                    "name": "leg_output_pair",
+                    "kind": "runtime_output",
+                    "source_topics": ["leg_left", "leg_right"],
+                    "description": "Left/right leg outputs that capture the main control result for the current robot profile.",
+                    "required_for_smoke": True,
+                    "status": "observed",
+                    "observed": True,
+                    "observed_source_topics": ["leg_left", "leg_right"],
                 },
             ],
         )

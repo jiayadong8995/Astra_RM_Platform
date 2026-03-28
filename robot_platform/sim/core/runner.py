@@ -27,6 +27,18 @@ def _append_stats_sample(samples: list[dict[str, int]], sample: dict[str, int] |
     samples.append(sample)
 
 
+def _append_runtime_output_observation(
+    observations: list[dict[str, object]],
+    observation: dict[str, object] | None,
+) -> None:
+    if not isinstance(observation, dict):
+        return
+    topic = observation.get("topic")
+    if not isinstance(topic, str) or not topic:
+        return
+    observations.append(observation)
+
+
 def _parse_key_value_line(line: str, prefix: str) -> dict[str, object] | None:
     if not line.startswith(prefix):
         return None
@@ -44,6 +56,7 @@ def _parse_key_value_line(line: str, prefix: str) -> dict[str, object] | None:
 def _extract_bridge_metadata(lines: list[str]) -> dict[str, object]:
     metadata: dict[str, object] = {}
     stats_samples: list[dict[str, int]] = []
+    runtime_output_observations: list[dict[str, object]] = []
     boundary_pattern = re.compile(
         r"^\[Bridge\] Runtime boundary "
         r"inputs=(?P<inputs>\(.+?\)) "
@@ -75,6 +88,8 @@ def _extract_bridge_metadata(lines: list[str]) -> dict[str, object]:
                 metadata["bridge_startup_complete"] = payload
             elif event_type == "stats":
                 _append_stats_sample(stats_samples, _normalize_stats_sample(payload))
+            elif event_type == "runtime_output_observation":
+                _append_runtime_output_observation(runtime_output_observations, payload)
             continue
 
         boundary_match = boundary_pattern.match(line)
@@ -100,6 +115,8 @@ def _extract_bridge_metadata(lines: list[str]) -> dict[str, object]:
     if stats_samples:
         metadata["bridge_stats_samples"] = stats_samples
         metadata["bridge_stats_last"] = stats_samples[-1]
+    if runtime_output_observations:
+        metadata["runtime_output_observations"] = runtime_output_observations
 
     return metadata
 
@@ -182,6 +199,7 @@ def _summarize_validation_targets(summary: dict[str, object], profile: SimProjec
     status_builder = profile.validation_status_builder or _default_validation_status_builder
     validation_status = status_builder(summary, profile)
     summary["validation_targets_status"] = validation_status
+    runtime_output_observations = summary.get("runtime_output_observations")
     summary["validation_summary"] = {
         "declared_count": len(profile.validation_targets),
         "required_count": sum(1 for target in profile.validation_targets if target.required_for_smoke),
@@ -195,6 +213,9 @@ def _summarize_validation_targets(summary: dict[str, object], profile: SimProjec
             for item in validation_status
             if isinstance(item, dict) and not bool(item.get("observed"))
         ),
+        "runtime_output_observation_count": len(runtime_output_observations)
+        if isinstance(runtime_output_observations, list)
+        else 0,
     }
 
 
