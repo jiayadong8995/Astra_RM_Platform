@@ -20,6 +20,7 @@ from robot_platform.sim.core.protocol import (
 from robot_platform.sim.projects import get_project_profile
 
 STATS_PERIOD_S = 0.1
+RUNTIME_OUTPUT_PERIOD_S = 0.1
 
 
 def emit_event(event_type: str, payload: dict[str, object]) -> None:
@@ -127,6 +128,27 @@ def stats_thread(stats: BridgeStats) -> None:
         time.sleep(STATS_PERIOD_S)
 
 
+def runtime_output_thread(*, collect_runtime_output_observations) -> None:
+    last_by_topic: dict[str, dict[str, object]] = {}
+    while True:
+        observations = collect_runtime_output_observations()
+        if not isinstance(observations, tuple):
+            observations = tuple(observations)
+
+        for observation in observations:
+            if not isinstance(observation, dict):
+                continue
+            topic = observation.get("topic")
+            if not isinstance(topic, str) or not topic:
+                continue
+            if last_by_topic.get(topic) == observation:
+                continue
+            last_by_topic[topic] = observation
+            emit_event("runtime_output_observation", observation)
+
+        time.sleep(RUNTIME_OUTPUT_PERIOD_S)
+
+
 def main(argv: Sequence[str] | None = None, *, default_project: str | None = None) -> int:
     if argv is None and default_project is not None:
         args = _parse_args(["--project", default_project])
@@ -208,7 +230,18 @@ def main(argv: Sequence[str] | None = None, *, default_project: str | None = Non
 
     t_stats = threading.Thread(target=stats_thread, args=(stats,), daemon=True)
     t_stats.start()
-    emit_event("startup_complete", {"threads": ["imu", "motor", "stats"], "project": profile.name})
+    t_runtime_outputs = threading.Thread(
+        target=runtime_output_thread,
+        kwargs={
+            "collect_runtime_output_observations": adapter.collect_runtime_output_observations,
+        },
+        daemon=True,
+    )
+    t_runtime_outputs.start()
+    emit_event(
+        "startup_complete",
+        {"threads": ["imu", "motor", "stats", "runtime_outputs"], "project": profile.name},
+    )
 
     try:
         while True:

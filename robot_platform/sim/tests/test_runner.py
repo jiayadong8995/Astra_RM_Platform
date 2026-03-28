@@ -69,6 +69,7 @@ class RunnerSummaryTests(unittest.TestCase):
         )
         adapter_module = __import__(BALANCE_CHASSIS_PROFILE.bridge_adapter_module, fromlist=["SITL_BACKEND_ADAPTER"])
         self.assertIsInstance(adapter_module.SITL_BACKEND_ADAPTER, SitlBackendAdapter)
+        self.assertEqual(adapter_module.SITL_BACKEND_ADAPTER.collect_runtime_output_observations(), ())
         self.assertEqual(BALANCE_CHASSIS_PROFILE.runtime_input_boundary.topics, ("ins_data", "chassis_cmd"))
         self.assertEqual(
             BALANCE_CHASSIS_PROFILE.runtime_output_boundary.topics,

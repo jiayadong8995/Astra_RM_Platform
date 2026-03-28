@@ -28,8 +28,13 @@ def create_motor_feedback(*, motor_id: int, position: float, velocity: float, to
     )
 
 
+def collect_runtime_output_observations() -> tuple[dict[str, object], ...]:
+    return ()
+
+
 SITL_BACKEND_ADAPTER = SitlBackendAdapter(
     create_default_imu_sample=create_default_imu_sample,
     integrate_toy_motor_state=integrate_toy_motor_state,
     create_motor_feedback=create_motor_feedback,
+    collect_runtime_output_observations=collect_runtime_output_observations,
 )
