@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 from robot_platform.tools.cubemx_backend.main import run_codegen
-from robot_platform.sim.physics.runner import run_physics_scenario
 
 
 HELP = {
@@ -32,7 +31,7 @@ def _run(cmd: list[str], cwd: Path) -> int:
 
 def _generate_balance_chassis() -> int:
     repo_root = _repo_root()
-    ioc_path = repo_root / "Chassis" / "CtrlBoard-H7_IMU.ioc"
+    ioc_path = repo_root / "Astra_RM2025_Balance" / "Chassis" / "CtrlBoard-H7_IMU.ioc"
     out_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
     return run_codegen(ioc_path, out_dir)
 
@@ -69,6 +68,8 @@ def _build_hw_seed(target: str) -> int:
 
 
 def _run_sim(scenario: str) -> int:
+    from robot_platform.sim.physics.runner import run_physics_scenario
+
     result = run_physics_scenario(scenario)
     summary = {
         "scenario": result["scenario"],
