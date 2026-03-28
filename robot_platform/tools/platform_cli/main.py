@@ -5,12 +5,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+from robot_platform.sim.runner import run_sitl_session
 from robot_platform.tools.cubemx_backend.main import run_codegen
 
 
 HELP = {
     "generate": "Run STM32CubeMX CLI code generation into runtime/generated.",
-    "build": "Configure and build the current GCC hardware seed target.",
+    "build": "Configure and build the current hardware or SITL target.",
     "flash": "Flash hardware firmware target.",
     "debug": "Start hardware debug session.",
     "replay": "Run log replay.",
@@ -24,7 +25,7 @@ def _repo_root() -> Path:
 
 
 def _run(cmd: list[str], cwd: Path) -> int:
-    print(f"+ {' '.join(str(part) for part in cmd)}")
+    print(f"+ {' '.join(str(part) for part in cmd)}", flush=True)
     completed = subprocess.run(cmd, cwd=cwd)
     return completed.returncode
 
@@ -101,18 +102,31 @@ def _build_sitl(target: str) -> int:
 
 
 def _run_sim(scenario: str) -> int:
-    summary = {
-        "sim_mode": "sitl",
-        "requested_scenario": scenario,
-            "status": "not_yet-integrated",
-            "next_steps": [
-                "python3 -m robot_platform.tools.platform_cli.main build sitl",
-                "./build/robot_platform_sitl_make/balance_chassis_sitl",
-                "python3 -m robot_platform.sim.bridge.sim_bridge",
-            ],
-    }
-    print(json.dumps(summary, indent=2, ensure_ascii=False))
-    return 2
+    if scenario != "sitl":
+        summary = {
+            "sim_mode": "sitl",
+            "requested_scenario": scenario,
+            "status": "unsupported_scenario",
+            "supported_scenarios": ["sitl"],
+        }
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
+        return 2
+
+    rc = _build_sitl("balance_chassis_sitl")
+    if rc != 0:
+        return rc
+    return run_sitl_session(repo_root=_repo_root())
+
+
+def _run_tests(scope: str) -> int:
+    repo_root = _repo_root()
+    if scope != "sim":
+        print(f"unsupported test scope for now: {scope}", file=sys.stderr)
+        return 2
+    return _run(
+        [sys.executable, "-m", "unittest", "discover", "-s", "robot_platform/sim/tests", "-v"],
+        cwd=repo_root,
+    )
 
 
 def main() -> int:
@@ -140,8 +154,6 @@ def main() -> int:
         supported = {
             "hw_elf": "balance_chassis_hw_seed.elf",
             "hw_seed": "balance_chassis_bsp_seed",
-            "legacy_obj": "balance_chassis_legacy_full_obj",
-            "legacy_full": "balance_chassis_legacy_full.elf",
             "sitl": "balance_chassis_sitl",
         }
         if mode not in supported:
@@ -154,6 +166,10 @@ def main() -> int:
     if cmd == "sim":
         scenario = args[1] if len(args) > 1 else "sitl"
         return _run_sim(scenario)
+
+    if cmd == "test":
+        scope = args[1] if len(args) > 1 else "sim"
+        return _run_tests(scope)
 
     print(f"command placeholder: {cmd}")
     print(HELP[cmd])

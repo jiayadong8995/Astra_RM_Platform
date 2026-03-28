@@ -22,16 +22,16 @@ platform test
 - `generate`: 使用 `Astra_RM2025_Balance/Chassis/CtrlBoard-H7_IMU.ioc` 调用官方 `STM32CubeMX` CLI 生成 `runtime/generated/stm32h7_ctrl_board_raw`
 - `build hw_elf`: 构建 `balance_chassis_hw_seed.elf`
 - `build hw_seed`: 构建底层静态库种子 `balance_chassis_bsp_seed`
-- `build legacy_obj`: 编译迁移后的整套 `Chassis/User` 对象库 `balance_chassis_legacy_full_obj`
-- `build legacy_full`: 构建迁移后的整套 legacy 固件 `balance_chassis_legacy_full.elf`
 - `build sitl`: 构建 Linux 上运行的 `balance_chassis_sitl`
+- `sim`: 自动构建并执行最小 SITL smoke run，输出 `build/sim_reports/sitl_smoke.json`
+  并在终端打印一行 smoke summary
+- `test sim`: 运行 sim 侧最小单元回归，锁住 bridge 事件解析和 smoke report 汇总逻辑
 
 当前未收口：
 
 - `flash`
 - `debug`
 - `replay`
-- `test`
 
 当前确认延后：
 
