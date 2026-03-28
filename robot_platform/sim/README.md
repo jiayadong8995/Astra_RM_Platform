@@ -40,6 +40,7 @@ python3 -m robot_platform.tools.platform_cli.main test sim
 - 最小健康摘要（调度器启动、IMU 注入、命令/反馈活动）
 - 顶层 smoke 结果摘要（是否通过、首个失败项、关键计数）
 - 统计摘要（样本数、计数增量、单位时间速率）
+- 可选警告项（例如已启动但尚未看到电机命令/反馈）
 
 当前 `test sim` 会跑 sim 侧最小单元回归，锁住：
 

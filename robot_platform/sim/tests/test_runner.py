@@ -107,6 +107,28 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertFalse(summary["smoke_health"]["passed"])
         self.assertIn("session_status_ok", summary["smoke_health"]["failures"])
 
+    def test_smoke_health_keeps_missing_motor_activity_as_warning(self) -> None:
+        summary = {
+            "status": "ok",
+            "bridge_protocol_declared": {"bridge_protocol_version": 1},
+            "runtime_boundary_declared": {"inputs": [], "outputs": [], "transitional": []},
+            "transport_ports_declared": {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003},
+            "bridge_protocol": {"bridge_protocol_version": 1},
+            "runtime_boundary": {"inputs": [], "outputs": [], "transitional": []},
+            "transport_ports": {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003},
+            "bridge_startup_complete": {"threads": ["imu"]},
+            "bridge_stats_last": {"imu_sent": 10, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
+            "sitl_output": ["Starting FreeRTOS POSIX Scheduler..."],
+        }
+
+        _summarize_runtime_boundary(summary)
+        _summarize_smoke_health(summary)
+        _build_smoke_result(summary)
+
+        self.assertTrue(summary["smoke_health"]["passed"])
+        self.assertEqual(summary["smoke_health"]["warnings"], ["motor_command_seen", "motor_feedback_active"])
+        self.assertEqual(summary["smoke_result"]["warnings"], ["motor_command_seen", "motor_feedback_active"])
+
 
 if __name__ == "__main__":
     unittest.main()
