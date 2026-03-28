@@ -8,7 +8,7 @@ import sys
 import time
 from pathlib import Path
 
-from robot_platform.sim.core.profile import SimProjectProfile
+from robot_platform.sim.core.profile import SimProjectProfile, ValidationStatus
 from robot_platform.sim.reports.report_writer import write_report
 
 
@@ -150,8 +150,12 @@ def _summarize_runtime_boundary(summary: dict[str, object]) -> None:
         summary["transport_ports_match"] = declared_ports == observed_ports
 
 
-def _summarize_validation_targets(summary: dict[str, object], profile: SimProjectProfile) -> None:
-    validation_status: list[dict[str, object]] = []
+def _default_validation_status_builder(
+    summary: dict[str, object],
+    profile: SimProjectProfile,
+) -> list[ValidationStatus]:
+    del summary
+    validation_status: list[ValidationStatus] = []
     for target in profile.validation_targets:
         validation_status.append(
             {
@@ -164,13 +168,26 @@ def _summarize_validation_targets(summary: dict[str, object], profile: SimProjec
                 "observed": False,
             }
         )
+    return validation_status
 
+
+def _summarize_validation_targets(summary: dict[str, object], profile: SimProjectProfile) -> None:
+    status_builder = profile.validation_status_builder or _default_validation_status_builder
+    validation_status = status_builder(summary, profile)
     summary["validation_targets_status"] = validation_status
     summary["validation_summary"] = {
         "declared_count": len(profile.validation_targets),
         "required_count": sum(1 for target in profile.validation_targets if target.required_for_smoke),
-        "observed_count": 0,
-        "pending_count": len(profile.validation_targets),
+        "observed_count": sum(
+            1
+            for item in validation_status
+            if isinstance(item, dict) and bool(item.get("observed"))
+        ),
+        "pending_count": sum(
+            1
+            for item in validation_status
+            if isinstance(item, dict) and not bool(item.get("observed"))
+        ),
     }
 
 

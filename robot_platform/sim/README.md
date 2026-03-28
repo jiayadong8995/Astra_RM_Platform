@@ -35,6 +35,7 @@ python3 -m robot_platform.tools.platform_cli.main test sim
 
 - `sim/core`: 平台公共层，承接 runner / profile / protocol 这类可复用能力
 - `sim/projects/balance_chassis`: 当前机器人适配层，承接 runtime boundary / profile / bridge adapter / smoke
+- 项目层现在也负责声明 validation target，并通过项目自己的 validation builder 生成状态
 
 当前 smoke report 至少记录：
 

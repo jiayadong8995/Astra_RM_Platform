@@ -8,6 +8,7 @@ from robot_platform.sim.core.profile import (
     ValidationTarget,
 )
 from robot_platform.sim.core.protocol import BRIDGE_PROTOCOL_VERSION
+from robot_platform.sim.projects.balance_chassis.validation import build_validation_status
 
 
 RUNTIME_INPUT_BOUNDARY = RuntimeTopicBoundary(
@@ -75,4 +76,5 @@ BALANCE_CHASSIS_PROFILE = SimProjectProfile(
         warn_on_missing_motor_feedback=True,
     ),
     validation_targets=VALIDATION_TARGETS,
+    validation_status_builder=build_validation_status,
 )

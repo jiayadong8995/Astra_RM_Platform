@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 
@@ -37,6 +38,10 @@ class ValidationTarget:
     required_for_smoke: bool = False
 
 
+ValidationStatus = dict[str, object]
+ValidationStatusBuilder = Callable[[dict[str, object], "SimProjectProfile"], list[ValidationStatus]]
+
+
 @dataclass(frozen=True)
 class SimProjectProfile:
     name: str
@@ -51,3 +56,4 @@ class SimProjectProfile:
     transport_ports: TransportPorts
     smoke_expectations: SmokeExpectations
     validation_targets: tuple[ValidationTarget, ...] = ()
+    validation_status_builder: ValidationStatusBuilder | None = None

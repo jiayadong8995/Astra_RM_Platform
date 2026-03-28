@@ -3,6 +3,8 @@ from robot_platform.sim.core.profile import (
     SmokeExpectations,
     SimProjectProfile,
     TransportPorts,
+    ValidationStatus,
+    ValidationStatusBuilder,
     ValidationTarget,
 )
 
@@ -11,5 +13,7 @@ __all__ = [
     "SmokeExpectations",
     "SimProjectProfile",
     "TransportPorts",
+    "ValidationStatus",
+    "ValidationStatusBuilder",
     "ValidationTarget",
 ]
