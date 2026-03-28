@@ -41,6 +41,7 @@ python3 -m robot_platform.tools.platform_cli.main test sim
 - 顶层 smoke 结果摘要（是否通过、首个失败项、关键计数）
 - 统计摘要（样本数、计数增量、单位时间速率）
 - 可选警告项（例如已启动但尚未看到电机命令/反馈）
+- bridge 失败时的 SITL 存活状态（区分“bridge 没起来”和“SITL 自己崩了”）
 
 当前 `test sim` 会跑 sim 侧最小单元回归，锁住：
 

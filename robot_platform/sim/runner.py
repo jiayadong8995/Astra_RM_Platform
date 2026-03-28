@@ -158,9 +158,11 @@ def _summarize_runtime_boundary(summary: dict[str, object]) -> None:
 def _summarize_smoke_health(summary: dict[str, object]) -> None:
     sitl_lines = summary.get("sitl_output", [])
     bridge_stats = summary.get("bridge_stats_last")
+    sitl_exit_code = summary.get("sitl_exit_code")
 
     health: dict[str, object] = {
         "sitl_scheduler_started": False,
+        "sitl_remained_alive": sitl_exit_code == -15,
         "bridge_startup_complete": isinstance(summary.get("bridge_startup_complete"), dict),
         "bridge_runtime_boundary_observed": isinstance(summary.get("runtime_boundary"), dict),
         "bridge_transport_ports_observed": isinstance(summary.get("transport_ports"), dict),
@@ -192,6 +194,9 @@ def _summarize_smoke_health(summary: dict[str, object]) -> None:
         "runtime_boundary_declared": isinstance(summary.get("runtime_boundary_declared"), dict),
         "transport_ports_declared": isinstance(summary.get("transport_ports_declared"), dict),
     }
+
+    if summary.get("status") == "bridge_exited_early":
+        required_checks["sitl_remained_alive"] = bool(health["sitl_remained_alive"])
 
     if summary.get("status") == "ok":
         required_checks["bridge_protocol_observed"] = isinstance(summary.get("bridge_protocol"), dict)
@@ -230,12 +235,14 @@ def _build_smoke_result(summary: dict[str, object]) -> None:
     bridge_stats = summary.get("bridge_stats_last")
     bridge_stats_summary = summary.get("bridge_stats_summary")
     startup_error = summary.get("bridge_startup_error")
+    sitl_exit_code = summary.get("sitl_exit_code")
     result: dict[str, object] = {
         "status": summary.get("status"),
         "passed": False,
         "primary_failure": None,
         "failure_detail": None,
         "elapsed_s": summary.get("elapsed_s"),
+        "sitl_remained_alive": sitl_exit_code == -15,
     }
 
     if isinstance(health, dict):

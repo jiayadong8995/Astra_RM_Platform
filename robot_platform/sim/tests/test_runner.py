@@ -77,6 +77,7 @@ class RunnerSummaryTests(unittest.TestCase):
         summary = {
             "status": "bridge_exited_early",
             "elapsed_s": 0.1,
+            "sitl_exit_code": -15,
             "bridge_startup_error": {"message": "[Errno 1] Operation not permitted"},
             "bridge_stats_last": {"imu_sent": 0, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
             "smoke_health": {"passed": False, "failures": ["session_status_ok"]},
@@ -86,6 +87,7 @@ class RunnerSummaryTests(unittest.TestCase):
 
         self.assertEqual(summary["smoke_result"]["primary_failure"], "bridge_startup_error")
         self.assertEqual(summary["smoke_result"]["failure_detail"], "[Errno 1] Operation not permitted")
+        self.assertTrue(summary["smoke_result"]["sitl_remained_alive"])
 
     def test_smoke_health_recomputes_failure_after_runtime_error_status(self) -> None:
         summary = {
@@ -110,6 +112,7 @@ class RunnerSummaryTests(unittest.TestCase):
     def test_smoke_health_keeps_missing_motor_activity_as_warning(self) -> None:
         summary = {
             "status": "ok",
+            "sitl_exit_code": -15,
             "bridge_protocol_declared": {"bridge_protocol_version": 1},
             "runtime_boundary_declared": {"inputs": [], "outputs": [], "transitional": []},
             "transport_ports_declared": {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003},
@@ -128,6 +131,22 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertTrue(summary["smoke_health"]["passed"])
         self.assertEqual(summary["smoke_health"]["warnings"], ["motor_command_seen", "motor_feedback_active"])
         self.assertEqual(summary["smoke_result"]["warnings"], ["motor_command_seen", "motor_feedback_active"])
+
+    def test_bridge_failure_requires_sitl_to_remain_alive(self) -> None:
+        summary = {
+            "status": "bridge_exited_early",
+            "sitl_exit_code": -15,
+            "bridge_protocol_declared": {"bridge_protocol_version": 1},
+            "runtime_boundary_declared": {"inputs": [], "outputs": [], "transitional": []},
+            "transport_ports_declared": {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003},
+            "sitl_output": ["Starting FreeRTOS POSIX Scheduler..."],
+        }
+
+        _summarize_smoke_health(summary)
+
+        self.assertTrue(summary["smoke_health"]["sitl_remained_alive"])
+        self.assertIn("sitl_remained_alive", summary["smoke_health"]["required_checks"])
+        self.assertNotIn("sitl_remained_alive", summary["smoke_health"]["failures"])
 
 
 if __name__ == "__main__":
