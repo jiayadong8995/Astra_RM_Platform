@@ -5,6 +5,7 @@ project(robot_platform C ASM)
 option(PLATFORM_TARGET_HW "Build hardware target" ON)
 option(PLATFORM_TARGET_REPLAY "Build replay target" OFF)
 option(PLATFORM_TARGET_SIM "Build simulation target" OFF)
+option(PLATFORM_SIM_ASAN "Enable AddressSanitizer for SITL target" OFF)
 
 set(PLATFORM_ROOT ${CMAKE_CURRENT_LIST_DIR})
 set(PLATFORM_PROJECTS_DIR ${PLATFORM_ROOT}/projects)
@@ -17,6 +18,7 @@ message(STATUS "PLATFORM_ROOT=${PLATFORM_ROOT}")
 message(STATUS "PLATFORM_TARGET_HW=${PLATFORM_TARGET_HW}")
 message(STATUS "PLATFORM_TARGET_REPLAY=${PLATFORM_TARGET_REPLAY}")
 message(STATUS "PLATFORM_TARGET_SIM=${PLATFORM_TARGET_SIM}")
+message(STATUS "PLATFORM_SIM_ASAN=${PLATFORM_SIM_ASAN}")
 
 add_custom_target(platform_info
   COMMAND ${CMAKE_COMMAND} -E echo "robot_platform bootstrap ready"
@@ -359,6 +361,18 @@ if(PLATFORM_TARGET_SIM)
       SITL_BUILD
       ARM_MATH_CM7
   )
+
+  if(PLATFORM_SIM_ASAN)
+    target_compile_options(balance_chassis_sitl
+      PRIVATE
+        -fsanitize=address
+        -fno-omit-frame-pointer
+    )
+    target_link_options(balance_chassis_sitl
+      PRIVATE
+        -fsanitize=address
+    )
+  endif()
 
   target_link_libraries(balance_chassis_sitl
     PRIVATE

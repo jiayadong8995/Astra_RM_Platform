@@ -12,6 +12,14 @@ osThreadId OBSERVE_TASKHandle;
 osThreadId REMOTE_TASKHandle;
 osThreadId RC_INPUT_TASKHandle;
 
+#define DEFAULT_TASK_STACK_BYTES 512
+#define INS_TASK_STACK_BYTES 2048
+#define CHASSIS_TASK_STACK_BYTES 4096
+#define MOTOR_CONTROL_TASK_STACK_BYTES 2048
+#define OBSERVE_TASK_STACK_BYTES 2048
+#define RC_INPUT_TASK_STACK_BYTES 1024
+#define REMOTE_TASK_STACK_BYTES 2048
+
 static void StartDefaultTask(void const *argument);
 static void INS_Task(void const *argument);
 static void Chassis_Task(void const *argument);
@@ -27,26 +35,28 @@ void Observe_task(void);
 void remote_task(void);
 void MX_FREERTOS_Init(void)
 {
-    osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+    osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, DEFAULT_TASK_STACK_BYTES);
     defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
-    osThreadDef(INS_TASK, INS_Task, osPriorityRealtime, 0, 512);
+    osThreadDef(INS_TASK, INS_Task, osPriorityRealtime, 0, INS_TASK_STACK_BYTES);
     INS_TASKHandle = osThreadCreate(osThread(INS_TASK), NULL);
 
-    osThreadDef(CHASSISR_TASK, Chassis_Task, osPriorityAboveNormal, 0, 512);
+    osThreadDef(CHASSISR_TASK, Chassis_Task, osPriorityAboveNormal, 0, CHASSIS_TASK_STACK_BYTES);
     CHASSIS_TASKHandle = osThreadCreate(osThread(CHASSISR_TASK), NULL);
 
-    osThreadDef(CHASSISL_TASK, Motor_Control_Task, osPriorityAboveNormal, 0, 512);
+    osThreadDef(CHASSISL_TASK, Motor_Control_Task, osPriorityAboveNormal, 0, MOTOR_CONTROL_TASK_STACK_BYTES);
     MOTOR_CONTROL_TASKHandle = osThreadCreate(osThread(CHASSISL_TASK), NULL);
 
-    osThreadDef(OBSERVE_TASK, OBSERVE_Task, osPriorityHigh, 0, 512);
+    osThreadDef(OBSERVE_TASK, OBSERVE_Task, osPriorityHigh, 0, OBSERVE_TASK_STACK_BYTES);
     OBSERVE_TASKHandle = osThreadCreate(osThread(OBSERVE_TASK), NULL);
 
-    osThreadDef(RC_INPUT_TASK, RC_Input_Task, osPriorityAboveNormal, 0, 384);
+#if !defined(SITL_BUILD)
+    osThreadDef(RC_INPUT_TASK, RC_Input_Task, osPriorityAboveNormal, 0, RC_INPUT_TASK_STACK_BYTES);
     RC_INPUT_TASKHandle = osThreadCreate(osThread(RC_INPUT_TASK), NULL);
 
-    osThreadDef(REMOTE_TASK, Remote_Task, osPriorityAboveNormal, 0, 512);
+    osThreadDef(REMOTE_TASK, Remote_Task, osPriorityAboveNormal, 0, REMOTE_TASK_STACK_BYTES);
     REMOTE_TASKHandle = osThreadCreate(osThread(REMOTE_TASK), NULL);
+#endif
 }
 
 static void StartDefaultTask(void const *argument)
