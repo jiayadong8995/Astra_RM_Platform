@@ -32,13 +32,17 @@ void motor_control_task(void)
 {
     Subscriber_t *ins_sub;
     Subscriber_t *actuator_cmd_sub;
+    Publisher_t *actuator_feedback_pub;
     INS_Data_t ins_msg = {0};
     Actuator_Cmd_t actuator_msg = {0};
+    Actuator_Feedback_t feedback_msg = {0};
     uint8_t ins_ready = 0;
     Joint_Motor_t *joint_motor[4];
+    chassis_motor_measure_t *wheel_motor[2];
 
     ins_sub = SubRegister("ins_data", sizeof(INS_Data_t));
     actuator_cmd_sub = SubRegister("actuator_cmd", sizeof(Actuator_Cmd_t));
+    actuator_feedback_pub = PubRegister("actuator_feedback", sizeof(Actuator_Feedback_t));
 
     while(ins_ready == 0)
 	{
@@ -49,26 +53,28 @@ void motor_control_task(void)
 	    osDelay(1);
 	}
 
-    joint_motor[0] = chassis_joint_motor_state(0);
-    joint_motor[1] = chassis_joint_motor_state(1);
-    joint_motor[2] = chassis_joint_motor_state(2);
-    joint_motor[3] = chassis_joint_motor_state(3);
+    joint_motor[0] = get_joint_motor_state(0);
+    joint_motor[1] = get_joint_motor_state(1);
+    joint_motor[2] = get_joint_motor_state(2);
+    joint_motor[3] = get_joint_motor_state(3);
+    wheel_motor[0] = get_chassis_motor_measure_point(0);
+    wheel_motor[1] = get_chassis_motor_measure_point(1);
 	
 	joint_motor_init(joint_motor[0],1,MIT_MODE);//发送id为1,控制模式 MIT
 	joint_motor_init(joint_motor[1],2,MIT_MODE);//发送id为2,控制模式 MIT
 	joint_motor_init(joint_motor[2],3,MIT_MODE);//发送id为3,控制模式 MIT
 	joint_motor_init(joint_motor[3],4,MIT_MODE);//发送id为4,控制模式 MIT
   //需要对4个关节电机进行零点重置
-	chassis_set_joint_enable_flag(0, enable_motor_mode(&hfdcan1, joint_motor[0]->para.id, joint_motor[0]->mode));
+	enable_motor_mode(&hfdcan1, joint_motor[0]->para.id, joint_motor[0]->mode);
 	//DM_motor_zeroset(&hfdcan1, joint_motor[0]->para.id);
 	osDelay(1); 
-	chassis_set_joint_enable_flag(1, enable_motor_mode(&hfdcan1, joint_motor[1]->para.id, joint_motor[1]->mode));
+	enable_motor_mode(&hfdcan1, joint_motor[1]->para.id, joint_motor[1]->mode);
 	//DM_motor_zeroset(&hfdcan1, joint_motor[1]->para.id);
 	osDelay(1);
-	chassis_set_joint_enable_flag(2, enable_motor_mode(&hfdcan1, joint_motor[2]->para.id, joint_motor[2]->mode));
+	enable_motor_mode(&hfdcan1, joint_motor[2]->para.id, joint_motor[2]->mode);
 	//DM_motor_zeroset(&hfdcan1, joint_motor[2]->para.id);
 	osDelay(1);
-	chassis_set_joint_enable_flag(3, enable_motor_mode(&hfdcan1, joint_motor[3]->para.id, joint_motor[3]->mode));
+	enable_motor_mode(&hfdcan1, joint_motor[3]->para.id, joint_motor[3]->mode);
 	//DM_motor_zeroset(&hfdcan1, joint_motor[3]->para.id);
 	osDelay(1);
 	osDelay(2);
@@ -79,6 +85,16 @@ void motor_control_task(void)
         {
             /* latest actuator command cached in topic subscriber */
         }
+        feedback_msg.joint_pos[0] = joint_motor[0]->para.pos;
+        feedback_msg.joint_pos[1] = joint_motor[1]->para.pos;
+        feedback_msg.joint_pos[2] = joint_motor[2]->para.pos;
+        feedback_msg.joint_pos[3] = joint_motor[3]->para.pos;
+        feedback_msg.wheel_speed[0] = wheel_motor[0]->speed_rpm * M3508_RPM_TO_RADS * WHEEL_RADIUS;
+        feedback_msg.wheel_speed[1] = wheel_motor[1]->speed_rpm * M3508_RPM_TO_RADS * WHEEL_RADIUS;
+        feedback_msg.wheel_angle[0] = wheel_motor[0]->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;
+        feedback_msg.wheel_angle[1] = wheel_motor[1]->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;
+        feedback_msg.ready = 1U;
+        PubPushMessage(actuator_feedback_pub, &feedback_msg);
 
 		systick = osKernelSysTick();
 	   if(actuator_msg.start_flag==0){

@@ -44,7 +44,9 @@ void Observe_task(void)
 {
     Publisher_t *observe_pub;
     Subscriber_t *cmd_sub;
+    Subscriber_t *feedback_sub;
     Chassis_Cmd_t cmd_msg = {0};
+    Actuator_Feedback_t feedback_msg = {0};
     float observe_v_filter = 0.0f;
     float observe_x_filter = 0.0f;
 
@@ -66,12 +68,14 @@ void Observe_task(void)
 	xvEstimateKF_Init(&vaEstimateKF);
     observe_pub = PubRegister("chassis_observe", sizeof(Chassis_Observe_t));
     cmd_sub = SubRegister("chassis_cmd", sizeof(Chassis_Cmd_t));
+    feedback_sub = SubRegister("actuator_feedback", sizeof(Actuator_Feedback_t));
 	
 	while(1)
 	{  
         SubGetMessage(cmd_sub, &cmd_msg);
+        SubGetMessage(feedback_sub, &feedback_msg);
 		// 当前先保留最简单的轮速估计边界，不再依赖 legacy 全局状态和腿模型中间量。
-		observe_v_filter = -(chassis_wheel_speed(1) - chassis_wheel_speed(0))/2.0f;
+		observe_v_filter = -(feedback_msg.wheel_speed[1] - feedback_msg.wheel_speed[0])/2.0f;
 		observe_x_filter = observe_x_filter + observe_v_filter * ((float)OBSERVE_TIME/1000.0f);
 		// 历史逻辑中的 last_leg_set 当前未被维护，这里只保留 recover 模式下不清零的位置估计。
 		if(cmd_msg.recover_flag != 0)

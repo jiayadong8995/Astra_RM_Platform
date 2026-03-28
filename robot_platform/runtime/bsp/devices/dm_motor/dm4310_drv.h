@@ -112,6 +112,7 @@ void CAN_cmd_chassis(hcan_t *hcan, int16_t motor1, int16_t motor2, int16_t rev1,
 void get_motor_measure(chassis_motor_measure_t *ptr, uint8_t *data, uint32_t data_len);
 void get_total_angle(chassis_motor_measure_t *p);
 chassis_motor_measure_t *get_chassis_motor_measure_point(uint8_t i);
+Joint_Motor_t *get_joint_motor_state(uint8_t index);
 float motor_speed_to_angle(MotorData *motors, float *speed);
 void DM_motor_zeroset(hcan_t *hcan, uint16_t motor_id);
 

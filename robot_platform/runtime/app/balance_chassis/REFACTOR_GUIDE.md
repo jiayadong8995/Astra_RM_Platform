@@ -8,6 +8,10 @@
 
 `rc_data / ins_data -> chassis_cmd / chassis_observe -> chassis_state / leg_left / leg_right -> actuator_cmd`
 
+执行反馈现在也开始收口成总线：
+
+`motor_control_task / device feedback -> actuator_feedback -> observe_task / chassis_task`
+
 其中：
 
 - `rc_data` 是板级输入收口 topic
@@ -32,9 +36,9 @@
 
 - [x] `INS_task` 发布 `ins_data`
 - [x] `remote_task` 订阅 `rc_data / ins_data / chassis_state / leg_left / leg_right`，发布 `chassis_cmd`
-- [x] `observe_task` 订阅 `chassis_cmd`，发布 `chassis_observe`
-- [x] `chassis_task` 订阅 `ins_data / chassis_cmd / chassis_observe`，发布 `chassis_state / leg_left / leg_right / actuator_cmd`
-- [x] `motor_control_task` 改为订阅单一 `actuator_cmd`
+- [x] `observe_task` 订阅 `chassis_cmd / actuator_feedback`，发布 `chassis_observe`
+- [x] `chassis_task` 订阅 `ins_data / chassis_cmd / chassis_observe / actuator_feedback`，发布 `chassis_state / leg_left / leg_right / actuator_cmd`
+- [x] `motor_control_task` 改为订阅单一 `actuator_cmd`，并发布 `actuator_feedback`
 
 ### 3. legacy 全局状态显式依赖减少
 
@@ -54,6 +58,8 @@
 
 - [x] 新增 `actuator_cmd`
 - [x] `motor_control_task` 从“订阅多个 topic 再拼执行命令”改为“只订阅末端执行命令 topic”
+- [x] 新增 `actuator_feedback`
+- [x] `observe_task / chassis_task` 不再通过 accessor 读取 `chassis_task` 内部执行反馈
 
 ---
 
@@ -75,6 +81,7 @@
 - `rc_data`
 - `chassis_observe`
 - `actuator_cmd`
+- `actuator_feedback`
 
 ### 当前明确禁止的对接方式
 
@@ -104,51 +111,38 @@
 它现在已经是 `observe_task` 唯一正式输出，不再回写 `chassis_move` 关键观测状态。  
 但它还没有被升级为正式外部观测接口，所以不建议固化进 `sim/report/replay` 协议。
 
-### C. 执行层仍保留少量 accessor
+### C. 执行反馈总线刚落地
 
-当前仍有少量窄 accessor 供执行层或观测层读取内部运行态，例如：
-
-- `chassis_joint_motor_state()`
-- `chassis_wheel_speed()`
-- `chassis_set_joint_enable_flag()`
-
-这些比 extern 全局状态已经好很多，但仍不是最终理想状态。
+`actuator_feedback` 现在已经取代 app 层通过 accessor 偷读控制任务内部状态的做法。  
+但它暂时还是内部执行反馈 topic，还没有升级成对 `sim/report/replay` 的正式输出承诺。
 
 ---
 
 ## 下一步优先级
 
-### P0. 继续压缩 `chassis_task` 对外 accessor
+### P0. 拆 `chassis_task.c` 内部职责
 
 目标：
 
-- 能转成 topic 的继续转成 topic
-- 执行层不要继续依赖控制层内部结构体地址
-- 让 accessor 只保留确实无法立刻 topic 化的硬件执行接口
-
-### P1. 拆 `chassis_task.c` 内部职责
-
-建议拆分方向：
-
-- `balance_controller.c`
-- `jump_fsm.c`
-- `ground_detect.c`
-- `feedback_update.c`
+- `feedback_update`
+- `balance_controller`
+- `jump_fsm`
+- `ground_detect`
 
 要求：
 
 - `chassis_task.c` 逐步退化成“订阅输入 -> 调用控制模块 -> 发布输出”的薄调度层
 
-### P2. 明确 `actuator_cmd` 的长期命运
+### P1. 明确 `actuator_cmd / actuator_feedback` 的长期命运
 
 两种路线二选一：
 
-1. 保持它为内部执行边界，只给 `motor_control_task` 使用
-2. 升级它为统一执行输出接口，让硬件执行层和 SITL bridge 都接这一层
+1. 保持它们为内部执行边界，只给执行层和反馈桥使用
+2. 升级它们为统一执行 I/O 接口，让硬件执行层和 SITL bridge 都接这一层
 
 当前还没有最终定论，所以文档里仍把它定义为过渡 topic。
 
-### P3. 统一 replay / sim / bridge 的边界口径
+### P2. 统一 replay / sim / bridge 的边界口径
 
 当前 sim 应优先对接：
 
@@ -160,6 +154,7 @@
 - `rc_data`
 - `chassis_observe`
 - `actuator_cmd`
+- `actuator_feedback`
 
 除非后续明确把其中某一项升级为正式边界。
 

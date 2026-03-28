@@ -10,7 +10,6 @@
 
 typedef struct
 {
-	Joint_Motor_t joint_motor[4];
 	chassis_motor_t wheel_motor[2];
 	
 	float v_set;//期望速度，单位是m/s
@@ -51,10 +50,6 @@ typedef struct
 
 void Chassis_task(void);
 void mySaturate(float *in,float min,float max);
-Joint_Motor_t *chassis_joint_motor_state(uint8_t index);
-float chassis_wheel_speed(uint8_t index);
-void chassis_set_joint_enable_flag(uint8_t index, int value);
 
 #endif
-
 

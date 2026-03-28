@@ -102,7 +102,6 @@ set(BALANCE_CHASSIS_BSP_SEED_SOURCES
   ${PLATFORM_REMOTE_CONTROL_DIR}/rc_input_bridge.c
   ${PLATFORM_REMOTE_CONTROL_DIR}/remote_control.c
   ${PLATFORM_DM_MOTOR_DIR}/dm4310_drv.c
-  ${PLATFORM_SEED_APP_DIR}/legacy_seed_state.c
 )
 
 add_library(balance_chassis_generated_raw STATIC
@@ -120,7 +119,6 @@ target_include_directories(balance_chassis_generated_raw
     ${PLATFORM_BOARD_BSP_DIR}
     ${PLATFORM_REMOTE_CONTROL_DIR}
     ${PLATFORM_DM_MOTOR_DIR}
-    ${PLATFORM_SEED_APP_DIR}
 )
 
 target_compile_definitions(balance_chassis_generated_raw
@@ -151,7 +149,6 @@ target_include_directories(balance_chassis_bsp_seed
     ${PLATFORM_BOARD_BSP_DIR}
     ${PLATFORM_REMOTE_CONTROL_DIR}
     ${PLATFORM_DM_MOTOR_DIR}
-    ${PLATFORM_SEED_APP_DIR}
     ${PLATFORM_LEGACY_APP_DIR}
     ${CHASSIS_FREERTOS_DIR}/include
     ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS

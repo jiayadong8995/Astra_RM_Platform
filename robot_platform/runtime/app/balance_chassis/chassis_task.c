@@ -25,7 +25,6 @@ static float LQR_K_R[12]= LQR_K_MATRIX;
 
 static vmc_leg_t runtime_right_leg;
 static vmc_leg_t runtime_left_leg;
-static int joint_enable_flag[4] = {1, 1, 1, 1};
 static chassis_t chassis_runtime;
 static PidTypeDef leg_r_pid;//右腿的腿长pd
 static PidTypeDef leg_l_pid;//左腿的腿长pd
@@ -37,7 +36,7 @@ uint32_t CHASSIS_TIME=CHASSIS_TASK_PERIOD;
 
 static void Chassis_init(chassis_t *chassis,vmc_leg_t *vmcr_init,vmc_leg_t *vmcl_init);
 static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidTypeDef *legr,PidTypeDef *legl);
-static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins);
+static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins,const Actuator_Feedback_t *feedback);
 static void chassis_control_loop(chassis_t * chassis,\
 							      vmc_leg_t *    vmcr,\
 							      vmc_leg_t *    vmcl,\
@@ -65,6 +64,7 @@ static Publisher_t  *actuator_cmd_pub;
 static Subscriber_t *ins_sub;
 static Subscriber_t *cmd_sub;
 static Subscriber_t *observe_sub;
+static Subscriber_t *actuator_feedback_sub;
 static INS_t ins_runtime;
 
 static void update_ins_runtime(INS_t *ins, const INS_Data_t *msg);
@@ -76,17 +76,20 @@ void Chassis_task(void)
     INS_Data_t ins_msg = {0};
     Chassis_Cmd_t cmd_msg = {0};
     Chassis_Observe_t observe_msg = {0};
+    Actuator_Feedback_t feedback_msg = {0};
 
     ins_sub           = SubRegister("ins_data",      sizeof(INS_Data_t));
     cmd_sub           = SubRegister("chassis_cmd",   sizeof(Chassis_Cmd_t));
     observe_sub       = SubRegister("chassis_observe", sizeof(Chassis_Observe_t));
+    actuator_feedback_sub = SubRegister("actuator_feedback", sizeof(Actuator_Feedback_t));
 
-	while(ins_runtime.ins_flag == 0)
+	while(ins_runtime.ins_flag == 0 || feedback_msg.ready == 0U)
 	{
         if (SubGetMessage(ins_sub, &ins_msg))
         {
             update_ins_runtime(&ins_runtime, &ins_msg);
         }
+        SubGetMessage(actuator_feedback_sub, &feedback_msg);
 	    osDelay(1);
 	}
 
@@ -115,8 +118,9 @@ void Chassis_task(void)
         {
             apply_observe_state(&chassis_runtime, &observe_msg);
         }
+        SubGetMessage(actuator_feedback_sub, &feedback_msg);
 
-		chassis_feedback_update(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime);
+		chassis_feedback_update(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,&feedback_msg);
 	    chassis_control_loop(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,LQR_K_R,LQR_K_R,&leg_r_pid,&leg_l_pid);
 
 		/* publish chassis state */
@@ -170,33 +174,6 @@ void Chassis_task(void)
 	}
 }
 
-Joint_Motor_t *chassis_joint_motor_state(uint8_t index)
-{
-    if (index >= 4U)
-    {
-        return &chassis_runtime.joint_motor[0];
-    }
-    return &chassis_runtime.joint_motor[index];
-}
-
-float chassis_wheel_speed(uint8_t index)
-{
-    if (index >= 2U)
-    {
-        return chassis_runtime.wheel_motor[0].speed;
-    }
-    return chassis_runtime.wheel_motor[index].speed;
-}
-
-void chassis_set_joint_enable_flag(uint8_t index, int value)
-{
-    if (index >= 4U)
-    {
-        return;
-    }
-    joint_enable_flag[index] = value;
-}
-
 static void update_ins_runtime(INS_t *ins, const INS_Data_t *msg)
 {
     ins->Pitch = msg->pitch;
@@ -233,12 +210,9 @@ static void Chassis_init(chassis_t *chassis,vmc_leg_t *vmcr_init,vmc_leg_t *vmcl
 	for(int i = 0;i < 2; i++)
 	{
 		chassis->wheel_motor[i].chassis_x = 0.0f;
-		chassis->wheel_motor[i].chassis_motor_measure = get_chassis_motor_measure_point(i);
 	}  
 	VMC_init(vmcr_init);//给杆长赋值
 	VMC_init(vmcl_init);//给杆长赋值
-	
-	chassis_feedback_update(chassis, vmcr_init, vmcl_init, &ins_runtime);//更新数据
 }
 
 static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidTypeDef *legr,PidTypeDef *legl)
@@ -259,21 +233,20 @@ static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidT
 	PID_init(legl, PID_POSITION,legl_pid, LEG_PID_MAX_OUT, LEG_PID_MAX_IOUT);//腿长pid
 }
 
-static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins)
+static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins,const Actuator_Feedback_t *feedback)
 {
-    vmc_r->phi1=pi/2.0f+chassis->joint_motor[0].para.pos+JOINT0_OFFSET;
-	vmc_r->phi4=pi/2.0f+chassis->joint_motor[1].para.pos+JOINT1_OFFSET;
-	vmc_l->phi1=pi/2.0f+chassis->joint_motor[2].para.pos+JOINT2_OFFSET;
-	vmc_l->phi4=pi/2.0f+chassis->joint_motor[3].para.pos+JOINT3_OFFSET;
+    vmc_r->phi1=pi/2.0f+feedback->joint_pos[0]+JOINT0_OFFSET;
+	vmc_r->phi4=pi/2.0f+feedback->joint_pos[1]+JOINT1_OFFSET;
+	vmc_l->phi1=pi/2.0f+feedback->joint_pos[2]+JOINT2_OFFSET;
+	vmc_l->phi4=pi/2.0f+feedback->joint_pos[3]+JOINT3_OFFSET;
 
-	chassis->wheel_motor[0].chassis_x = chassis->wheel_motor[0].chassis_motor_measure->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;		
-	chassis->wheel_motor[1].chassis_x = chassis->wheel_motor[1].chassis_motor_measure->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;
+	chassis->wheel_motor[0].chassis_x = feedback->wheel_angle[0];
+	chassis->wheel_motor[1].chassis_x = feedback->wheel_angle[1];
 
-	chassis->wheel_motor[0].w_speed = chassis->wheel_motor[0].chassis_motor_measure->speed_rpm * M3508_RPM_TO_RADS; 		
-	chassis->wheel_motor[1].w_speed = chassis->wheel_motor[1].chassis_motor_measure->speed_rpm * M3508_RPM_TO_RADS; 
-	
-	chassis->wheel_motor[0].speed = chassis->wheel_motor[0].w_speed * WHEEL_RADIUS;		
-	chassis->wheel_motor[1].speed = chassis->wheel_motor[1].w_speed * WHEEL_RADIUS;		
+	chassis->wheel_motor[0].speed = feedback->wheel_speed[0];
+	chassis->wheel_motor[1].speed = feedback->wheel_speed[1];
+	chassis->wheel_motor[0].w_speed = feedback->wheel_speed[0] / WHEEL_RADIUS;
+	chassis->wheel_motor[1].w_speed = feedback->wheel_speed[1] / WHEEL_RADIUS;
 
   chassis->myPithGyroL = - ins->Gyro[0];
 	chassis->myPithL = - ins->Pitch;//-0.05 //+0.05

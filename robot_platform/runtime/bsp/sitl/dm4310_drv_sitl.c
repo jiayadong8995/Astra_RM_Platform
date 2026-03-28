@@ -10,6 +10,7 @@
 static int motor_sock = -1;
 static struct sockaddr_in sim_addr;
 static chassis_motor_measure_t motor_measures[4]; // 2 wheels (0,1), 2 joints (2,3) or whatever
+static Joint_Motor_t joint_motor[4];
 
 static void ensure_sock_init(void) {
     if (motor_sock >= 0) return;
@@ -53,6 +54,10 @@ static void poll_motor_feedback(void) {
         // We do a simple mapping: motor_id - 1
         if (pkt.id >= 1 && pkt.id <= 4) {
             uint8_t idx = pkt.id - 1;
+            joint_motor[idx].para.id = pkt.id;
+            joint_motor[idx].para.pos = pkt.pos;
+            joint_motor[idx].para.vel = pkt.vel;
+            joint_motor[idx].para.tor = pkt.torque;
             motor_measures[idx].last_ecd = motor_measures[idx].ecd;
             // Fake an ECD value (0-8191) from radians
             float rotations = pkt.pos / (2.0f * 3.14159265f);
@@ -109,6 +114,15 @@ chassis_motor_measure_t *get_chassis_motor_measure_point(uint8_t i) {
     return &motor_measures[0];
 }
 
+Joint_Motor_t *get_joint_motor_state(uint8_t index) {
+    poll_motor_feedback();
+    if (index < 4) return &joint_motor[index];
+    return &joint_motor[0];
+}
+
 int enable_motor_mode(FDCAN_HandleTypeDef *hcan, uint16_t id, uint16_t mode) { (void)hcan; (void)id; (void)mode; return 0; }
 void motor_sys_rest(FDCAN_HandleTypeDef *hcan) { (void)hcan; }
-void joint_motor_init(Joint_Motor_t *motor, uint16_t id, uint16_t mode) { (void)motor; (void)id; (void)mode; }
+void joint_motor_init(Joint_Motor_t *motor, uint16_t id, uint16_t mode) {
+    motor->para.id = id;
+    motor->mode = mode;
+}

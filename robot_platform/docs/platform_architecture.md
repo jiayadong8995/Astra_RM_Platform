@@ -337,6 +337,7 @@ project config
 - `chassis_observe`
 - `rc_data`
 - `actuator_cmd`
+- `actuator_feedback`
 
 说明：
 
@@ -344,6 +345,8 @@ project config
 - 它用于把 `observe_task` 的估计结果显式送入控制链
 - `rc_data` 仅用于板级遥控输入向 app 的单点收口
 - `actuator_cmd` 是当前 app 到执行层的内部末端命令 topic，暂不作为 sim/report 的正式输出边界
+- `actuator_feedback` 是当前执行层回流到控制层的内部反馈 topic
+- 它用于让 `observe_task / chassis_task` 订阅设备反馈，而不是读取控制任务内部状态或 legacy 全局变量
 - 现阶段不应把它当成长期稳定的外部报告边界固化到 replay/report 协议中，除非后续明确升级为正式观测接口
 
 ### 9.4 禁止的对接方式

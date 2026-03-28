@@ -1,17 +1,19 @@
 #include "dm4310_drv.h"
 
 #include "arm_math.h"
-#include "chassis_state_bridge.h"
 
 static chassis_motor_measure_t chassis_motor[2];
+static Joint_Motor_t joint_motor_state[4];
+static uint8_t wheel_feedback_reset_pending = 1U;
 
 #define ABS(x) ( (x > 0) ? (x) : (-(x)) )
 
 void get_total_angle(chassis_motor_measure_t *p)
 {
-    if (platform_consume_begin_flag() == 1U)
+    if (wheel_feedback_reset_pending == 1U)
     {
         p->total_angle = 0.0f;
+        wheel_feedback_reset_pending = 0U;
     }
 
     int res1, res2, delta;
@@ -217,6 +219,15 @@ void get_motor_measure(chassis_motor_measure_t *ptr, uint8_t *data, uint32_t dat
 chassis_motor_measure_t *get_chassis_motor_measure_point(uint8_t i)
 {
     return &chassis_motor[i];
+}
+
+Joint_Motor_t *get_joint_motor_state(uint8_t index)
+{
+    if (index >= 4U)
+    {
+        return &joint_motor_state[0];
+    }
+    return &joint_motor_state[index];
 }
 
 float motor_speed_to_angle(MotorData *motors, float *speed)

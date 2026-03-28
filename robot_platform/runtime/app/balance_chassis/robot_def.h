@@ -207,4 +207,12 @@ typedef struct {
     uint8_t reserved[3];
 } Actuator_Cmd_t;
 
+typedef struct {
+    float joint_pos[4];    // rad, [r_front, r_back, l_front, l_back]
+    float wheel_speed[2];  // m/s, [left, right]
+    float wheel_angle[2];  // m, [left, right]
+    uint8_t ready;         // 1 after first valid feedback snapshot
+    uint8_t reserved[3];
+} Actuator_Feedback_t;
+
 #endif // ROBOT_DEF_H

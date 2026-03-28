@@ -4,7 +4,6 @@
 
 #include "dm4310_drv.h"
 #include "fdcan.h"
-#include "chassis_state_bridge.h"
 
 FDCAN_RxHeaderTypeDef RxHeader1;
 uint8_t g_Can1RxData[64];
@@ -132,10 +131,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
             switch (RxHeader1.Identifier)
             {
-            case 0x11: dm4310_fbdata(platform_joint_motor_state(0), g_Can1RxData, RxHeader1.DataLength); break;
-            case 0x12: dm4310_fbdata(platform_joint_motor_state(1), g_Can1RxData, RxHeader1.DataLength); break;
-            case 0x13: dm4310_fbdata(platform_joint_motor_state(2), g_Can1RxData, RxHeader1.DataLength); break;
-            case 0x14: dm4310_fbdata(platform_joint_motor_state(3), g_Can1RxData, RxHeader1.DataLength); break;
+            case 0x11: dm4310_fbdata(get_joint_motor_state(0), g_Can1RxData, RxHeader1.DataLength); break;
+            case 0x12: dm4310_fbdata(get_joint_motor_state(1), g_Can1RxData, RxHeader1.DataLength); break;
+            case 0x13: dm4310_fbdata(get_joint_motor_state(2), g_Can1RxData, RxHeader1.DataLength); break;
+            case 0x14: dm4310_fbdata(get_joint_motor_state(3), g_Can1RxData, RxHeader1.DataLength); break;
             default: break;
             }
         }

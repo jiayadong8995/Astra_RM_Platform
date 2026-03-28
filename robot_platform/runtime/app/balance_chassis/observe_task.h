@@ -1,10 +1,9 @@
 #ifndef __OBSERVE_TASK_H
 #define __OBSERVE_TASK_H
 
-
 #include "stdint.h"
 #include "ins_task.h"
-#include "motor_control_task.h"
+#include "kalman_filter.h"
 #include "main.h"
 
 
@@ -13,7 +12,3 @@ extern void xvEstimateKF_Init(KalmanFilter_t *EstimateKF);
 extern void xvEstimateKF_Update(KalmanFilter_t *EstimateKF ,float acc,float vel);
 
 #endif
-
-
-
-
