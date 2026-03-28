@@ -140,7 +140,7 @@ robot_platform/
 
 当前状态：
 
-- `balance_chassis_seed` 仍用于最小种子链路
+- `balance_chassis` 已经承接当前控制主链，不再保留独立 seed app 目录
 - `balance_chassis` 已承接 legacy task 主体
 - 目前更像 legacy app 的平台落位，还不是完全重写后的平台 app
 

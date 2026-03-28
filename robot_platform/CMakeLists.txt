@@ -37,7 +37,6 @@ set(PLATFORM_LINKER_SCRIPT ${PLATFORM_ROOT}/cmake/linker/stm32h723_flash.ld)
 set(PLATFORM_BOARD_BSP_DIR ${PLATFORM_RUNTIME_DIR}/bsp/boards/stm32h7_ctrl_board)
 set(PLATFORM_REMOTE_CONTROL_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/remote_control)
 set(PLATFORM_DM_MOTOR_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/dm_motor)
-set(PLATFORM_SEED_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis_seed)
 set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
 set(PLATFORM_BMI088_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/bmi088)
 if(PLATFORM_TARGET_HW)
@@ -264,6 +263,7 @@ if(PLATFORM_TARGET_SIM)
   set(BALANCE_CHASSIS_LEGACY_APP_SOURCES
     ${PLATFORM_LEGACY_APP_DIR}/INS_task.c
     ${PLATFORM_LEGACY_APP_DIR}/chassis_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/control/chassis_runtime_helpers.c
     ${PLATFORM_LEGACY_APP_DIR}/motor_control_task.c
     ${PLATFORM_LEGACY_APP_DIR}/observe_task.c
     ${PLATFORM_LEGACY_APP_DIR}/remote_task.c
