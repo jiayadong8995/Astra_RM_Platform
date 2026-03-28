@@ -70,7 +70,7 @@ def _build_hw_seed(target: str) -> int:
 def _build_sitl(target: str) -> int:
     repo_root = _repo_root()
     source_dir = repo_root / "robot_platform"
-    build_dir = repo_root / "build" / "robot_platform_sitl"
+    build_dir = repo_root / "build" / "robot_platform_sitl_make"
     toolchain_file = source_dir / "cmake" / "toolchains" / "linux-gcc.cmake"
 
     configure_cmd = [
@@ -104,12 +104,12 @@ def _run_sim(scenario: str) -> int:
     summary = {
         "sim_mode": "sitl",
         "requested_scenario": scenario,
-        "status": "not_yet-integrated",
-        "next_steps": [
-            "python3 -m robot_platform.tools.platform_cli.main build sitl",
-            "./build/robot_platform_sitl/balance_chassis_sitl",
-            "python3 -m robot_platform.sim.bridge.sim_bridge",
-        ],
+            "status": "not_yet-integrated",
+            "next_steps": [
+                "python3 -m robot_platform.tools.platform_cli.main build sitl",
+                "./build/robot_platform_sitl_make/balance_chassis_sitl",
+                "python3 -m robot_platform.sim.bridge.sim_bridge",
+            ],
     }
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     return 2
