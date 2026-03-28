@@ -16,6 +16,7 @@
 	
 #include "remote_task.h"
 #include "cmsis_os.h"
+#include "../app_config/app_params.h"
 #include "../app_flow/remote_runtime.h"
 #include "../app_flow/remote_runtime_helpers.h"
 #include "../app_io/remote_topics.h"
@@ -41,6 +42,6 @@ void remote_task(void)
         cmd_msg = remote_runtime_build_cmd(&cmd_state);
         remote_runtime_bus_publish_cmd(&runtime_bus, &cmd_msg);
 
-		osDelay(REMOTE_TASK_PERIOD);
+		osDelay(REMOTE_TASK_PERIOD_MS);
 	}
 }

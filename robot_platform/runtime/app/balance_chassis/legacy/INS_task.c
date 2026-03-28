@@ -17,6 +17,7 @@
 #include "bsp_PWM.h"
 #include "bsp_dwt.h"
 #include "cmsis_os.h"
+#include "../app_config/app_params.h"
 #include "../app_config/robot_def.h"
 #include "../app_flow/ins_runtime.h"
 #include "../app_io/ins_topics.h"
@@ -44,6 +45,6 @@ void INS_task(void)
         ins_runtime_build_msg(&runtime_state, &msg);
         ins_runtime_bus_publish(&runtime_bus, &msg);
 
-		osDelay(1);
+		osDelay(INS_TASK_PERIOD_MS);
 	}
 } 

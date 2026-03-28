@@ -2,6 +2,7 @@
 
 #include <math.h>
 
+#include "../app_config/app_params.h"
 #include "remote_control.h"
 
 static void slope_following(float *target, float *set, float acc);
@@ -72,7 +73,7 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
             local_saturate(&runtime->v_set, -RC_VX_MAX, RC_VX_MAX);
         }
 
-        runtime->x_set = runtime->x_set + runtime->v_set * (float)REMOTE_TASK_PERIOD / 1000.0f;
+        runtime->x_set = runtime->x_set + runtime->v_set * (float)REMOTE_TASK_PERIOD_MS / 1000.0f;
     }
     else
     {

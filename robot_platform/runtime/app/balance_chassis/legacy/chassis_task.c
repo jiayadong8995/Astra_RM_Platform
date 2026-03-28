@@ -19,13 +19,13 @@
 #include "fdcan.h"
 #include "cmsis_os.h"
 #include "can_bsp.h"
+#include "../app_config/app_params.h"
 #include "../app_config/robot_def.h"
 #include "../app_flow/chassis_orchestration.h"
 #include "../app_io/chassis_topics.h"
 
 static Chassis_Runtime_Bus_t runtime_bus;
 static Chassis_Runtime_State_t runtime_state;
-static uint32_t CHASSIS_TIME = CHASSIS_TASK_PERIOD;
 
 void Chassis_task(void)
 {
@@ -38,7 +38,7 @@ void Chassis_task(void)
     chassis_runtime_state_init(&runtime_state);
     chassis_runtime_apply_bus_inputs(&runtime_state, &inputs);
 
-    osDelay(6);
+    osDelay(APP_CHASSIS_STARTUP_DELAY_MS);
 
 	while(1)
 	{	
@@ -48,6 +48,6 @@ void Chassis_task(void)
         chassis_runtime_build_bus_outputs(&runtime_state, &outputs);
         chassis_runtime_bus_publish_outputs(&runtime_bus, &outputs);
 
-		osDelay(CHASSIS_TIME);
+		osDelay(CHASSIS_TASK_PERIOD_MS);
 	}
 }

@@ -101,12 +101,6 @@
 
 #define LEG_LENGTH_DEFAULT  0.18f
 
-/* ======================== 任务周期 ======================== */
-
-#define CHASSIS_TASK_PERIOD     2
-#define OBSERVE_TASK_PERIOD     3
-#define REMOTE_TASK_PERIOD      10
-
 /* ======================== LQR 增益矩阵 ======================== */
 
 #define LQR_K_MATRIX { \

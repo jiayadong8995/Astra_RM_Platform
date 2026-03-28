@@ -35,7 +35,7 @@
   - 当前文件：`chassis_orchestration.*`、`chassis_runtime_helpers.*`、`remote_runtime.*`、`observe_runtime.*`、`actuator_runtime.*`、`ins_runtime.*`
 - `app_config/`
   - 项目参数、topic 结构、业务常量、app 运行态结构
-  - 当前文件：`robot_def.h`、`runtime_state.h`
+  - 当前文件：`robot_def.h`、`runtime_state.h`、`app_params.h`
 - `legacy/`
   - 尚未拆完的 task shell 与兼容资产
   - 当前文件：`INS_task.*`、`chassis_task.*`、`remote_task.*`、`observe_task.*`、`motor_control_task.*`
@@ -103,6 +103,7 @@
 - [x] `INS_t` / `chassis_t` 已从 `legacy` 头抽到 `app_config/runtime_state.h`
 - [x] `app_flow` 和 `VMC_calc.h` 不再直接依赖 `legacy/INS_task.h`、`legacy/chassis_task.h`
 - [x] 坐标变换 helper 已从 `legacy/INS_task.c` 收回 `app_flow/ins_runtime.c`
+- [x] 任务周期、线程栈、优先级、启动延时已开始收进 `app_config/app_params.h`
 
 ### 6. `app_bringup` 开始变成装配入口
 
@@ -157,6 +158,7 @@
 - `legacy/INS_task.c` 已基本是 shell
 - `legacy/motor_control_task.c` 已基本是 shell
 - `freertos_app.c` 已基本是入口壳
+- `legacy/observe_task.c` 里的未使用卡尔曼残留已清掉
 
 还没完成：
 

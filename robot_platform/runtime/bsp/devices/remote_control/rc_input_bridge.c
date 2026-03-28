@@ -5,6 +5,7 @@
 #include "cmsis_os.h"
 #include "message_center.h"
 #include "remote_control.h"
+#include "app_config/app_params.h"
 #include "robot_def.h"
 
 void rc_input_task(void)
@@ -25,6 +26,6 @@ void rc_input_task(void)
         }
 
         PubPushMessage(rc_pub, &rc_msg);
-        osDelay(REMOTE_TASK_PERIOD);
+        osDelay(REMOTE_TASK_PERIOD_MS);
     }
 }
