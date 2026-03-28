@@ -6,6 +6,7 @@ from robot_platform.sim.runner import (
     _build_smoke_result,
     _detect_runtime_error,
     _extract_bridge_metadata,
+    _sitl_remained_alive,
     _summarize_bridge_stats,
     _summarize_runtime_boundary,
     _summarize_validation_targets,
@@ -55,6 +56,11 @@ class RunnerMetadataTests(unittest.TestCase):
 class RunnerSummaryTests(unittest.TestCase):
     def test_balance_chassis_profile_declares_runtime_boundaries(self) -> None:
         self.assertEqual(BALANCE_CHASSIS_PROFILE.name, "balance_chassis")
+        self.assertEqual(BALANCE_CHASSIS_PROFILE.backend_module, "robot_platform.sim.backends.sitl_bridge")
+        self.assertEqual(
+            BALANCE_CHASSIS_PROFILE.bridge_adapter_module,
+            "robot_platform.sim.projects.balance_chassis.bridge_adapter",
+        )
         self.assertEqual(BALANCE_CHASSIS_PROFILE.runtime_input_boundary.topics, ("ins_data", "chassis_cmd"))
         self.assertEqual(
             BALANCE_CHASSIS_PROFILE.runtime_output_boundary.topics,
@@ -218,6 +224,11 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertTrue(summary["smoke_health"]["sitl_remained_alive"])
         self.assertIn("sitl_remained_alive", summary["smoke_health"]["required_checks"])
         self.assertNotIn("sitl_remained_alive", summary["smoke_health"]["failures"])
+
+    def test_sitl_remained_alive_accepts_sigkill_runner_cleanup(self) -> None:
+        self.assertTrue(_sitl_remained_alive({"sitl_exit_code": -9}))
+        self.assertTrue(_sitl_remained_alive({"sitl_exit_code": -15}))
+        self.assertFalse(_sitl_remained_alive({"sitl_exit_code": 0}))
 
 
 if __name__ == "__main__":

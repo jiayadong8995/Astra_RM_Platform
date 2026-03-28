@@ -27,7 +27,7 @@ python3 -m robot_platform.tools.platform_cli.main test sim
 当前 `sim` 命令会：
 
 - 自动构建 `balance_chassis_sitl`
-- 拉起 `sim_bridge` 和 SITL 进程
+- 拉起 profile 指定的 SITL backend 和 SITL 进程
 - 执行一个最小 smoke session
 - 输出 `build/sim_reports/sitl_smoke.json`
 
@@ -36,6 +36,11 @@ python3 -m robot_platform.tools.platform_cli.main test sim
 - `sim/core`: 平台公共层，承接 runner / profile / protocol 这类可复用能力
 - `sim/projects/balance_chassis`: 当前机器人适配层，承接 runtime boundary / profile / bridge adapter / smoke
 - 项目层现在也负责声明 validation target，并通过项目自己的 validation builder 生成状态
+
+当前 backend 层：
+
+- `sim/backends/sitl_bridge.py`: 通用 SITL backend，runner 通过 profile 指定项目后启动
+- 旧的 `sim/bridge/sim_bridge.py` 只保留为 `balance_chassis` 的兼容 wrapper
 
 当前 smoke report 至少记录：
 

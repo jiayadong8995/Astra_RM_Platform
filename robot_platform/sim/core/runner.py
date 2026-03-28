@@ -150,6 +150,13 @@ def _summarize_runtime_boundary(summary: dict[str, object]) -> None:
         summary["transport_ports_match"] = declared_ports == observed_ports
 
 
+def _sitl_remained_alive(summary: dict[str, object]) -> bool:
+    sitl_exit_code = summary.get("sitl_exit_code")
+    if sitl_exit_code in (-15, -9):
+        return True
+    return False
+
+
 def _default_validation_status_builder(
     summary: dict[str, object],
     profile: SimProjectProfile,
@@ -194,12 +201,11 @@ def _summarize_validation_targets(summary: dict[str, object], profile: SimProjec
 def _summarize_smoke_health(summary: dict[str, object], profile: SimProjectProfile) -> None:
     sitl_lines = summary.get("sitl_output", [])
     bridge_stats = summary.get("bridge_stats_last")
-    sitl_exit_code = summary.get("sitl_exit_code")
     expectations = profile.smoke_expectations
 
     health: dict[str, object] = {
         "sitl_scheduler_started": False,
-        "sitl_remained_alive": sitl_exit_code == -15,
+        "sitl_remained_alive": _sitl_remained_alive(summary),
         "bridge_startup_complete": isinstance(summary.get("bridge_startup_complete"), dict),
         "bridge_runtime_boundary_observed": isinstance(summary.get("runtime_boundary"), dict),
         "bridge_transport_ports_observed": isinstance(summary.get("transport_ports"), dict),
@@ -279,7 +285,6 @@ def _build_smoke_result(summary: dict[str, object]) -> None:
     bridge_stats = summary.get("bridge_stats_last")
     bridge_stats_summary = summary.get("bridge_stats_summary")
     startup_error = summary.get("bridge_startup_error")
-    sitl_exit_code = summary.get("sitl_exit_code")
     validation_summary = summary.get("validation_summary")
     validation_targets_status = summary.get("validation_targets_status")
     result: dict[str, object] = {
@@ -288,7 +293,7 @@ def _build_smoke_result(summary: dict[str, object]) -> None:
         "primary_failure": None,
         "failure_detail": None,
         "elapsed_s": summary.get("elapsed_s"),
-        "sitl_remained_alive": sitl_exit_code == -15,
+        "sitl_remained_alive": _sitl_remained_alive(summary),
     }
 
     if isinstance(health, dict):
@@ -363,7 +368,8 @@ def run_profile_session(
         "duration_s": duration_s,
         "report_path": str(report_path),
         "sitl_binary": str(sitl_bin),
-        "bridge_command": [sys.executable, "-u", "-m", profile.bridge_module],
+        "backend_command": [sys.executable, "-u", "-m", profile.backend_module, "--project", profile.name],
+        "bridge_command": [sys.executable, "-u", "-m", profile.backend_module, "--project", profile.name],
         "sitl_command": [str(sitl_bin)],
         "bridge_protocol_declared": {
             "bridge_protocol_version": profile.bridge_protocol_version,
@@ -403,7 +409,7 @@ def run_profile_session(
 
     try:
         bridge_proc = subprocess.Popen(
-            [sys.executable, "-u", "-m", profile.bridge_module],
+            [sys.executable, "-u", "-m", profile.backend_module, "--project", profile.name],
             cwd=repo_root,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,

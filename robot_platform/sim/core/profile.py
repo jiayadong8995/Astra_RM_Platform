@@ -48,7 +48,8 @@ class SimProjectProfile:
     sitl_target: str
     sitl_binary_name: str
     report_name: str
-    bridge_module: str
+    backend_module: str
+    bridge_adapter_module: str
     bridge_protocol_version: int
     runtime_input_boundary: RuntimeTopicBoundary
     runtime_output_boundary: RuntimeTopicBoundary

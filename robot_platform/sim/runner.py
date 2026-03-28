@@ -4,6 +4,7 @@ from robot_platform.sim.core.runner import (
     _build_smoke_result,
     _detect_runtime_error,
     _extract_bridge_metadata,
+    _sitl_remained_alive,
     _summarize_bridge_stats,
     _summarize_runtime_boundary,
     _summarize_validation_targets,
