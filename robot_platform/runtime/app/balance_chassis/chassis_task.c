@@ -42,6 +42,9 @@ uint32_t CHASSIS_TIME=CHASSIS_TASK_PERIOD;
 static void Chassis_init(chassis_t *chassis,vmc_leg_t *vmcr_init,vmc_leg_t *vmcl_init);
 static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidTypeDef *legr,PidTypeDef *legl);
 static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins,const Actuator_Feedback_t *feedback);
+static void update_leg_feedback(vmc_leg_t *vmc_r, vmc_leg_t *vmc_l, const Actuator_Feedback_t *feedback);
+static void update_wheel_feedback(chassis_t *chassis, const Actuator_Feedback_t *feedback);
+static void update_attitude_feedback(chassis_t *chassis, const vmc_leg_t *vmc_r, const vmc_leg_t *vmc_l, const INS_t *ins);
 static void chassis_control_loop(chassis_t * chassis,\
 							      vmc_leg_t *    vmcr,\
 							      vmc_leg_t *    vmcl,\
@@ -56,6 +59,8 @@ static void chassis_jump_loop(chassis_t * chassis,\
 							 PidTypeDef * legr   ,\
 							 PidTypeDef * legl	  );
 static void Limit_Int(int16_t *in,int16_t min,int16_t max);
+static void saturate_wheel_outputs(chassis_t *chassis);
+static void saturate_leg_outputs(vmc_leg_t *vmcr, vmc_leg_t *vmcl);
 static void chassis_ground_detection(chassis_t * chassis,\
 									 vmc_leg_t * vmcr   ,\
 									 vmc_leg_t * vmcl   ,\
@@ -253,33 +258,44 @@ static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidT
 
 static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins,const Actuator_Feedback_t *feedback)
 {
-    vmc_r->phi1=pi/2.0f+feedback->joint_pos[0]+JOINT0_OFFSET;
-	vmc_r->phi4=pi/2.0f+feedback->joint_pos[1]+JOINT1_OFFSET;
-	vmc_l->phi1=pi/2.0f+feedback->joint_pos[2]+JOINT2_OFFSET;
-	vmc_l->phi4=pi/2.0f+feedback->joint_pos[3]+JOINT3_OFFSET;
-
-	chassis->wheel_motor[0].chassis_x = feedback->wheel_angle[0];
-	chassis->wheel_motor[1].chassis_x = feedback->wheel_angle[1];
-
-	chassis->wheel_motor[0].speed = feedback->wheel_speed[0];
-	chassis->wheel_motor[1].speed = feedback->wheel_speed[1];
-	chassis->wheel_motor[0].w_speed = feedback->wheel_speed[0] / WHEEL_RADIUS;
-	chassis->wheel_motor[1].w_speed = feedback->wheel_speed[1] / WHEEL_RADIUS;
-
-  chassis->myPithGyroL = - ins->Gyro[0];
-	chassis->myPithL = - ins->Pitch;//-0.05 //+0.05
-	chassis->myPithR = ins->Pitch;//0.05
-	chassis->myPithGyroR = ins->Gyro[0];
-	
-	chassis->total_yaw = ins->YawTotalAngle;
-	chassis->roll = ins->Roll;
-	chassis->theta_err = 0.0f-(vmc_r->theta+vmc_l->theta);
+    update_leg_feedback(vmc_r, vmc_l, feedback);
+    update_wheel_feedback(chassis, feedback);
+    update_attitude_feedback(chassis, vmc_r, vmc_l, ins);
 	
 	if(ins->Pitch<PITCH_FALL_THRESHOLD&&ins->Pitch>-PITCH_FALL_THRESHOLD)
 	{//根据pitch角度判断倒地自起是否完成
 		chassis->recover_flag=0;
 	}
 
+}
+
+static void update_leg_feedback(vmc_leg_t *vmc_r, vmc_leg_t *vmc_l, const Actuator_Feedback_t *feedback)
+{
+    vmc_r->phi1 = pi / 2.0f + feedback->joint_pos[0] + JOINT0_OFFSET;
+    vmc_r->phi4 = pi / 2.0f + feedback->joint_pos[1] + JOINT1_OFFSET;
+    vmc_l->phi1 = pi / 2.0f + feedback->joint_pos[2] + JOINT2_OFFSET;
+    vmc_l->phi4 = pi / 2.0f + feedback->joint_pos[3] + JOINT3_OFFSET;
+}
+
+static void update_wheel_feedback(chassis_t *chassis, const Actuator_Feedback_t *feedback)
+{
+    chassis->wheel_motor[0].chassis_x = feedback->wheel_angle[0];
+    chassis->wheel_motor[1].chassis_x = feedback->wheel_angle[1];
+    chassis->wheel_motor[0].speed = feedback->wheel_speed[0];
+    chassis->wheel_motor[1].speed = feedback->wheel_speed[1];
+    chassis->wheel_motor[0].w_speed = feedback->wheel_speed[0] / WHEEL_RADIUS;
+    chassis->wheel_motor[1].w_speed = feedback->wheel_speed[1] / WHEEL_RADIUS;
+}
+
+static void update_attitude_feedback(chassis_t *chassis, const vmc_leg_t *vmc_r, const vmc_leg_t *vmc_l, const INS_t *ins)
+{
+    chassis->myPithGyroL = -ins->Gyro[0];
+    chassis->myPithL = -ins->Pitch;
+    chassis->myPithR = ins->Pitch;
+    chassis->myPithGyroR = ins->Gyro[0];
+    chassis->total_yaw = ins->YawTotalAngle;
+    chassis->roll = ins->Roll;
+    chassis->theta_err = 0.0f - (vmc_r->theta + vmc_l->theta);
 }
 
 static void chassis_control_loop( chassis_t * chassis,\
@@ -339,8 +355,6 @@ static void chassis_control_loop( chassis_t * chassis,\
    for(int i=0;i<2;i++)
    {
 		chassis->wheel_motor[i].torque_set= WHEEL_TORQUE_RATIO * chassis->wheel_motor[i].torque_set+TURN_TORQUE_RATIO * chassis->turn_T;	//轮毂电机输出力矩
-		mySaturate(&chassis->wheel_motor[i].torque_set,-WHEEL_TORQUE_MAX,WHEEL_TORQUE_MAX);	
-		Limit_Int(&chassis->wheel_motor[i].give_current,-8000,8000);
    }
 
     vmcr->Tp = vmcr->Tp+chassis->leg_tp;//右髋关节输出力矩
@@ -358,16 +372,9 @@ static void chassis_control_loop( chassis_t * chassis,\
 	 
 	chassis->wheel_motor[0].give_current = chassis->wheel_motor[0].torque_set * M3508_TORQUE_TO_CURRENT;
 	chassis->wheel_motor[1].give_current = chassis->wheel_motor[1].torque_set * M3508_TORQUE_TO_CURRENT;
-	 
-	//额定扭矩
-	mySaturate(&vmcr->F0,-100.0f,100.0f);//限幅 
-    mySaturate(&vmcr->torque_set[1],-JOINT_TORQUE_MAX,JOINT_TORQUE_MAX);//3	
-	mySaturate(&vmcr->torque_set[0],-JOINT_TORQUE_MAX,JOINT_TORQUE_MAX);
-	
-	mySaturate(&vmcl->F0,-100.0f,100.0f);//限幅
-	mySaturate(&vmcl->torque_set[1],-JOINT_TORQUE_MAX,JOINT_TORQUE_MAX);//3
-	mySaturate(&vmcl->torque_set[0],-JOINT_TORQUE_MAX,JOINT_TORQUE_MAX);
-	
+
+    saturate_wheel_outputs(chassis);
+    saturate_leg_outputs(vmcr, vmcl);
 }
 
 static void Limit_Int(int16_t *in,int16_t min,int16_t max)
@@ -380,6 +387,25 @@ static void Limit_Int(int16_t *in,int16_t min,int16_t max)
   {
     *in = max;
   }
+}
+
+static void saturate_wheel_outputs(chassis_t *chassis)
+{
+    for (int i = 0; i < 2; i++)
+    {
+        mySaturate(&chassis->wheel_motor[i].torque_set, -WHEEL_TORQUE_MAX, WHEEL_TORQUE_MAX);
+        Limit_Int(&chassis->wheel_motor[i].give_current, -8000, 8000);
+    }
+}
+
+static void saturate_leg_outputs(vmc_leg_t *vmcr, vmc_leg_t *vmcl)
+{
+    mySaturate(&vmcr->F0, -100.0f, 100.0f);
+    mySaturate(&vmcr->torque_set[1], -JOINT_TORQUE_MAX, JOINT_TORQUE_MAX);
+    mySaturate(&vmcr->torque_set[0], -JOINT_TORQUE_MAX, JOINT_TORQUE_MAX);
+    mySaturate(&vmcl->F0, -100.0f, 100.0f);
+    mySaturate(&vmcl->torque_set[1], -JOINT_TORQUE_MAX, JOINT_TORQUE_MAX);
+    mySaturate(&vmcl->torque_set[0], -JOINT_TORQUE_MAX, JOINT_TORQUE_MAX);
 }
 
 static void chassis_jump_loop(chassis_t * chassis,\
