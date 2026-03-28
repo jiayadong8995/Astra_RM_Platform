@@ -19,48 +19,13 @@
 #include "fdcan.h"
 #include "cmsis_os.h"
 #include "can_bsp.h"
-#include "message_center.h"
-#include "pid.h"
-#include "VMC_calc.h"
-#include "INS_task.h"
 #include "../app_config/robot_def.h"
-#include "user_lib.h"
-#include "../app_flow/chassis_runtime_helpers.h"
+#include "../app_flow/chassis_orchestration.h"
 #include "../app_io/chassis_topics.h"
 
-static float LQR_K_R[12]= LQR_K_MATRIX;
-
-static vmc_leg_t runtime_right_leg;
-static vmc_leg_t runtime_left_leg;
-static chassis_t chassis_runtime;
-static PidTypeDef leg_r_pid;//右腿的腿长pd
-static PidTypeDef leg_l_pid;//左腿的腿长pd
-static PidTypeDef tp_pid;//防劈叉补偿pd
-static PidTypeDef turn_pid;//转向pd
-static PidTypeDef roll_pid;//横滚角补偿pd
-
-uint32_t CHASSIS_TIME=CHASSIS_TASK_PERIOD;
-
-static void Chassis_init(chassis_t *chassis,vmc_leg_t *vmcr_init,vmc_leg_t *vmcl_init);
-static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidTypeDef *legr,PidTypeDef *legl);
-static void chassis_apply_bus_inputs(chassis_t *chassis, INS_t *ins, const Chassis_Bus_Input_t *inputs);
-static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins,const Actuator_Feedback_t *feedback);
-static void chassis_build_bus_outputs(const chassis_t *chassis,
-                                      const vmc_leg_t *right_leg,
-                                      const vmc_leg_t *left_leg,
-                                      Chassis_Bus_Output_t *outputs);
-static void chassis_control_loop(chassis_t * chassis,\
-							      vmc_leg_t *    vmcr,\
-							      vmc_leg_t *    vmcl,\
-						              INS_t *     ins,\
-						              float *  LQR_KR,\
-						              float *  LQR_KL,\
-							     PidTypeDef *    legr,\
-							     PidTypeDef *    legl);
-
-/* pub-sub handles */
 static Chassis_Runtime_Bus_t runtime_bus;
-static INS_t ins_runtime;
+static Chassis_Runtime_State_t runtime_state;
+static uint32_t CHASSIS_TIME = CHASSIS_TASK_PERIOD;
 
 void Chassis_task(void)
 {
@@ -70,148 +35,19 @@ void Chassis_task(void)
     chassis_runtime_bus_init(&runtime_bus);
     chassis_runtime_bus_wait_ready(&runtime_bus, &inputs);
 
-    Chassis_init(&chassis_runtime,&runtime_right_leg,&runtime_left_leg);
-    Pensation_init(&roll_pid,&tp_pid,&turn_pid,&leg_r_pid,&leg_l_pid);
-    chassis_apply_bus_inputs(&chassis_runtime, &ins_runtime, &inputs);
+    chassis_runtime_state_init(&runtime_state);
+    chassis_runtime_apply_bus_inputs(&runtime_state, &inputs);
 
     osDelay(6);
 
 	while(1)
 	{	
         chassis_runtime_bus_pull_inputs(&runtime_bus, &inputs);
-        chassis_apply_bus_inputs(&chassis_runtime, &ins_runtime, &inputs);
-
-		chassis_feedback_update(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,&inputs.feedback);
-	    chassis_control_loop(&chassis_runtime,&runtime_right_leg,&runtime_left_leg,&ins_runtime,LQR_K_R,LQR_K_R,&leg_r_pid,&leg_l_pid);
-        chassis_build_bus_outputs(&chassis_runtime, &runtime_right_leg, &runtime_left_leg, &outputs);
+        chassis_runtime_apply_bus_inputs(&runtime_state, &inputs);
+        chassis_runtime_step(&runtime_state, &inputs.feedback);
+        chassis_runtime_build_bus_outputs(&runtime_state, &outputs);
         chassis_runtime_bus_publish_outputs(&runtime_bus, &outputs);
 
 		osDelay(CHASSIS_TIME);
 	}
-}
-
-
-static void Chassis_init(chassis_t *chassis,vmc_leg_t *vmcr_init,vmc_leg_t *vmcl_init)
-{
-	for(int i = 0;i < 2; i++)
-	{
-		chassis->wheel_motor[i].chassis_x = 0.0f;
-	}  
-	VMC_init(vmcr_init);//给杆长赋值
-	VMC_init(vmcl_init);//给杆长赋值
-}
-
-static void Pensation_init(PidTypeDef *roll,PidTypeDef *Tp,PidTypeDef *turn,PidTypeDef *legr,PidTypeDef *legl)
-{
-	//腿长pid初始化
-	static const float roll_pid[3] = {ROLL_PID_KP,ROLL_PID_KI,ROLL_PID_KD};
-    static const float legr_pid[3] = {LEG_PID_KP, LEG_PID_KI,LEG_PID_KD};
-    static const float legl_pid[3] = {LEG_PID_KP, LEG_PID_KI,LEG_PID_KD};
-    //补偿pid初始化：防劈叉补偿、偏航角补偿
-	static const float tp_pid[3] = {TP_PID_KP, TP_PID_KI, TP_PID_KD};
-	static const float turn_pid[3] = {TURN_PID_KP, TURN_PID_KI, TURN_PID_KD};
-	
-    PID_init(roll, PID_POSITION, roll_pid, ROLL_PID_MAX_OUT, ROLL_PID_MAX_IOUT);
-	PID_init(Tp,   PID_POSITION, tp_pid,   TP_PID_MAX_OUT,   TP_PID_MAX_IOUT);
-	PID_init(turn, PID_POSITION, turn_pid, TURN_PID_MAX_OUT, TURN_PID_MAX_IOUT);
-
-	PID_init(legr, PID_POSITION,legr_pid, LEG_PID_MAX_OUT, LEG_PID_MAX_IOUT);//腿长pid
-	PID_init(legl, PID_POSITION,legl_pid, LEG_PID_MAX_OUT, LEG_PID_MAX_IOUT);//腿长pid
-}
-
-static void chassis_apply_bus_inputs(chassis_t *chassis, INS_t *ins, const Chassis_Bus_Input_t *inputs)
-{
-    ins->Pitch = inputs->ins.pitch;
-    ins->Roll = inputs->ins.roll;
-    ins->YawTotalAngle = inputs->ins.yaw_total;
-    ins->Gyro[0] = inputs->ins.gyro[0];
-    ins->Gyro[1] = inputs->ins.gyro[1];
-    ins->Gyro[2] = inputs->ins.gyro[2];
-    ins->MotionAccel_b[0] = inputs->ins.accel_b[0];
-    ins->MotionAccel_b[1] = inputs->ins.accel_b[1];
-    ins->MotionAccel_b[2] = inputs->ins.accel_b[2];
-    ins->ins_flag = inputs->ins.ready;
-
-    chassis->v_set = inputs->cmd.vx_cmd;
-    chassis->turn_set = inputs->cmd.turn_cmd;
-    chassis->leg_set = inputs->cmd.leg_set;
-    chassis->start_flag = inputs->cmd.start_flag;
-    chassis->jump_flag = inputs->cmd.jump_flag;
-    chassis->recover_flag = inputs->cmd.recover_flag;
-
-    chassis->v_filter = inputs->observe.v_filter;
-    chassis->x_filter = inputs->observe.x_filter;
-}
-
-static void chassis_feedback_update(chassis_t *chassis,vmc_leg_t *vmc_r,vmc_leg_t *vmc_l,INS_t *ins,const Actuator_Feedback_t *feedback)
-{
-    chassis_apply_feedback_snapshot(chassis, vmc_r, vmc_l, ins, feedback);
-}
-
-static void chassis_build_bus_outputs(const chassis_t *chassis,
-                                      const vmc_leg_t *right_leg,
-                                      const vmc_leg_t *left_leg,
-                                      Chassis_Bus_Output_t *outputs)
-{
-    outputs->state.v_filter = chassis->v_filter;
-    outputs->state.x_filter = chassis->x_filter;
-    outputs->state.x_set = chassis->x_set;
-    outputs->state.total_yaw = chassis->total_yaw;
-    outputs->state.roll = chassis->roll;
-    outputs->state.turn_set = chassis->turn_set;
-
-    outputs->right_leg.joint_torque[0] = right_leg->torque_set[0];
-    outputs->right_leg.joint_torque[1] = right_leg->torque_set[1];
-    outputs->right_leg.wheel_torque = chassis->wheel_motor[1].torque_set;
-    outputs->right_leg.wheel_current = chassis->wheel_motor[1].give_current;
-    outputs->right_leg.leg_length = right_leg->L0;
-
-    outputs->left_leg.joint_torque[0] = left_leg->torque_set[0];
-    outputs->left_leg.joint_torque[1] = left_leg->torque_set[1];
-    outputs->left_leg.wheel_torque = chassis->wheel_motor[0].torque_set;
-    outputs->left_leg.wheel_current = chassis->wheel_motor[0].give_current;
-    outputs->left_leg.leg_length = left_leg->L0;
-
-    outputs->actuator_cmd.joint_torque[0] = right_leg->torque_set[0];
-    outputs->actuator_cmd.joint_torque[1] = right_leg->torque_set[1];
-    outputs->actuator_cmd.joint_torque[2] = left_leg->torque_set[0];
-    outputs->actuator_cmd.joint_torque[3] = left_leg->torque_set[1];
-    outputs->actuator_cmd.wheel_current[0] = chassis->wheel_motor[0].give_current;
-    outputs->actuator_cmd.wheel_current[1] = chassis->wheel_motor[1].give_current;
-    outputs->actuator_cmd.start_flag = chassis->start_flag;
-}
-
-static void chassis_control_loop( chassis_t * chassis,\
-							      vmc_leg_t *    vmcr,\
-							      vmc_leg_t *    vmcl,\
-						              INS_t *     ins,\
-						              float *  LQR_KR,\
-						              float *  LQR_KL,\
-							     PidTypeDef *    legr,\
-							     PidTypeDef *    legl)
-{
-	
-	VMC_calc_1_right(vmcr,ins,2.0f/1000.0f);//计算theta和d_theta给lqr用，同时也计算右腿长L0,该任务控制周期是4*0.001秒
-	VMC_calc_1_left(vmcl,ins,2.0f/1000.0f);//计算theta和d_theta给lqr用，同时也计算左腿长L0,该任务控制周期是4*0.001秒
-	chassis_compute_turn_and_leg_compensation(chassis, ins, &turn_pid, &roll_pid, &tp_pid);
-    chassis_compute_lqr_outputs(chassis, vmcr, vmcl, LQR_KR, LQR_KL);
-    chassis_mix_wheel_torque(chassis);
-
-    vmcr->Tp = vmcr->Tp+chassis->leg_tp;//右髋关节输出力矩
-	vmcl->Tp = vmcl->Tp+chassis->leg_tp;//左髋关节输出力矩
-
-
-	chassis->roll_f0 = 0;
-
-	chassis_apply_jump_logic(chassis, vmcr, vmcl, legr, legl);
-   
-	chassis_apply_ground_detection(chassis, vmcr, vmcl, ins);
-	
-	VMC_calc_2(vmcr);//计算期望的关节输出力矩
-	VMC_calc_2(vmcl);
-	 
-	chassis->wheel_motor[0].give_current = chassis->wheel_motor[0].torque_set * M3508_TORQUE_TO_CURRENT;
-	chassis->wheel_motor[1].give_current = chassis->wheel_motor[1].torque_set * M3508_TORQUE_TO_CURRENT;
-
-    chassis_saturate_outputs(chassis, vmcr, vmcl);
 }
