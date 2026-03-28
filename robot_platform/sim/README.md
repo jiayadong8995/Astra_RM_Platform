@@ -30,6 +30,11 @@ python3 -m robot_platform.tools.platform_cli.main test sim
 - 执行一个最小 smoke session
 - 输出 `build/sim_reports/sitl_smoke.json`
 
+当前目录开始按两层收口：
+
+- `sim/core`: 平台公共层，承接 runner / profile / protocol 这类可复用能力
+- `sim/projects/balance_chassis`: 当前机器人适配层，承接 runtime boundary / profile / bridge adapter / smoke
+
 当前 smoke report 至少记录：
 
 - 运行状态和进程退出信息

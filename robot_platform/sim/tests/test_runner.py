@@ -10,6 +10,7 @@ from robot_platform.sim.runner import (
     _summarize_runtime_boundary,
     _summarize_smoke_health,
 )
+from robot_platform.sim.projects.balance_chassis.profile import BALANCE_CHASSIS_PROFILE
 
 
 class RunnerMetadataTests(unittest.TestCase):
@@ -51,6 +52,14 @@ class RunnerMetadataTests(unittest.TestCase):
 
 
 class RunnerSummaryTests(unittest.TestCase):
+    def test_balance_chassis_profile_declares_runtime_boundaries(self) -> None:
+        self.assertEqual(BALANCE_CHASSIS_PROFILE.name, "balance_chassis")
+        self.assertEqual(BALANCE_CHASSIS_PROFILE.runtime_input_boundary.topics, ("ins_data", "chassis_cmd"))
+        self.assertEqual(
+            BALANCE_CHASSIS_PROFILE.runtime_output_boundary.topics,
+            ("chassis_state", "leg_left", "leg_right"),
+        )
+
     def test_summarize_bridge_stats_computes_delta_and_rate(self) -> None:
         summary = {
             "elapsed_s": 2.0,

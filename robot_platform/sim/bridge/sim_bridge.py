@@ -18,7 +18,13 @@ from robot_platform.sim.bridge.protocol import (
     MotorFeedback,
     WheelCurrentCommand,
 )
-from robot_platform.sim.runtime_io import (
+from robot_platform.sim.projects.balance_chassis.bridge_adapter import (
+    create_default_imu_sample,
+    create_motor_feedback,
+    integrate_toy_motor_state,
+)
+from robot_platform.sim.projects.balance_chassis.profile import BALANCE_CHASSIS_PROFILE
+from robot_platform.sim.projects.balance_chassis.runtime_io import (
     RUNTIME_INPUT_BOUNDARY,
     RUNTIME_OUTPUT_BOUNDARY,
     RUNTIME_TRANSITIONAL_TOPICS,
@@ -37,7 +43,7 @@ def create_socket(*, bind_port: int | None = None) -> socket.socket:
 
 
 def imu_thread(sock: socket.socket, stats: BridgeStats) -> None:
-    sample = ImuSample()
+    sample = create_default_imu_sample()
     while True:
         sock.sendto(sample.encode(), (SITL_IP, IMU_PORT))
         stats.imu_packets_sent += 1
@@ -61,15 +67,18 @@ def motor_thread(sock_cmd: socket.socket, sock_fb: socket.socket, stats: BridgeS
             if cmd.motor_id not in motor_states:
                 continue
 
-            # Current bridge behavior is intentionally minimal:
-            # integrate torque into a toy velocity/position state and return feedback.
-            motor_states[cmd.motor_id][1] += cmd.torque * 0.001
-            motor_states[cmd.motor_id][0] += motor_states[cmd.motor_id][1] * 0.001
-
-            feedback = MotorFeedback(
-                motor_id=cmd.motor_id,
+            next_position, next_velocity = integrate_toy_motor_state(
                 position=motor_states[cmd.motor_id][0],
                 velocity=motor_states[cmd.motor_id][1],
+                torque=cmd.torque,
+            )
+            motor_states[cmd.motor_id][0] = next_position
+            motor_states[cmd.motor_id][1] = next_velocity
+
+            feedback = create_motor_feedback(
+                motor_id=cmd.motor_id,
+                position=next_position,
+                velocity=next_velocity,
                 torque=cmd.torque,
             )
             sock_fb.sendto(feedback.encode(), (SITL_IP, MOTOR_FB_PORT))
@@ -101,14 +110,14 @@ def stats_thread(stats: BridgeStats) -> None:
 def main() -> int:
     emit_event("protocol_version", {"bridge_protocol_version": BRIDGE_PROTOCOL_VERSION})
     runtime_boundary = {
-        "inputs": list(RUNTIME_INPUT_BOUNDARY.topics),
-        "outputs": list(RUNTIME_OUTPUT_BOUNDARY.topics),
-        "transitional": list(RUNTIME_TRANSITIONAL_TOPICS.topics),
+        "inputs": list(BALANCE_CHASSIS_PROFILE.runtime_input_boundary.topics),
+        "outputs": list(BALANCE_CHASSIS_PROFILE.runtime_output_boundary.topics),
+        "transitional": list(BALANCE_CHASSIS_PROFILE.runtime_transitional_topics.topics),
     }
     transport_ports = {
-        "imu": IMU_PORT,
-        "motor_fb": MOTOR_FB_PORT,
-        "motor_cmd": MOTOR_CMD_PORT,
+        "imu": BALANCE_CHASSIS_PROFILE.transport_ports.imu,
+        "motor_fb": BALANCE_CHASSIS_PROFILE.transport_ports.motor_fb,
+        "motor_cmd": BALANCE_CHASSIS_PROFILE.transport_ports.motor_cmd,
     }
 
     emit_event("runtime_boundary", runtime_boundary)
@@ -126,9 +135,9 @@ def main() -> int:
     stats = BridgeStats()
     print(
         "[Bridge] Runtime boundary "
-        f"inputs={RUNTIME_INPUT_BOUNDARY.topics} "
-        f"outputs={RUNTIME_OUTPUT_BOUNDARY.topics} "
-        f"transitional={RUNTIME_TRANSITIONAL_TOPICS.topics}"
+        f"inputs={BALANCE_CHASSIS_PROFILE.runtime_input_boundary.topics} "
+        f"outputs={BALANCE_CHASSIS_PROFILE.runtime_output_boundary.topics} "
+        f"transitional={BALANCE_CHASSIS_PROFILE.runtime_transitional_topics.topics}"
     )
     print(f"[Bridge] Transport ports imu={IMU_PORT} motor_fb={MOTOR_FB_PORT} motor_cmd={MOTOR_CMD_PORT}")
     print("[Bridge] Starting IMU mock thread (1000Hz)...")
