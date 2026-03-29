@@ -4,10 +4,11 @@
 #include "actuator/actuator_device.h"
 #include "actuator/motor/motor_device.h"
 #include "device_types.h"
+#include "device_profile.h"
 #include "imu/imu_device.h"
 #include "remote/remote_device.h"
 
-typedef struct {
+typedef struct platform_device_layer {
   platform_imu_device_t imu;
   platform_remote_device_t remote;
   platform_motor_device_t motor;

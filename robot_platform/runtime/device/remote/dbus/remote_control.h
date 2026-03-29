@@ -6,8 +6,8 @@
 #ifndef REMOTE_CONTROL_H
 #define REMOTE_CONTROL_H
 
-#include "bsp_rc.h"
 #include "struct_typedef.h"
+#include "usart.h"
 
 #define SBUS_RX_BUF_NUM 36u
 #define RC_FRAME_LENGTH 18u

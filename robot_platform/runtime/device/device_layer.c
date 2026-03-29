@@ -1,16 +1,16 @@
 #include "device_layer.h"
 
-#include "internal/device_backend_profiles.h"
-
 static void platform_map_device_command_to_motor_set(const platform_device_command_t *command,
                                                      platform_motor_command_set_t *motor_set);
 static void platform_copy_feedback_to_input(const platform_device_feedback_t *feedback,
                                             platform_device_input_t *input);
 static platform_device_result_t platform_default_layer_ensure_ready(void);
 static void platform_device_layer_bind_profile(platform_device_layer_t *layer,
-                                               platform_device_backend_profile_t profile);
+                                               const platform_device_profile_t *profile,
+                                               platform_device_backend_profile_t backend_profile);
 static void platform_device_layer_reset_sequences(platform_device_layer_t *layer);
 static platform_device_backend_profile_t platform_default_backend_profile(void);
+static const platform_device_profile_t *platform_select_profile(platform_device_backend_profile_t profile);
 
 static platform_device_layer_t g_platform_default_layer;
 static bool g_platform_default_layer_ready;
@@ -24,20 +24,28 @@ static void platform_device_layer_reset_sequences(platform_device_layer_t *layer
 }
 
 static void platform_device_layer_bind_profile(platform_device_layer_t *layer,
-                                               platform_device_backend_profile_t profile)
+                                               const platform_device_profile_t *profile,
+                                               platform_device_backend_profile_t backend_profile)
 {
-  switch (profile)
+  if (profile == 0)
   {
-    case PLATFORM_DEVICE_BACKEND_PROFILE_SITL:
-      platform_device_backend_bind_sitl(layer);
-      break;
-    case PLATFORM_DEVICE_BACKEND_PROFILE_HW:
-    default:
-      platform_device_backend_bind_hw(layer);
-      break;
+    return;
   }
 
-  layer->backend_profile = profile;
+  if (profile->bind_imu != 0)
+  {
+    profile->bind_imu(layer);
+  }
+  if (profile->bind_remote != 0)
+  {
+    profile->bind_remote(layer);
+  }
+  if (profile->bind_motor != 0)
+  {
+    profile->bind_motor(layer);
+  }
+
+  layer->backend_profile = backend_profile;
   platform_device_layer_reset_sequences(layer);
 }
 
@@ -78,7 +86,14 @@ platform_device_result_t platform_device_layer_init(platform_device_layer_t *lay
 platform_device_result_t platform_device_layer_init_profile(platform_device_layer_t *layer,
                                                             platform_device_backend_profile_t profile)
 {
-  platform_device_layer_bind_profile(layer, profile);
+  const platform_device_profile_t *selected_profile = platform_select_profile(profile);
+
+  if (selected_profile == 0)
+  {
+    return PLATFORM_DEVICE_RESULT_INVALID;
+  }
+
+  platform_device_layer_bind_profile(layer, selected_profile, profile);
   return platform_device_layer_init(layer);
 }
 
@@ -322,4 +337,22 @@ static platform_device_backend_profile_t platform_default_backend_profile(void)
 #else
   return PLATFORM_DEVICE_BACKEND_PROFILE_HW;
 #endif
+}
+
+static const platform_device_profile_t *platform_select_profile(platform_device_backend_profile_t profile)
+{
+  switch (profile)
+  {
+    case PLATFORM_DEVICE_BACKEND_PROFILE_SITL:
+      return platform_device_profile_sitl();
+    case PLATFORM_DEVICE_BACKEND_PROFILE_AUTO:
+#ifdef SITL_BUILD
+      return platform_device_profile_sitl();
+#else
+      return platform_device_profile_hw();
+#endif
+    case PLATFORM_DEVICE_BACKEND_PROFILE_HW:
+    default:
+      return platform_device_profile_hw();
+  }
 }

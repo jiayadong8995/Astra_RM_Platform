@@ -48,7 +48,7 @@ set(BALANCE_CHASSIS_DEVICE_SOURCES)
 
 if(PLATFORM_TARGET_HW)
   list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
-    ${PLATFORM_DEVICE_DIR}/device_backend_hw.c
+    ${PLATFORM_DEVICE_DIR}/device_profile_hw.c
     ${PLATFORM_DEVICE_DIR}/device_layer.c
     ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_hw.c
     ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_hw.c
@@ -58,7 +58,7 @@ endif()
 
 if(PLATFORM_TARGET_SIM)
   list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
-    ${PLATFORM_DEVICE_DIR}/device_backend_sitl.c
+    ${PLATFORM_DEVICE_DIR}/device_profile_sitl.c
     ${PLATFORM_DEVICE_DIR}/device_layer.c
     ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_sitl.c
     ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_sitl.c

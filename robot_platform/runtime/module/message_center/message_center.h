@@ -5,12 +5,12 @@
  *
  * Usage:
  *   // Publisher (e.g. INS_task)
- *   Publisher_t *ins_pub = PubRegister("ins_data", sizeof(INS_Data_t));
+ *   Publisher_t *ins_pub = PubRegister("ins_data", sizeof(platform_ins_state_message_t));
  *   PubPushMessage(ins_pub, &ins_data);
  *
  *   // Subscriber (e.g. chassis_task)
- *   Subscriber_t *ins_sub = SubRegister("ins_data", sizeof(INS_Data_t));
- *   INS_Data_t local_ins;
+ *   Subscriber_t *ins_sub = SubRegister("ins_data", sizeof(platform_ins_state_message_t));
+ *   platform_ins_state_message_t local_ins;
  *   if (SubGetMessage(ins_sub, &local_ins)) { ... }
  */
 

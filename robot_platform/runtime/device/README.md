@@ -11,8 +11,8 @@
 
 backend profile 装配现在只作为 `device_layer` 的内部依赖存在，源码位于：
 
-- `device_backend_hw.c`
-- `device_backend_sitl.c`
+- `device_profile_hw.c`
+- `device_profile_sitl.c`
 
 它们内部按设备域拆成：
 
@@ -56,6 +56,21 @@ runtime/device/
 
 - `device_layer`
 - 设备子域的稳定设备语义接口
+- `device_profile`
+
+这里的 `profile` 是当前 `device` 层的策略模型：
+
+- 一个 profile 定义一套设备节点装配方式
+- `hw` 和 `sitl` 通过不同 profile 装配同一套 `device_layer`
+- `device_layer` 不再直接依赖“默认绑定函数名”
+
+这里的“设备节点”指的是：
+
+- `platform_imu_device_t`
+- `platform_remote_device_t`
+- `platform_motor_device_t`
+
+`device_layer` 负责持有节点，`device_profile` 负责决定这些节点绑定哪套 concrete driver。
 
 当前默认 profile 规则：
 
