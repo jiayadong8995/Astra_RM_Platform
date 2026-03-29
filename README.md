@@ -14,9 +14,9 @@
 2. `robot_platform/`
    当前主工程。
    负责承接生成、构建、运行时分层和当前 `SITL` 验证主线。
-3. `Platform_Refactor/`
-   路线决策归档。
-   用于解释为什么项目最终收敛到当前路线。
+3. `references/`
+   外部高质量参考仓库。
+   用于对照成熟机器人平台的目录分工和控制组织方式。
 
 ## 当前项目主线
 
@@ -32,7 +32,7 @@
 
 1. 先读 [robot_platform/README.md](./robot_platform/README.md)
 2. 再读 [robot_platform/docs/README.md](./robot_platform/docs/README.md)
-3. 如需看路线背景，再读 [Platform_Refactor/README.md](./Platform_Refactor/README.md)
+3. 如需看参考实现，再读 [robot_platform/docs/ros_robot_algorithm_placement_research.md](./robot_platform/docs/ros_robot_algorithm_placement_research.md)
 
 ## 说明
 

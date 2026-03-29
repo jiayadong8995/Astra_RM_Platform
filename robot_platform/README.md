@@ -30,7 +30,7 @@ robot_platform/
 3. 如需看架构说明，读 [docs/platform_architecture.md](./docs/platform_architecture.md)
 4. 如需看分工和边界，读 [docs/project_roles_and_scope.md](./docs/project_roles_and_scope.md)
 5. 如需看环境细节，读 [docs/wsl_environment_setup.md](./docs/wsl_environment_setup.md)
-6. 如需看路线背景，再读 [../Platform_Refactor/README.md](../Platform_Refactor/README.md)
+6. 如需看外部参考，再读 [docs/ros_robot_algorithm_placement_research.md](./docs/ros_robot_algorithm_placement_research.md)
 
 ## 当前可用命令
 

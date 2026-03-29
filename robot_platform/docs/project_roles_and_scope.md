@@ -203,7 +203,7 @@ sim 编码师和代码重构师不能各自单独定义：
 - 这是一个平台架构项目，不是多个并列子项目
 - `robot_platform` 是唯一主执行面
 - `Astra_RM2025_Balance` 是历史基线
-- `Platform_Refactor` 是路线归档
+- `references` 是外部参考集
 - 当前验证主线是 `SITL`
 - 新消息总线体系进入当前交付面
 - `replay`、`physics_sim`、`osal`、大范围算法重写都不进入当前执行面
