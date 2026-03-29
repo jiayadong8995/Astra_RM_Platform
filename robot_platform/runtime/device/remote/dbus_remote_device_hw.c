@@ -1,6 +1,5 @@
 #include "dbus_remote_device.h"
 
-#include "../../bsp/devices/remote_control/remote_node.h"
 #include "../../bsp/devices/remote_control/remote_control.h"
 
 static platform_device_result_t platform_dbus_remote_init(platform_remote_device_t *device);
@@ -14,11 +13,6 @@ void platform_dbus_remote_device_bind(platform_remote_device_t *device,
   device->context = (void *)config;
   device->ops.init = platform_dbus_remote_init;
   device->ops.read_input = platform_dbus_remote_read_input;
-}
-
-void platform_dbus_remote_device_bind_default(platform_remote_device_t *device)
-{
-  platform_dbus_remote_device_bind(device, platform_remote_node_default());
 }
 
 static platform_device_result_t platform_dbus_remote_init(platform_remote_device_t *device)

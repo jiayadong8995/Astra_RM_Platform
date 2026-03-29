@@ -17,11 +17,6 @@ void platform_motor_actuator_device_bind(platform_motor_device_t *device,
   device->ops.read_motor_feedback = platform_motor_actuator_read;
 }
 
-void platform_motor_actuator_device_bind_default(platform_motor_device_t *device)
-{
-  platform_motor_actuator_device_bind(device, 0);
-}
-
 static platform_device_result_t platform_motor_actuator_init(platform_motor_device_t *device)
 {
   device->stamp.valid = true;

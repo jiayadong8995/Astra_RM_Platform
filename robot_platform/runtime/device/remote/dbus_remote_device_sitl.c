@@ -14,11 +14,6 @@ void platform_dbus_remote_device_bind(platform_remote_device_t *device,
   device->ops.read_input = platform_dbus_remote_read_input;
 }
 
-void platform_dbus_remote_device_bind_default(platform_remote_device_t *device)
-{
-  platform_dbus_remote_device_bind(device, 0);
-}
-
 static platform_device_result_t platform_dbus_remote_init(platform_remote_device_t *device)
 {
   device->stamp.valid = true;

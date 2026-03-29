@@ -8,8 +8,7 @@
   - 板级总线访问
   - 时基 / PWM / UART / CAN 等底层能力
 - `devices/`
-  - 面向具体驱动的 backend 节点
-  - 给 `runtime/device` 提供默认绑定配置
+  - 面向具体器件的原始驱动实现
 
 它不负责：
 

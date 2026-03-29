@@ -1,8 +1,6 @@
 #include "device_layer.h"
 
-#include "actuator/motor/motor_actuator_device.h"
-#include "imu/bmi088_device.h"
-#include "remote/dbus_remote_device.h"
+#include "device_backend.h"
 
 static void platform_map_device_command_to_motor_set(const platform_device_command_t *command,
                                                      platform_motor_command_set_t *motor_set);
@@ -11,9 +9,7 @@ static void platform_copy_feedback_to_input(const platform_device_feedback_t *fe
 
 void platform_device_layer_bind_default(platform_device_layer_t *layer)
 {
-  platform_bmi088_device_bind_default(&layer->imu);
-  platform_dbus_remote_device_bind_default(&layer->remote);
-  platform_motor_actuator_device_bind_default(&layer->motor);
+  platform_device_backend_bind_default(layer);
   layer->input_sequence = 0U;
   layer->feedback_sequence = 0U;
   layer->command_sequence = 0U;

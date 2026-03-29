@@ -13,6 +13,4 @@ typedef struct {
 void platform_dbus_remote_device_bind(platform_remote_device_t *device,
                                       const platform_dbus_remote_device_config_t *config);
 
-void platform_dbus_remote_device_bind_default(platform_remote_device_t *device);
-
 #endif

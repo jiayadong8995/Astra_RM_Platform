@@ -16,6 +16,4 @@ typedef struct {
 void platform_bmi088_device_bind(platform_imu_device_t *device,
                                  const platform_bmi088_device_config_t *config);
 
-void platform_bmi088_device_bind_default(platform_imu_device_t *device);
-
 #endif

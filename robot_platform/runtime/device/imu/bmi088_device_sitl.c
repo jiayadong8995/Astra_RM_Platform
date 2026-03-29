@@ -14,11 +14,6 @@ void platform_bmi088_device_bind(platform_imu_device_t *device,
   device->ops.read_sample = platform_bmi088_read_sample;
 }
 
-void platform_bmi088_device_bind_default(platform_imu_device_t *device)
-{
-  platform_bmi088_device_bind(device, 0);
-}
-
 static platform_device_result_t platform_bmi088_init(platform_imu_device_t *device)
 {
   device->stamp.valid = true;

@@ -19,6 +19,4 @@ typedef struct {
 void platform_motor_actuator_device_bind(platform_motor_device_t *device,
                                          const platform_motor_actuator_device_config_t *config);
 
-void platform_motor_actuator_device_bind_default(platform_motor_device_t *device);
-
 #endif

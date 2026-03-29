@@ -46,6 +46,7 @@ set(BALANCE_CHASSIS_DEVICE_SOURCES)
 
 if(PLATFORM_TARGET_HW)
   list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
+    ${PLATFORM_DEVICE_DIR}/device_backend_hw.c
     ${PLATFORM_DEVICE_DIR}/device_layer.c
     ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_hw.c
     ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_hw.c
@@ -55,6 +56,7 @@ endif()
 
 if(PLATFORM_TARGET_SIM)
   list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
+    ${PLATFORM_DEVICE_DIR}/device_backend_sitl.c
     ${PLATFORM_DEVICE_DIR}/device_layer.c
     ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_sitl.c
     ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_sitl.c
@@ -122,12 +124,9 @@ set(BALANCE_CHASSIS_BSP_SEED_SOURCES
   ${PLATFORM_BOARD_BSP_DIR}/bsp_PWM.c
   ${PLATFORM_BOARD_BSP_DIR}/bsp_uart.c
   ${PLATFORM_BOARD_BSP_DIR}/can_bsp.c
-  ${PLATFORM_BMI088_DIR}/bmi088_node.c
   ${PLATFORM_REMOTE_CONTROL_DIR}/rc_input_bridge.c
   ${PLATFORM_REMOTE_CONTROL_DIR}/remote_control.c
-  ${PLATFORM_REMOTE_CONTROL_DIR}/remote_node.c
   ${PLATFORM_DM_MOTOR_DIR}/dm4310_drv.c
-  ${PLATFORM_DM_MOTOR_DIR}/motor_node.c
 )
 
 add_library(balance_chassis_generated_raw STATIC

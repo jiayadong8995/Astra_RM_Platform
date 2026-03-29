@@ -1,6 +1,5 @@
 #include "motor_actuator_device.h"
 
-#include "../../../bsp/devices/dm_motor/motor_node.h"
 #include "../../../bsp/devices/dm_motor/dm4310_drv.h"
 #include "fdcan.h"
 
@@ -27,11 +26,6 @@ void platform_motor_actuator_device_bind(platform_motor_device_t *device,
   device->ops.init = platform_motor_actuator_init;
   device->ops.write_motor_command = platform_motor_actuator_write;
   device->ops.read_motor_feedback = platform_motor_actuator_read;
-}
-
-void platform_motor_actuator_device_bind_default(platform_motor_device_t *device)
-{
-  platform_motor_actuator_device_bind(device, platform_motor_node_default());
 }
 
 static platform_device_result_t platform_motor_actuator_init(platform_motor_device_t *device)

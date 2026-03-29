@@ -8,6 +8,11 @@
 - 向上提供设备输入、反馈、命令能力
 - 屏蔽 BSP/driver 差异
 
+默认后端绑定现在统一收口在：
+
+- `device_backend_hw.c`
+- `device_backend_sitl.c`
+
 它的实现原则还有一条：
 
 - 设备接口可以统一，但 concrete adapter 必须按 backend 分离
