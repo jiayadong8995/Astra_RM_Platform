@@ -14,6 +14,12 @@
    记录当前仓库在 WSL 下跑通 `generate` / `build` 所需的环境前提。
 5. [sim_architecture_research.md](./sim_architecture_research.md)
    调研当前 `sim/SITL` 架构方向，说明为什么采用平台公共 `sim core` 与项目适配层的结构。
+6. [project_overview_and_target_architecture.md](./project_overview_and_target_architecture.md)
+   项目总览与目标架构说明，先建立整个平台的统一地图。
+7. [runtime_realignment_plan.md](./runtime_realignment_plan.md)
+   基于参考项目给出运行时结构回正方案，定义目标层次和拆分批次。
+8. [runtime_file_migration_map.md](./runtime_file_migration_map.md)
+   文件级迁移映射表，明确当前代码分别应留在哪一层、应如何分批迁移。
 
 ## 已移除内容
 
