@@ -3,10 +3,9 @@
 #include <math.h>
 
 #include "../app_config/app_params.h"
+#include "../../../control/constraints/actuator_constraints.h"
+#include "../../../control/primitives/control_math.h"
 #include "remote_control.h"
-
-static void slope_following(float *target, float *set, float acc);
-static void local_saturate(float *in, float min, float max);
 
 void remote_runtime_init(Remote_Runtime_t *runtime)
 {
@@ -69,8 +68,8 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
 
         {
             float vx_speed_cmd = -rc_data->ch[1] * RC_TO_VX;
-            slope_following(&vx_speed_cmd, &runtime->v_set, RC_SPEED_SLOPE);
-            local_saturate(&runtime->v_set, -RC_VX_MAX, RC_VX_MAX);
+            platform_slew_to_target(vx_speed_cmd, &runtime->v_set, RC_SPEED_SLOPE);
+            platform_float_clamp(&runtime->v_set, -RC_VX_MAX, RC_VX_MAX);
         }
 
         runtime->x_set = runtime->x_set + runtime->v_set * (float)REMOTE_TASK_PERIOD_MS / 1000.0f;
@@ -82,14 +81,8 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
         runtime->turn_set = runtime->total_yaw;
     }
 
-    if (fabsf(runtime->turn_set - runtime->total_yaw) > 0.3f)
-    {
-        runtime->turn_set = ((runtime->turn_set - runtime->total_yaw) > 0.0f)
-                          ? (runtime->total_yaw + 0.3f)
-                          : (runtime->total_yaw - 0.3f);
-    }
-
-    local_saturate(&runtime->leg_set, LEG_LENGTH_MIN, LEG_LENGTH_MAX);
+    platform_constrain_remote_turn(&runtime->turn_set, runtime->total_yaw, 0.3f);
+    platform_float_clamp(&runtime->leg_set, LEG_LENGTH_MIN, LEG_LENGTH_MAX);
 }
 
 void remote_runtime_limit_leg_set(Remote_Runtime_t *runtime,
@@ -97,11 +90,7 @@ void remote_runtime_limit_leg_set(Remote_Runtime_t *runtime,
                                   const Leg_Output_t *left_msg)
 {
     float leg_length = (left_msg->leg_length + right_msg->leg_length) / 2.0f;
-    float leg_cmd = runtime->leg_set - leg_length;
-    if (fabsf(leg_cmd) > 0.1f)
-    {
-        runtime->leg_set = (leg_cmd > 0.0f) ? (leg_length + 0.1f) : (leg_length - 0.1f);
-    }
+    platform_constrain_remote_leg_set(&runtime->leg_set, leg_length, 0.1f);
 }
 
 Chassis_Cmd_t remote_runtime_build_cmd(const Remote_Runtime_t *runtime)
@@ -156,36 +145,4 @@ platform_robot_intent_t remote_runtime_build_intent(const Remote_Runtime_t *runt
     }
 
     return intent;
-}
-
-static void slope_following(float *target, float *set, float acc)
-{
-    if (*target > *set)
-    {
-        *set = *set + acc;
-        if (*set >= *target)
-        {
-            *set = *target;
-        }
-    }
-    else if (*target < *set)
-    {
-        *set = *set - acc;
-        if (*set <= *target)
-        {
-            *set = *target;
-        }
-    }
-}
-
-static void local_saturate(float *in, float min, float max)
-{
-    if (*in < min)
-    {
-        *in = min;
-    }
-    else if (*in > max)
-    {
-        *in = max;
-    }
 }

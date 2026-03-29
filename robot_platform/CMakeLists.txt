@@ -122,9 +122,12 @@ set(BALANCE_CHASSIS_BSP_SEED_SOURCES
   ${PLATFORM_BOARD_BSP_DIR}/bsp_PWM.c
   ${PLATFORM_BOARD_BSP_DIR}/bsp_uart.c
   ${PLATFORM_BOARD_BSP_DIR}/can_bsp.c
+  ${PLATFORM_BMI088_DIR}/bmi088_node.c
   ${PLATFORM_REMOTE_CONTROL_DIR}/rc_input_bridge.c
   ${PLATFORM_REMOTE_CONTROL_DIR}/remote_control.c
+  ${PLATFORM_REMOTE_CONTROL_DIR}/remote_node.c
   ${PLATFORM_DM_MOTOR_DIR}/dm4310_drv.c
+  ${PLATFORM_DM_MOTOR_DIR}/motor_node.c
 )
 
 add_library(balance_chassis_generated_raw STATIC
@@ -297,9 +300,11 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_RUNTIME_DIR}/control/state/observe_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
     ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
+    ${PLATFORM_RUNTIME_DIR}/control/constraints/actuator_constraints.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
+    ${PLATFORM_RUNTIME_DIR}/control/primitives/control_math.c
     ${PLATFORM_LEGACY_APP_DIR}/legacy/remote_task.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c

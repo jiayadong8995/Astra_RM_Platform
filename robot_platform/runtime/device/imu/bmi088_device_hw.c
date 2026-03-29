@@ -1,19 +1,11 @@
 #include "bmi088_device.h"
 
+#include "../../bsp/devices/bmi088/bmi088_node.h"
 #include "../../bsp/devices/bmi088/BMI088driver.h"
-#include "spi.h"
 
 static platform_device_result_t platform_bmi088_init(platform_imu_device_t *device);
 static platform_device_result_t platform_bmi088_read_sample(platform_imu_device_t *device,
                                                             platform_imu_sample_t *sample);
-
-static platform_bmi088_device_config_t g_platform_bmi088_config = {
-  .spi_handle = &hspi2,
-  .sample_state = &BMI088,
-  .calibrate = 1U,
-  .init_fn = (void (*)(void *, uint8_t))BMI088_Init,
-  .read_fn = (void (*)(void *))BMI088_Read,
-};
 
 void platform_bmi088_device_bind(platform_imu_device_t *device,
                                  const platform_bmi088_device_config_t *config)
@@ -26,7 +18,7 @@ void platform_bmi088_device_bind(platform_imu_device_t *device,
 
 void platform_bmi088_device_bind_default(platform_imu_device_t *device)
 {
-  platform_bmi088_device_bind(device, &g_platform_bmi088_config);
+  platform_bmi088_device_bind(device, platform_bmi088_node_default());
 }
 
 static platform_device_result_t platform_bmi088_init(platform_imu_device_t *device)

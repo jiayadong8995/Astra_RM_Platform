@@ -1,5 +1,6 @@
 #include "motor_actuator_device.h"
 
+#include "../../../bsp/devices/dm_motor/motor_node.h"
 #include "../../../bsp/devices/dm_motor/dm4310_drv.h"
 #include "fdcan.h"
 
@@ -17,17 +18,6 @@ static platform_device_result_t platform_motor_actuator_read(platform_motor_devi
 
 static platform_motor_actuator_context_t g_platform_motor_actuator_context;
 
-static platform_motor_actuator_device_config_t g_platform_motor_actuator_config = {
-  .joint_can_handle = &hfdcan1,
-  .wheel_can_handle = &hfdcan2,
-  .get_joint_state_fn = (void *(*)(uint8_t))get_joint_motor_state,
-  .get_wheel_state_fn = (void *(*)(uint8_t))get_chassis_motor_measure_point,
-  .joint_init_fn = (void (*)(void *, uint16_t, uint16_t))joint_motor_init,
-  .enable_mode_fn = (int (*)(void *, uint16_t, uint16_t))enable_motor_mode,
-  .mit_ctrl_fn = (void (*)(void *, uint16_t, float, float, float, float, float))mit_ctrl,
-  .wheel_cmd_fn = (void (*)(void *, int16_t, int16_t, int16_t, int16_t))CAN_cmd_chassis,
-};
-
 void platform_motor_actuator_device_bind(platform_motor_device_t *device,
                                          const platform_motor_actuator_device_config_t *config)
 {
@@ -41,7 +31,7 @@ void platform_motor_actuator_device_bind(platform_motor_device_t *device,
 
 void platform_motor_actuator_device_bind_default(platform_motor_device_t *device)
 {
-  platform_motor_actuator_device_bind(device, &g_platform_motor_actuator_config);
+  platform_motor_actuator_device_bind(device, platform_motor_node_default());
 }
 
 static platform_device_result_t platform_motor_actuator_init(platform_motor_device_t *device)
