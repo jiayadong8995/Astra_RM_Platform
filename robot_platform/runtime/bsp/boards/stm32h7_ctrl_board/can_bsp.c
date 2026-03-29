@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "dm4310_drv.h"
+#include "../../../device/actuator/motor/dm4310/dm4310_drv.h"
 #include "fdcan.h"
 
 FDCAN_RxHeaderTypeDef RxHeader1;

@@ -1,6 +1,6 @@
 #include "dbus_remote_device.h"
 
-#include "../../bsp/devices/remote_control/remote_control.h"
+#include "dbus/remote_control.h"
 
 static platform_device_result_t platform_dbus_remote_init(platform_remote_device_t *device);
 static platform_device_result_t platform_dbus_remote_read_input(platform_remote_device_t *device,

@@ -4,8 +4,21 @@
 
 #include "../app_config/app_params.h"
 #include "../../../control/constraints/actuator_constraints.h"
-#include "../../../control/primitives/control_math.h"
-#include "remote_control.h"
+#include "../../../module/lib/control/control_math.h"
+
+#define APP_RC_SW_UP   1U
+#define APP_RC_SW_MID  3U
+#define APP_RC_SW_DOWN 2U
+
+static uint8_t app_rc_switch_is_mid(uint8_t sw)
+{
+    return (sw == APP_RC_SW_MID) ? 1U : 0U;
+}
+
+static uint8_t app_rc_switch_is_down(uint8_t sw)
+{
+    return (sw == APP_RC_SW_DOWN) ? 1U : 0U;
+}
 
 void remote_runtime_init(Remote_Runtime_t *runtime)
 {
@@ -37,15 +50,15 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
         runtime->recover_flag = 0;
         runtime->jump_flag = 0;
     }
-    else if (switch_is_mid(rc_data->sw[0]))
+    else if (app_rc_switch_is_mid(rc_data->sw[0]))
     {
         runtime->start_flag = 1;
         if (runtime->myPithR > PITCH_RECOVER_THRESHOLD || runtime->myPithR < -PITCH_RECOVER_THRESHOLD)
         {
-            runtime->recover_flag = (rc_data->sw[1] == RC_SW_MID) ? 0U : 1U;
+            runtime->recover_flag = (rc_data->sw[1] == APP_RC_SW_MID) ? 0U : 1U;
         }
     }
-    else if (switch_is_down(rc_data->sw[0]))
+    else if (app_rc_switch_is_down(rc_data->sw[0]))
     {
         runtime->start_flag = 0;
         runtime->recover_flag = 0;
@@ -54,11 +67,11 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
 
     if (runtime->start_flag == 1)
     {
-        if (switch_is_mid(rc_data->sw[1]))
+        if (app_rc_switch_is_mid(rc_data->sw[1]))
         {
             runtime->jump_flag = (rc_data->ch[3] == 660) ? 1U : 0U;
         }
-        else if (switch_is_down(rc_data->sw[1]))
+        else if (app_rc_switch_is_down(rc_data->sw[1]))
         {
             runtime->jump_flag = 0;
         }

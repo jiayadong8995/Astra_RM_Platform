@@ -1,6 +1,6 @@
 #include "bmi088_device.h"
 
-#include "../../bsp/devices/bmi088/BMI088driver.h"
+#include "bmi088/BMI088driver.h"
 
 static platform_device_result_t platform_bmi088_init(platform_imu_device_t *device);
 static platform_device_result_t platform_bmi088_read_sample(platform_imu_device_t *device,

@@ -35,12 +35,14 @@ set(GENERATED_RAW_DIR ${PLATFORM_RUNTIME_DIR}/generated/stm32h7_ctrl_board_raw)
 set(PLATFORM_FREERTOS_PORT_DIR ${PLATFORM_THIRD_PARTY_DIR}/freertos_port_gcc_cm7_r0p1)
 set(PLATFORM_LINKER_SCRIPT ${PLATFORM_ROOT}/cmake/linker/stm32h723_flash.ld)
 set(PLATFORM_BOARD_BSP_DIR ${PLATFORM_RUNTIME_DIR}/bsp/boards/stm32h7_ctrl_board)
-set(PLATFORM_REMOTE_CONTROL_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/remote_control)
-set(PLATFORM_DM_MOTOR_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/dm_motor)
 set(PLATFORM_DEVICE_DIR ${PLATFORM_RUNTIME_DIR}/device)
+set(PLATFORM_DEVICE_REMOTE_DIR ${PLATFORM_DEVICE_DIR}/remote/dbus)
+set(PLATFORM_DEVICE_MOTOR_DIR ${PLATFORM_DEVICE_DIR}/actuator/motor/dm4310)
+set(PLATFORM_DEVICE_IMU_DIR ${PLATFORM_DEVICE_DIR}/imu/bmi088)
 set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
+set(PLATFORM_APP_IO_DIR ${PLATFORM_LEGACY_APP_DIR}/app_io)
 set(PLATFORM_CONTROL_CONTRACT_DIR ${PLATFORM_RUNTIME_DIR}/control/contracts)
-set(PLATFORM_BMI088_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/bmi088)
+set(PLATFORM_MODULE_CONTROL_LIB_DIR ${PLATFORM_RUNTIME_DIR}/module/lib/control)
 
 set(BALANCE_CHASSIS_DEVICE_SOURCES)
 
@@ -124,9 +126,8 @@ set(BALANCE_CHASSIS_BSP_SEED_SOURCES
   ${PLATFORM_BOARD_BSP_DIR}/bsp_PWM.c
   ${PLATFORM_BOARD_BSP_DIR}/bsp_uart.c
   ${PLATFORM_BOARD_BSP_DIR}/can_bsp.c
-  ${PLATFORM_REMOTE_CONTROL_DIR}/rc_input_bridge.c
-  ${PLATFORM_REMOTE_CONTROL_DIR}/remote_control.c
-  ${PLATFORM_DM_MOTOR_DIR}/dm4310_drv.c
+  ${PLATFORM_DEVICE_REMOTE_DIR}/remote_control.c
+  ${PLATFORM_DEVICE_MOTOR_DIR}/dm4310_drv.c
 )
 
 add_library(balance_chassis_generated_raw STATIC
@@ -142,8 +143,8 @@ target_include_directories(balance_chassis_generated_raw
     ${CHASSIS_CMSIS_DIR}/Include
     ${CHASSIS_CMSIS_DIR}/DSP/Include
     ${PLATFORM_BOARD_BSP_DIR}
-    ${PLATFORM_REMOTE_CONTROL_DIR}
-    ${PLATFORM_DM_MOTOR_DIR}
+    ${PLATFORM_DEVICE_REMOTE_DIR}
+    ${PLATFORM_DEVICE_MOTOR_DIR}
 )
 
 target_compile_definitions(balance_chassis_generated_raw
@@ -172,14 +173,16 @@ target_link_libraries(balance_chassis_bsp_seed
 target_include_directories(balance_chassis_bsp_seed
   PUBLIC
     ${PLATFORM_BOARD_BSP_DIR}
-    ${PLATFORM_REMOTE_CONTROL_DIR}
-    ${PLATFORM_DM_MOTOR_DIR}
+    ${PLATFORM_DEVICE_REMOTE_DIR}
+    ${PLATFORM_DEVICE_MOTOR_DIR}
     ${PLATFORM_CONTROL_CONTRACT_DIR}
     ${PLATFORM_LEGACY_APP_DIR}
+    ${PLATFORM_APP_IO_DIR}
     ${CHASSIS_FREERTOS_DIR}/include
     ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS
     ${PLATFORM_FREERTOS_PORT_DIR}
     ${PLATFORM_RUNTIME_DIR}/module/message_center
+    ${PLATFORM_MODULE_CONTROL_LIB_DIR}
 )
 
 target_compile_options(balance_chassis_bsp_seed
@@ -282,8 +285,7 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_SITL_BSP_DIR}/can_bsp_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/BMI088driver_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
-    ${PLATFORM_REMOTE_CONTROL_DIR}/remote_control.c
-    ${PLATFORM_REMOTE_CONTROL_DIR}/rc_input_bridge.c
+    ${PLATFORM_DEVICE_REMOTE_DIR}/remote_control.c
   )
 
   set(BALANCE_CHASSIS_LEGACY_APP_SOURCES
@@ -292,6 +294,7 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/remote_orchestration.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_io/rc_input_bridge.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_task.c
@@ -303,7 +306,7 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
-    ${PLATFORM_RUNTIME_DIR}/control/primitives/control_math.c
+    ${PLATFORM_MODULE_CONTROL_LIB_DIR}/control_math.c
     ${PLATFORM_LEGACY_APP_DIR}/legacy/remote_task.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
@@ -367,10 +370,11 @@ if(PLATFORM_TARGET_SIM)
       ${PLATFORM_SITL_BSP_DIR}
       # Original hardware headers so app/module can find them
       ${PLATFORM_BOARD_BSP_DIR}
-      ${PLATFORM_DM_MOTOR_DIR}
-      ${PLATFORM_BMI088_DIR}
-      ${PLATFORM_REMOTE_CONTROL_DIR}
+      ${PLATFORM_DEVICE_MOTOR_DIR}
+      ${PLATFORM_DEVICE_IMU_DIR}
+      ${PLATFORM_DEVICE_REMOTE_DIR}
       ${PLATFORM_LEGACY_APP_DIR}
+      ${PLATFORM_APP_IO_DIR}
       ${PLATFORM_CONTROL_CONTRACT_DIR}
       # CMSIS / Core headers needed by FreeRTOS CMSIS wrapper and others
       ${CHASSIS_HAL_DIR}/Inc
@@ -390,6 +394,7 @@ if(PLATFORM_TARGET_SIM)
       ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony
       ${PLATFORM_RUNTIME_DIR}/module/controller
       ${PLATFORM_RUNTIME_DIR}/module/lib
+      ${PLATFORM_MODULE_CONTROL_LIB_DIR}
       ${PLATFORM_RUNTIME_DIR}/module/message_center
   )
 
@@ -434,7 +439,11 @@ if((PLATFORM_TARGET_HW OR PLATFORM_TARGET_SIM) AND NOT TARGET balance_chassis_de
       ${PLATFORM_DEVICE_DIR}/remote
       ${PLATFORM_DEVICE_DIR}/actuator
       ${PLATFORM_DEVICE_DIR}/actuator/motor
+      ${PLATFORM_DEVICE_REMOTE_DIR}
+      ${PLATFORM_DEVICE_MOTOR_DIR}
+      ${PLATFORM_DEVICE_IMU_DIR}
       ${PLATFORM_CONTROL_CONTRACT_DIR}
+      ${PLATFORM_MODULE_CONTROL_LIB_DIR}
   )
 
   target_compile_options(balance_chassis_device
@@ -448,9 +457,9 @@ if((PLATFORM_TARGET_HW OR PLATFORM_TARGET_SIM) AND NOT TARGET balance_chassis_de
     target_include_directories(balance_chassis_device
       PUBLIC
         ${PLATFORM_BOARD_BSP_DIR}
-        ${PLATFORM_REMOTE_CONTROL_DIR}
-        ${PLATFORM_DM_MOTOR_DIR}
-        ${PLATFORM_BMI088_DIR}
+        ${PLATFORM_DEVICE_REMOTE_DIR}
+        ${PLATFORM_DEVICE_MOTOR_DIR}
+        ${PLATFORM_DEVICE_IMU_DIR}
         ${GENERATED_RAW_DIR}/Inc
         ${CHASSIS_HAL_DIR}/Inc
         ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include

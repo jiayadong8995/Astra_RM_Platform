@@ -68,7 +68,7 @@ robot_platform/
 
 - 不单独引入一个厚重的 `runtime_service` 层作为长期目标
 - 不把 `module` 作为机器人专属控制逻辑的归属层
-- 通用算法原件收敛到 `control/primitives`
+- 通用算法原件收敛到 `runtime/module`
 
 ---
 
@@ -190,7 +190,6 @@ runtime/control/
   state/
   controllers/
   constraints/
-  primitives/
   execution/
 ```
 
@@ -204,35 +203,13 @@ runtime/control/
   - 机器人专属控制组合逻辑
 - `constraints/`
   - 限幅、安全、保护
-- `primitives/`
-  - 控制内部复用原件
 - `execution/`
   - `ActuatorCommand -> DeviceCommand` 映射
 
-### 为什么 `primitives/` 保留
-
-`primitives/` 放的是控制内部公共原件，例如：
-
-- PID
-- EKF
-- Mahony
-- VMC 基础实现
-- 数学工具
+通用算法、数学工具和控制小原件统一留在 `runtime/module`，不再和 `control` 重叠。
 - 基础滤波器
 
-它不是业务层接口，也不建议被 `app` 直接依赖。
-
-它的角色是：
-
-- 为 `state/`
-- `controllers/`
-- `constraints/`
-提供复用积木
-
-因此：
-
-- `primitives/` 原则上只对 `control/` 内部开放
-- 不作为全项目随意依赖的“公共杂物层”
+这些内容统一留在 `runtime/module`，不再在 `control` 内重复设一层目录。
 
 ## 3.5 `runtime/app`
 

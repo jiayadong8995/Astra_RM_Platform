@@ -2,7 +2,7 @@
 
 #include "dma.h"
 #include "main.h"
-#include "remote_control.h"
+#include "../../../device/remote/dbus/remote_control.h"
 #include "usart.h"
 
 extern UART_HandleTypeDef huart1;

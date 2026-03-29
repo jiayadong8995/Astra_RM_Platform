@@ -33,7 +33,7 @@ void Chassis_task(void)
     platform_balance_controller_output_t outputs = {0};
 
     chassis_runtime_bus_init(&runtime_bus);
-    chassis_runtime_bus_wait_ready(&runtime_bus, &inputs);
+    chassis_runtime_bus_wait_ready(&runtime_bus, &inputs.ins, &inputs.feedback);
 
     platform_balance_controller_init(&runtime_state);
     platform_balance_controller_apply_inputs(&runtime_state, &inputs);
@@ -42,11 +42,19 @@ void Chassis_task(void)
 
 	while(1)
 	{	
-        chassis_runtime_bus_pull_inputs(&runtime_bus, &inputs);
+        chassis_runtime_bus_pull_inputs(&runtime_bus,
+                                        &inputs.ins,
+                                        &inputs.cmd,
+                                        &inputs.observe,
+                                        &inputs.feedback);
         platform_balance_controller_apply_inputs(&runtime_state, &inputs);
         platform_balance_controller_step(&runtime_state, &inputs.feedback);
         platform_balance_controller_build_outputs(&runtime_state, &outputs);
-        chassis_runtime_bus_publish_outputs(&runtime_bus, &outputs);
+        chassis_runtime_bus_publish_outputs(&runtime_bus,
+                                           &outputs.state,
+                                           &outputs.right_leg,
+                                           &outputs.left_leg,
+                                           &outputs.actuator_cmd);
 
 		osDelay(CHASSIS_TASK_PERIOD_MS);
 	}

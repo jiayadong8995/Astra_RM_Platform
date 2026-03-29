@@ -2,7 +2,7 @@
 
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
-#include "rc_input_bridge.h"
+#include "../app_io/rc_input_bridge.h"
 
 #include "../app_config/app_params.h"
 #include "../../../control/state/observe_task.h"

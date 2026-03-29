@@ -1,7 +1,7 @@
 #include "actuator_constraints.h"
 
 #include "../../app/balance_chassis/app_config/robot_def.h"
-#include "../primitives/control_math.h"
+#include "../../module/lib/control/control_math.h"
 #include "user_lib.h"
 
 void platform_constrain_leg_outputs(vmc_leg_t *right_leg, vmc_leg_t *left_leg)

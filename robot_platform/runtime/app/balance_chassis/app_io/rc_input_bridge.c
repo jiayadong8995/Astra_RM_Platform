@@ -4,9 +4,9 @@
 
 #include "cmsis_os.h"
 #include "message_center.h"
-#include "app_config/robot_def.h"
-#include "remote_control.h"
-#include "app_config/app_params.h"
+#include "../app_config/robot_def.h"
+#include "../app_config/app_params.h"
+#include "../../../device/remote/dbus/remote_control.h"
 
 void rc_input_task(void)
 {

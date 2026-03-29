@@ -1,11 +1,11 @@
 #include "device_backend.h"
 
-#include "../bsp/devices/bmi088/BMI088driver.h"
-#include "../bsp/devices/dm_motor/dm4310_drv.h"
-#include "../bsp/devices/remote_control/remote_control.h"
-#include "fdcan.h"
+#include "imu/bmi088/BMI088driver.h"
+#include "actuator/motor/dm4310/dm4310_drv.h"
+#include "remote/dbus/remote_control.h"
 #include "imu/bmi088_device.h"
 #include "remote/dbus_remote_device.h"
+#include "fdcan.h"
 #include "spi.h"
 #include "actuator/motor/motor_actuator_device.h"
 

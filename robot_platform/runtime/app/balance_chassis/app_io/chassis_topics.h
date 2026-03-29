@@ -2,7 +2,6 @@
 #define BALANCE_CHASSIS_APP_IO_CHASSIS_TOPICS_H
 
 #include "../app_config/robot_def.h"
-#include "../../../control/controllers/balance_controller.h"
 #include "message_center.h"
 
 typedef struct
@@ -19,10 +18,20 @@ typedef struct
 
 void chassis_runtime_bus_init(Chassis_Runtime_Bus_t *bus);
 
-void chassis_runtime_bus_wait_ready(Chassis_Runtime_Bus_t *bus, platform_balance_controller_input_t *inputs);
+void chassis_runtime_bus_wait_ready(Chassis_Runtime_Bus_t *bus,
+                                    INS_Data_t *ins,
+                                    Actuator_Feedback_t *feedback);
 
-void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus, platform_balance_controller_input_t *inputs);
+void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus,
+                                     INS_Data_t *ins,
+                                     Chassis_Cmd_t *cmd,
+                                     Chassis_Observe_t *observe,
+                                     Actuator_Feedback_t *feedback);
 
-void chassis_runtime_bus_publish_outputs(Chassis_Runtime_Bus_t *bus, const platform_balance_controller_output_t *outputs);
+void chassis_runtime_bus_publish_outputs(Chassis_Runtime_Bus_t *bus,
+                                         const Chassis_State_t *state,
+                                         const Leg_Output_t *right_leg,
+                                         const Leg_Output_t *left_leg,
+                                         const Actuator_Cmd_t *actuator_cmd);
 
 #endif

@@ -1,69 +1,75 @@
 #include "actuator_gateway.h"
 
-#include "fdcan.h"
+static void platform_map_legacy_command(const Actuator_Cmd_t *actuator_msg,
+                                        platform_device_command_t *device_command);
+static void platform_map_feedback_snapshot(const platform_actuator_feedback_snapshot_t *snapshot,
+                                           Actuator_Feedback_t *feedback_msg);
 
 void platform_actuator_gateway_init(platform_actuator_gateway_t *runtime)
 {
-    runtime->joint_motor[0] = get_joint_motor_state(0);
-    runtime->joint_motor[1] = get_joint_motor_state(1);
-    runtime->joint_motor[2] = get_joint_motor_state(2);
-    runtime->joint_motor[3] = get_joint_motor_state(3);
-    runtime->wheel_motor[0] = get_chassis_motor_measure_point(0);
-    runtime->wheel_motor[1] = get_chassis_motor_measure_point(1);
-
-    joint_motor_init(runtime->joint_motor[0], 1, MIT_MODE);
-    joint_motor_init(runtime->joint_motor[1], 2, MIT_MODE);
-    joint_motor_init(runtime->joint_motor[2], 3, MIT_MODE);
-    joint_motor_init(runtime->joint_motor[3], 4, MIT_MODE);
-
-    enable_motor_mode(&hfdcan1, runtime->joint_motor[0]->para.id, runtime->joint_motor[0]->mode);
-    enable_motor_mode(&hfdcan1, runtime->joint_motor[1]->para.id, runtime->joint_motor[1]->mode);
-    enable_motor_mode(&hfdcan1, runtime->joint_motor[2]->para.id, runtime->joint_motor[2]->mode);
-    enable_motor_mode(&hfdcan1, runtime->joint_motor[3]->para.id, runtime->joint_motor[3]->mode);
+    platform_device_layer_bind_default(&runtime->devices);
+    (void)platform_device_layer_init(&runtime->devices);
 }
 
 void platform_actuator_gateway_capture_feedback(const platform_actuator_gateway_t *runtime, Actuator_Feedback_t *feedback_msg)
 {
-    feedback_msg->joint_pos[0] = runtime->joint_motor[0]->para.pos;
-    feedback_msg->joint_pos[1] = runtime->joint_motor[1]->para.pos;
-    feedback_msg->joint_pos[2] = runtime->joint_motor[2]->para.pos;
-    feedback_msg->joint_pos[3] = runtime->joint_motor[3]->para.pos;
-    feedback_msg->wheel_speed[0] = runtime->wheel_motor[0]->speed_rpm * M3508_RPM_TO_RADS * WHEEL_RADIUS;
-    feedback_msg->wheel_speed[1] = runtime->wheel_motor[1]->speed_rpm * M3508_RPM_TO_RADS * WHEEL_RADIUS;
-    feedback_msg->wheel_angle[0] = runtime->wheel_motor[0]->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;
-    feedback_msg->wheel_angle[1] = runtime->wheel_motor[1]->total_angle / WHEEL_GEAR_RATIO * WHEEL_RADIUS;
-    feedback_msg->ready = 1U;
+    platform_device_feedback_t feedback = {0};
+
+    if (platform_device_layer_read_feedback((platform_device_layer_t *)&runtime->devices, &feedback)
+        != PLATFORM_DEVICE_RESULT_OK)
+    {
+        return;
+    }
+
+    platform_map_feedback_snapshot(&feedback.actuator_feedback, feedback_msg);
 }
 
 void platform_actuator_gateway_dispatch_command(const platform_actuator_gateway_t *runtime,
                                                 const Actuator_Cmd_t *actuator_msg,
                                                 uint32_t systick)
 {
-    if (actuator_msg->start_flag == 0U)
+    platform_device_command_t device_command = {0};
+
+    (void)systick;
+    platform_map_legacy_command(actuator_msg, &device_command);
+    (void)platform_device_layer_write_command((platform_device_layer_t *)&runtime->devices, &device_command);
+}
+
+static void platform_map_legacy_command(const Actuator_Cmd_t *actuator_msg,
+                                        platform_device_command_t *device_command)
+{
+    for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i)
     {
-        if ((systick % 2U) == 0U)
-        {
-            mit_ctrl(&hfdcan1, runtime->joint_motor[0]->para.id, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-            mit_ctrl(&hfdcan1, runtime->joint_motor[1]->para.id, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-            CAN_cmd_chassis(&hfdcan2, 0, 0, 0, 0);
-        }
-        else
-        {
-            mit_ctrl(&hfdcan1, runtime->joint_motor[2]->para.id, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-            mit_ctrl(&hfdcan1, runtime->joint_motor[3]->para.id, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-        }
-        return;
+        device_command->joints[i].device_id = i;
+        device_command->joints[i].kind = PLATFORM_MOTOR_KIND_JOINT;
+        device_command->joints[i].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+        device_command->joints[i].torque_target = actuator_msg->joint_torque[i];
+        device_command->joints[i].valid = (actuator_msg->start_flag != 0U);
     }
 
-    if ((systick % 2U) == 0U)
+    for (uint8_t i = 0; i < PLATFORM_WHEEL_MOTOR_COUNT; ++i)
     {
-        mit_ctrl(&hfdcan1, runtime->joint_motor[0]->para.id, 0.0f, 0.0f, 0.0f, 0.0f, actuator_msg->joint_torque[0]);
-        mit_ctrl(&hfdcan1, runtime->joint_motor[1]->para.id, 0.0f, 0.0f, 0.0f, 0.0f, actuator_msg->joint_torque[1]);
-        CAN_cmd_chassis(&hfdcan2, actuator_msg->wheel_current[0], actuator_msg->wheel_current[1], 0, 0);
+        device_command->wheels[i].device_id = i;
+        device_command->wheels[i].kind = PLATFORM_MOTOR_KIND_WHEEL;
+        device_command->wheels[i].control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
+        device_command->wheels[i].current_target = (float)actuator_msg->wheel_current[i];
+        device_command->wheels[i].valid = (actuator_msg->start_flag != 0U);
     }
-    else
+}
+
+static void platform_map_feedback_snapshot(const platform_actuator_feedback_snapshot_t *snapshot,
+                                           Actuator_Feedback_t *feedback_msg)
+{
+    for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i)
     {
-        mit_ctrl(&hfdcan1, runtime->joint_motor[2]->para.id, 0.0f, 0.0f, 0.0f, 0.0f, actuator_msg->joint_torque[2]);
-        mit_ctrl(&hfdcan1, runtime->joint_motor[3]->para.id, 0.0f, 0.0f, 0.0f, 0.0f, actuator_msg->joint_torque[3]);
+        feedback_msg->joint_pos[i] = snapshot->joints[i].position;
     }
+
+    for (uint8_t i = 0; i < PLATFORM_WHEEL_MOTOR_COUNT; ++i)
+    {
+        feedback_msg->wheel_speed[i] = snapshot->wheels[i].velocity;
+        feedback_msg->wheel_angle[i] = snapshot->wheels[i].position;
+    }
+
+    feedback_msg->ready = snapshot->valid ? 1U : 0U;
 }

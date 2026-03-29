@@ -1,6 +1,6 @@
 #include "motor_actuator_device.h"
 
-#include "../../../bsp/devices/dm_motor/dm4310_drv.h"
+#include "dm4310/dm4310_drv.h"
 #include "fdcan.h"
 
 typedef struct {

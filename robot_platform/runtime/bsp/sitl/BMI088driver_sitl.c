@@ -1,4 +1,4 @@
-#include "BMI088driver.h"
+#include "../../device/imu/bmi088/BMI088driver.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>

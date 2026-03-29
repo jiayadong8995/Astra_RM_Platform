@@ -2,8 +2,8 @@
 #define BALANCE_CHASSIS_APP_CONFIG_RUNTIME_STATE_H
 
 #include "main.h"
-#include "dm4310_drv.h"
-#include "BMI088driver.h"
+#include "../../../device/actuator/motor/dm4310/dm4310_drv.h"
+#include "../../../device/imu/bmi088/BMI088driver.h"
 #include "QuaternionEKF.h"
 
 #define X 0

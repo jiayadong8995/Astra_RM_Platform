@@ -1,5 +1,5 @@
-#ifndef STRUCT_TYPEDEF_H
-#define STRUCT_TYPEDEF_H
+#ifndef PLATFORM_MODULE_LIB_BASIC_TYPES_H
+#define PLATFORM_MODULE_LIB_BASIC_TYPES_H
 
 #include <stdint.h>
 

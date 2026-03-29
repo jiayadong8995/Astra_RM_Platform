@@ -13,6 +13,7 @@
 - 板级访问
 - 设备驱动
 - 业务模式管理
+- 通用控制原件库
 
 当前这一层已经开始承接真实实现：
 
@@ -24,6 +25,8 @@
 - `execution`
   - `actuator_gateway`
   - `motor_control_task`
+
+通用算法和控制小原件不再留在这一层，统一回到 `runtime/module`。
 
 原则上：
 
