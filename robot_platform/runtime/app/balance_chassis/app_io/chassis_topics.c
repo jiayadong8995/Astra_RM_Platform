@@ -4,9 +4,9 @@
 
 void chassis_runtime_bus_init(Chassis_Runtime_Bus_t *bus)
 {
-    bus->ins_sub = SubRegister("ins_data", sizeof(INS_Data_t));
+    bus->ins_sub = SubRegister("ins_data", sizeof(platform_ins_state_message_t));
     bus->cmd_sub = SubRegister("robot_intent", sizeof(platform_robot_intent_t));
-    bus->observe_sub = SubRegister("chassis_observe", sizeof(Chassis_Observe_t));
+    bus->observe_sub = SubRegister("chassis_observe", sizeof(platform_chassis_observe_message_t));
     bus->device_feedback_sub = SubRegister("device_feedback", sizeof(platform_device_feedback_t));
 
     bus->robot_state_pub = PubRegister("robot_state", sizeof(platform_robot_state_t));
@@ -14,22 +14,22 @@ void chassis_runtime_bus_init(Chassis_Runtime_Bus_t *bus)
 }
 
 void chassis_runtime_bus_wait_ready(Chassis_Runtime_Bus_t *bus,
-                                    INS_Data_t *ins,
+                                    platform_ins_state_message_t *ins,
                                     platform_device_feedback_t *feedback)
 {
     while (ins->ready == 0U || !feedback->actuator_feedback.valid)
     {
         platform_robot_intent_t intent = {0};
-        Chassis_Observe_t observe = {0};
+        platform_chassis_observe_message_t observe = {0};
         chassis_runtime_bus_pull_inputs(bus, ins, &intent, &observe, feedback);
         osDelay(1);
     }
 }
 
 void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus,
-                                     INS_Data_t *ins,
+                                     platform_ins_state_message_t *ins,
                                      platform_robot_intent_t *intent,
-                                     Chassis_Observe_t *observe,
+                                     platform_chassis_observe_message_t *observe,
                                      platform_device_feedback_t *feedback)
 {
     SubGetMessage(bus->ins_sub, ins);

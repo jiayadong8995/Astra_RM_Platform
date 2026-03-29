@@ -11,7 +11,7 @@ typedef struct
     float turn_set;
     float total_yaw;
     float leg_set;
-    float myPithR;
+    float body_pitch;
     uint8_t start_flag;
     uint8_t jump_flag;
     uint8_t recover_flag;

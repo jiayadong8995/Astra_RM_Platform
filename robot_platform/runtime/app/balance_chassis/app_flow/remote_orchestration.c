@@ -34,7 +34,7 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
                                  const platform_rc_input_t *rc_input,
                                  const platform_robot_state_t *robot_state)
 {
-    runtime->myPithR = robot_state->body.pitch;
+    runtime->body_pitch = robot_state->body.pitch;
     runtime->x_filter = robot_state->chassis.x;
     runtime->total_yaw = robot_state->chassis.yaw_total;
     if (runtime->turn_set == 0.0f)
@@ -52,7 +52,7 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
     else if (app_rc_switch_is_mid(rc_input->switches[0]))
     {
         runtime->start_flag = 1;
-        if (runtime->myPithR > PITCH_RECOVER_THRESHOLD || runtime->myPithR < -PITCH_RECOVER_THRESHOLD)
+        if (runtime->body_pitch > PITCH_RECOVER_THRESHOLD || runtime->body_pitch < -PITCH_RECOVER_THRESHOLD)
         {
             runtime->recover_flag = (rc_input->switches[1] == APP_RC_SW_MID) ? 0U : 1U;
         }

@@ -27,28 +27,28 @@ typedef struct
     float v_filter;
     float x_filter;
 
-    float myPithR;
-    float myPithGyroR;
-    float myPithL;
-    float myPithGyroL;
+    float right_body_pitch;
+    float right_body_pitch_rate;
+    float left_body_pitch;
+    float left_body_pitch_rate;
     float roll;
     float total_yaw;
     float theta_err;
 
-    float turn_T;
-    float roll_f0;
-    float leg_tp;
+    float turn_torque_compensation;
+    float roll_force_compensation;
+    float leg_pitch_compensation;
 
     uint8_t start_flag;
 
     uint8_t jump_flag;
     float jump_leg;
     uint32_t jump_time;
-    uint8_t jump_status;
+    uint8_t jump_phase;
 
     uint8_t last_recover_flag;
     uint8_t recover_flag;
-    uint8_t text_jump_true;
+    uint8_t grounded_flag;
 } platform_balance_runtime_t;
 
 #endif

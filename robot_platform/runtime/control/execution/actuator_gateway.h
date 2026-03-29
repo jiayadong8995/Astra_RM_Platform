@@ -1,7 +1,6 @@
 #ifndef PLATFORM_CONTROL_EXECUTION_ACTUATOR_GATEWAY_H
 #define PLATFORM_CONTROL_EXECUTION_ACTUATOR_GATEWAY_H
 
-#include "../../app/balance_chassis/app_config/robot_def.h"
 #include "../contracts/actuator_command.h"
 #include "../contracts/device_feedback.h"
 #include "../../device/device_layer.h"

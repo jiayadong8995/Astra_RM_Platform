@@ -21,9 +21,9 @@ void platform_chassis_observer_apply_inputs(platform_chassis_observer_t *runtime
     }
 }
 
-Chassis_Observe_t platform_chassis_observer_build_output(const platform_chassis_observer_t *runtime)
+platform_chassis_observe_message_t platform_chassis_observer_build_output(const platform_chassis_observer_t *runtime)
 {
-    Chassis_Observe_t observe_msg = {
+    platform_chassis_observe_message_t observe_msg = {
         .v_filter = runtime->v_filter,
         .x_filter = runtime->x_filter,
     };

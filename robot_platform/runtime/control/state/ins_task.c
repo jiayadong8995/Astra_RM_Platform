@@ -4,9 +4,9 @@
 #include "bsp_dwt.h"
 #include "cmsis_os.h"
 #include "../../app/balance_chassis/app_config/app_params.h"
-#include "../../app/balance_chassis/app_config/robot_def.h"
 #include "../../device/device_layer.h"
 #include "ins_state_estimator.h"
+#include "ins_state_message.h"
 #include "ins_topics.h"
 
 static platform_ins_state_estimator_t runtime_state;
@@ -20,7 +20,7 @@ void INS_Init(void)
 
 void INS_task(void)
 {
-     INS_Data_t msg = {0};
+     platform_ins_state_message_t msg = {0};
      platform_imu_sample_t sample = {0};
      float ins_dt = 0.0f;
      INS_Init();

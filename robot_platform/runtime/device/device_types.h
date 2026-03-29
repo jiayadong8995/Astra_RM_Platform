@@ -12,6 +12,12 @@ typedef enum {
   PLATFORM_DEVICE_RESULT_UNSUPPORTED = 4,
 } platform_device_result_t;
 
+typedef enum {
+  PLATFORM_DEVICE_BACKEND_PROFILE_HW = 0,
+  PLATFORM_DEVICE_BACKEND_PROFILE_SITL = 1,
+  PLATFORM_DEVICE_BACKEND_PROFILE_AUTO = 255,
+} platform_device_backend_profile_t;
+
 typedef struct {
   uint32_t timestamp_us;
   uint32_t sequence;

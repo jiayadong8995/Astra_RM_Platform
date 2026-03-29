@@ -20,7 +20,6 @@
 #include "cmsis_os.h"
 #include "can_bsp.h"
 #include "../app_config/app_params.h"
-#include "../app_config/robot_def.h"
 #include "../app_io/chassis_topics.h"
 #include "../../../control/controllers/balance_controller.h"
 

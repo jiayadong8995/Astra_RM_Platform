@@ -9,7 +9,7 @@
 - 向上提供设备输入、反馈、命令能力
 - 屏蔽板级后端差异
 
-默认后端绑定实现现在只作为 `device_layer` 的内部依赖存在，源码位于：
+backend profile 装配现在只作为 `device_layer` 的内部依赖存在，源码位于：
 
 - `device_backend_hw.c`
 - `device_backend_sitl.c`
@@ -56,3 +56,9 @@ runtime/device/
 
 - `device_layer`
 - 设备子域的稳定设备语义接口
+
+当前默认 profile 规则：
+
+- `hw` 构建默认选择 `PLATFORM_DEVICE_BACKEND_PROFILE_HW`
+- `sitl` 构建默认选择 `PLATFORM_DEVICE_BACKEND_PROFILE_SITL`
+- 如需切换，应通过 `platform_device_configure_default_profile(...)` 完成

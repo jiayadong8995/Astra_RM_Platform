@@ -3,6 +3,7 @@
 
 #include "../contracts/actuator_command.h"
 #include "../contracts/device_feedback.h"
+#include "../state/ins_state_message.h"
 #include "message_center.h"
 
 typedef struct
@@ -13,7 +14,7 @@ typedef struct
 } platform_actuator_bus_t;
 
 void platform_actuator_bus_init(platform_actuator_bus_t *bus);
-void platform_actuator_bus_wait_ready(platform_actuator_bus_t *bus, INS_Data_t *ins_msg);
+void platform_actuator_bus_wait_ready(platform_actuator_bus_t *bus, platform_ins_state_message_t *ins_msg);
 void platform_actuator_bus_pull_cmd(platform_actuator_bus_t *bus, platform_actuator_command_t *actuator_msg);
 void platform_actuator_bus_publish_feedback(platform_actuator_bus_t *bus,
                                             const platform_device_feedback_t *device_feedback);

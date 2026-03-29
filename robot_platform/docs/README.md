@@ -2,11 +2,10 @@
 
 这里仅保留当前还能直接指导平台开发、验证和环境搭建的文档。
 
-当前文档按三类管理：
+当前文档按两类管理：
 
-- 正式文档：当前架构与迁移必须遵守
+- 正式文档：当前架构与代码必须遵守
 - 参考文档：保留研究结论，但不作为当前唯一口径
-- 待瘦身文档：内容有历史价值，但应逐步并入正式文档后删除
 
 ## 正式文档
 
@@ -21,14 +20,12 @@
 5. [runtime_architecture_blueprint.md](./runtime_architecture_blueprint.md)
    当前运行时目标架构蓝图，固定顶层分层、主数据流和通信原则。
 6. [runtime_architecture_task_list.md](./runtime_architecture_task_list.md)
-   当前架构阶段执行清单，定义先做什么、后做什么，以及当前禁区。
+   当前剩余任务清单，只保留仍未完成的收口项。
 7. [runtime_contracts_draft.md](./runtime_contracts_draft.md)
    主控制链正式契约草案，定义 `DeviceInput / RobotState / RobotIntent / ActuatorCommand / DeviceCommand / DeviceFeedback`。
 8. [runtime_capability_boundaries.md](./runtime_capability_boundaries.md)
    运行时能力边界表，定义哪些能力属于 `device / control / app / sim`，避免继续按 legacy task 拆系统。
-9. [runtime_migration_stages.md](./runtime_migration_stages.md)
-   正式迁移阶段清单，定义应先立什么、后立什么，以及每阶段进入条件、退出条件和禁区。
-10. [runtime_communication_matrix.md](./runtime_communication_matrix.md)
+9. [runtime_communication_matrix.md](./runtime_communication_matrix.md)
    运行时通信矩阵，固定哪些边界应使用直接接口，哪些场景才允许轻量 pub-sub。
 
 ## 参考文档
@@ -39,12 +36,6 @@
    记录 `app` 层拆分调研结论，可用于回看为什么放弃以 app 目录细拆为主线。
 2. [sim_architecture_research.md](./sim_architecture_research.md)
    记录 `sim` 方向调研结论，可作为后续验证与 backend 设计的参考输入。
-
-## 待瘦身文档
-
-以下文档仍有价值，但不作为当前正式执行依据：
-
-当前已无。
 
 ## 已移除内容
 

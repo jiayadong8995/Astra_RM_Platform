@@ -1,9 +1,9 @@
 #ifndef PLATFORM_CONTROL_STATE_INS_STATE_ESTIMATOR_H
 #define PLATFORM_CONTROL_STATE_INS_STATE_ESTIMATOR_H
 
-#include "../../app/balance_chassis/app_config/robot_def.h"
-#include "../internal/ins_runtime.h"
 #include "../contracts/robot_state.h"
+#include "../internal/ins_runtime.h"
+#include "ins_state_message.h"
 #include "mahony_filter.h"
 
 typedef struct
@@ -22,7 +22,8 @@ void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *s
                                                float dt,
                                                const float accel[3],
                                                const float gyro[3]);
-void platform_ins_state_estimator_build_msg(const platform_ins_state_estimator_t *state, INS_Data_t *msg);
+void platform_ins_state_estimator_build_msg(const platform_ins_state_estimator_t *state,
+                                            platform_ins_state_message_t *msg);
 void platform_ins_state_estimator_fill_robot_state(const platform_ins_state_estimator_t *state,
                                                    platform_robot_state_t *robot_state);
 

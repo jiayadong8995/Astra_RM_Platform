@@ -5,7 +5,7 @@ static void platform_map_contract_command(const platform_actuator_command_t *act
 
 void platform_actuator_gateway_init(void)
 {
-    (void)platform_device_init_defaults();
+    (void)platform_device_init_default_profile();
 }
 
 platform_device_result_t platform_actuator_gateway_capture_feedback(platform_device_feedback_t *feedback_msg)

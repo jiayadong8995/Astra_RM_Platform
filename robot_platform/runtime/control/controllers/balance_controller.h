@@ -1,13 +1,14 @@
 #ifndef PLATFORM_CONTROL_CONTROLLERS_BALANCE_CONTROLLER_H
 #define PLATFORM_CONTROL_CONTROLLERS_BALANCE_CONTROLLER_H
 
-#include "../../app/balance_chassis/app_config/robot_def.h"
 #include "../contracts/actuator_command.h"
 #include "../contracts/device_feedback.h"
 #include "../contracts/robot_intent.h"
 #include "../contracts/robot_state.h"
 #include "../internal/balance_runtime.h"
 #include "../internal/ins_runtime.h"
+#include "../state/chassis_observe_message.h"
+#include "../state/ins_state_message.h"
 #include "pid.h"
 #include "VMC_calc.h"
 
@@ -28,9 +29,9 @@ typedef struct
 
 typedef struct
 {
-    INS_Data_t ins;
+    platform_ins_state_message_t ins;
     platform_robot_intent_t intent;
-    Chassis_Observe_t observe;
+    platform_chassis_observe_message_t observe;
     platform_device_feedback_t feedback;
 } platform_balance_controller_input_t;
 

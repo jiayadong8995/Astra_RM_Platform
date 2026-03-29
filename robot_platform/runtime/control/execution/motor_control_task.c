@@ -10,7 +10,7 @@ static uint32_t systick;
 void motor_control_task(void)
 {
     platform_actuator_bus_t runtime_bus = {0};
-    INS_Data_t ins_msg = {0};
+    platform_ins_state_message_t ins_msg = {0};
     platform_actuator_command_t actuator_msg = {0};
     platform_device_feedback_t device_feedback = {0};
     platform_actuator_bus_init(&runtime_bus);

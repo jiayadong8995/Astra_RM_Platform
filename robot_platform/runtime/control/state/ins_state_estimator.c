@@ -94,7 +94,8 @@ void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *s
     }
 }
 
-void platform_ins_state_estimator_build_msg(const platform_ins_state_estimator_t *state, INS_Data_t *msg)
+void platform_ins_state_estimator_build_msg(const platform_ins_state_estimator_t *state,
+                                            platform_ins_state_message_t *msg)
 {
     msg->pitch = state->ins.Pitch;
     msg->roll = state->ins.Roll;

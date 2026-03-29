@@ -1,4 +1,4 @@
-#include "device_layer.h"
+#include "internal/device_backend_profiles.h"
 
 #include "imu/bmi088/BMI088driver.h"
 #include "actuator/motor/dm4310/dm4310_drv.h"
@@ -37,7 +37,7 @@ static const platform_motor_actuator_device_config_t g_platform_motor_hw = {
   .wheel_cmd_fn = (void (*)(void *, int16_t, int16_t, int16_t, int16_t))CAN_cmd_chassis,
 };
 
-void platform_device_backend_bind_default(platform_device_layer_t *layer)
+void platform_device_backend_bind_hw(platform_device_layer_t *layer)
 {
   bind_hw_imu(layer);
   bind_hw_remote(layer);

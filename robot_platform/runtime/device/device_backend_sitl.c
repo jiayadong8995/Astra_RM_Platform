@@ -1,4 +1,4 @@
-#include "device_layer.h"
+#include "internal/device_backend_profiles.h"
 
 #include "actuator/motor/motor_actuator_device.h"
 #include "imu/bmi088_device.h"
@@ -8,7 +8,7 @@ static void bind_sitl_imu(platform_device_layer_t *layer);
 static void bind_sitl_remote(platform_device_layer_t *layer);
 static void bind_sitl_motor(platform_device_layer_t *layer);
 
-void platform_device_backend_bind_default(platform_device_layer_t *layer)
+void platform_device_backend_bind_sitl(platform_device_layer_t *layer)
 {
   bind_sitl_imu(layer);
   bind_sitl_remote(layer);

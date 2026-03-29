@@ -1,11 +1,12 @@
 #ifndef BALANCE_CHASSIS_APP_IO_CHASSIS_TOPICS_H
 #define BALANCE_CHASSIS_APP_IO_CHASSIS_TOPICS_H
 
-#include "../app_config/robot_def.h"
 #include "../../../control/contracts/actuator_command.h"
 #include "../../../control/contracts/device_feedback.h"
 #include "../../../control/contracts/robot_intent.h"
 #include "../../../control/contracts/robot_state.h"
+#include "../../../control/state/chassis_observe_message.h"
+#include "../../../control/state/ins_state_message.h"
 #include "message_center.h"
 
 typedef struct
@@ -21,13 +22,13 @@ typedef struct
 void chassis_runtime_bus_init(Chassis_Runtime_Bus_t *bus);
 
 void chassis_runtime_bus_wait_ready(Chassis_Runtime_Bus_t *bus,
-                                    INS_Data_t *ins,
+                                    platform_ins_state_message_t *ins,
                                     platform_device_feedback_t *feedback);
 
 void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus,
-                                     INS_Data_t *ins,
+                                     platform_ins_state_message_t *ins,
                                      platform_robot_intent_t *intent,
-                                     Chassis_Observe_t *observe,
+                                     platform_chassis_observe_message_t *observe,
                                      platform_device_feedback_t *feedback);
 
 void chassis_runtime_bus_publish_outputs(Chassis_Runtime_Bus_t *bus,

@@ -108,20 +108,4 @@
      19.2682f,  2.0679f,  26.8886f, 17.6150f, 33.3348f, 3.2053f  \
 }
 
-/* ======================== Pub-Sub topic data structures ======================== */
-
-typedef struct {
-    float pitch;
-    float roll;
-    float yaw_total;
-    float gyro[3];
-    float accel_b[3];
-    uint8_t ready;
-} INS_Data_t;
-
-typedef struct {
-    float v_filter;
-    float x_filter;
-} Chassis_Observe_t;
-
 #endif
