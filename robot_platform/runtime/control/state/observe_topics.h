@@ -2,6 +2,7 @@
 #define PLATFORM_CONTROL_STATE_OBSERVE_TOPICS_H
 
 #include "../../app/balance_chassis/app_config/robot_def.h"
+#include "../contracts/device_feedback.h"
 #include "message_center.h"
 
 typedef struct
@@ -16,7 +17,7 @@ void platform_observe_bus_init(platform_observe_bus_t *bus);
 void platform_observe_bus_wait_ready(platform_observe_bus_t *bus, INS_Data_t *ins_msg);
 void platform_observe_bus_pull_inputs(platform_observe_bus_t *bus,
                                       Chassis_Cmd_t *cmd_msg,
-                                      Actuator_Feedback_t *feedback_msg);
+                                      platform_device_feedback_t *feedback_msg);
 void platform_observe_bus_publish(platform_observe_bus_t *bus, const Chassis_Observe_t *observe_msg);
 
 #endif

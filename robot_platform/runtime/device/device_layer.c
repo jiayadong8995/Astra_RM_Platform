@@ -7,11 +7,12 @@ static void platform_map_device_command_to_motor_set(const platform_device_comma
 static void platform_copy_feedback_to_input(const platform_device_feedback_t *feedback,
                                             platform_device_input_t *input);
 static platform_device_result_t platform_default_layer_ensure_ready(void);
+static void platform_device_layer_bind_default(platform_device_layer_t *layer);
 
 static platform_device_layer_t g_platform_default_layer;
 static bool g_platform_default_layer_ready;
 
-void platform_device_layer_bind_default(platform_device_layer_t *layer)
+static void platform_device_layer_bind_default(platform_device_layer_t *layer)
 {
   platform_device_backend_bind_default(layer);
   layer->input_sequence = 0U;
@@ -51,6 +52,12 @@ platform_device_result_t platform_device_layer_init(platform_device_layer_t *lay
   }
 
   return PLATFORM_DEVICE_RESULT_OK;
+}
+
+platform_device_result_t platform_device_layer_init_default(platform_device_layer_t *layer)
+{
+  platform_device_layer_bind_default(layer);
+  return platform_device_layer_init(layer);
 }
 
 platform_device_result_t platform_device_layer_read_input(platform_device_layer_t *layer,
@@ -233,8 +240,7 @@ static platform_device_result_t platform_default_layer_ensure_ready(void)
 {
   if (!g_platform_default_layer_ready)
   {
-    platform_device_layer_bind_default(&g_platform_default_layer);
-    if (platform_device_layer_init(&g_platform_default_layer) != PLATFORM_DEVICE_RESULT_OK)
+    if (platform_device_layer_init_default(&g_platform_default_layer) != PLATFORM_DEVICE_RESULT_OK)
     {
       return PLATFORM_DEVICE_RESULT_INVALID;
     }

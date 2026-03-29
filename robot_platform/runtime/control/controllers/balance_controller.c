@@ -8,8 +8,8 @@ static float LQR_K_R[12] = LQR_K_MATRIX;
 static void init_chassis_state(chassis_t *chassis, vmc_leg_t *right_leg, vmc_leg_t *left_leg);
 static void init_chassis_pids(PidTypeDef *roll, PidTypeDef *tp, PidTypeDef *turn, PidTypeDef *leg_r, PidTypeDef *leg_l);
 static void run_balance_control(platform_balance_controller_t *state);
-static void update_leg_feedback(vmc_leg_t *vmc_r, vmc_leg_t *vmc_l, const Actuator_Feedback_t *feedback);
-static void update_wheel_feedback(chassis_t *chassis, const Actuator_Feedback_t *feedback);
+static void update_leg_feedback(vmc_leg_t *vmc_r, vmc_leg_t *vmc_l, const platform_device_feedback_t *feedback);
+static void update_wheel_feedback(chassis_t *chassis, const platform_device_feedback_t *feedback);
 static void update_attitude_feedback(chassis_t *chassis, const vmc_leg_t *vmc_r, const vmc_leg_t *vmc_l, const INS_t *ins);
 static void limit_int(int16_t *in, int16_t min, int16_t max);
 static void saturate_wheel_outputs(chassis_t *chassis);
@@ -54,7 +54,7 @@ void platform_balance_controller_apply_inputs(platform_balance_controller_t *sta
     state->chassis.x_filter = inputs->observe.x_filter;
 }
 
-void platform_balance_controller_step(platform_balance_controller_t *state, const Actuator_Feedback_t *feedback)
+void platform_balance_controller_step(platform_balance_controller_t *state, const platform_device_feedback_t *feedback)
 {
     update_leg_feedback(&state->right_leg, &state->left_leg, feedback);
     update_wheel_feedback(&state->chassis, feedback);
@@ -229,22 +229,22 @@ static void run_balance_control(platform_balance_controller_t *state)
     saturate_leg_outputs(&state->right_leg, &state->left_leg);
 }
 
-static void update_leg_feedback(vmc_leg_t *vmc_r, vmc_leg_t *vmc_l, const Actuator_Feedback_t *feedback)
+static void update_leg_feedback(vmc_leg_t *vmc_r, vmc_leg_t *vmc_l, const platform_device_feedback_t *feedback)
 {
-    vmc_r->phi1 = pi / 2.0f + feedback->joint_pos[0] + JOINT0_OFFSET;
-    vmc_r->phi4 = pi / 2.0f + feedback->joint_pos[1] + JOINT1_OFFSET;
-    vmc_l->phi1 = pi / 2.0f + feedback->joint_pos[2] + JOINT2_OFFSET;
-    vmc_l->phi4 = pi / 2.0f + feedback->joint_pos[3] + JOINT3_OFFSET;
+    vmc_r->phi1 = pi / 2.0f + feedback->actuator_feedback.joints[0].position + JOINT0_OFFSET;
+    vmc_r->phi4 = pi / 2.0f + feedback->actuator_feedback.joints[1].position + JOINT1_OFFSET;
+    vmc_l->phi1 = pi / 2.0f + feedback->actuator_feedback.joints[2].position + JOINT2_OFFSET;
+    vmc_l->phi4 = pi / 2.0f + feedback->actuator_feedback.joints[3].position + JOINT3_OFFSET;
 }
 
-static void update_wheel_feedback(chassis_t *chassis, const Actuator_Feedback_t *feedback)
+static void update_wheel_feedback(chassis_t *chassis, const platform_device_feedback_t *feedback)
 {
-    chassis->wheel_motor[0].chassis_x = feedback->wheel_angle[0];
-    chassis->wheel_motor[1].chassis_x = feedback->wheel_angle[1];
-    chassis->wheel_motor[0].speed = feedback->wheel_speed[0];
-    chassis->wheel_motor[1].speed = feedback->wheel_speed[1];
-    chassis->wheel_motor[0].w_speed = feedback->wheel_speed[0] / WHEEL_RADIUS;
-    chassis->wheel_motor[1].w_speed = feedback->wheel_speed[1] / WHEEL_RADIUS;
+    chassis->wheel_motor[0].chassis_x = feedback->actuator_feedback.wheels[0].position;
+    chassis->wheel_motor[1].chassis_x = feedback->actuator_feedback.wheels[1].position;
+    chassis->wheel_motor[0].speed = feedback->actuator_feedback.wheels[0].velocity;
+    chassis->wheel_motor[1].speed = feedback->actuator_feedback.wheels[1].velocity;
+    chassis->wheel_motor[0].w_speed = feedback->actuator_feedback.wheels[0].velocity / WHEEL_RADIUS;
+    chassis->wheel_motor[1].w_speed = feedback->actuator_feedback.wheels[1].velocity / WHEEL_RADIUS;
 }
 
 static void update_attitude_feedback(chassis_t *chassis, const vmc_leg_t *vmc_r, const vmc_leg_t *vmc_l, const INS_t *ins)

@@ -5,8 +5,7 @@ static void platform_map_contract_command(const platform_actuator_command_t *act
 
 void platform_actuator_gateway_init(platform_actuator_gateway_t *runtime)
 {
-    platform_device_layer_bind_default(&runtime->devices);
-    (void)platform_device_layer_init(&runtime->devices);
+    (void)platform_device_layer_init_default(&runtime->devices);
 }
 
 platform_device_result_t platform_actuator_gateway_capture_feedback(const platform_actuator_gateway_t *runtime,

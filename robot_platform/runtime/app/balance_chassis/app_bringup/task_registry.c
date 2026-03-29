@@ -2,7 +2,6 @@
 
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
-#include "../app_io/rc_input_adapter.h"
 
 #include "../app_config/app_params.h"
 #include "../../../control/state/observe_task.h"
@@ -16,14 +15,12 @@ osThreadId CHASSIS_TASKHandle;
 osThreadId MOTOR_CONTROL_TASKHandle;
 osThreadId OBSERVE_TASKHandle;
 osThreadId REMOTE_TASKHandle;
-osThreadId RC_INPUT_TASKHandle;
 
 static void INS_Task(void const *argument);
 static void Chassis_Task(void const *argument);
 static void Motor_Control_Task(void const *argument);
 static void OBSERVE_Task(void const *argument);
 static void Remote_Task(void const *argument);
-static void RC_Input_Task(void const *argument);
 
 void balance_chassis_start_tasks(void)
 {
@@ -38,9 +35,6 @@ void balance_chassis_start_tasks(void)
 
     osThreadDef(OBSERVE_TASK, OBSERVE_Task, APP_OBSERVE_TASK_PRIORITY, 0, APP_OBSERVE_TASK_STACK_BYTES);
     OBSERVE_TASKHandle = osThreadCreate(osThread(OBSERVE_TASK), NULL);
-
-    osThreadDef(RC_INPUT_TASK, RC_Input_Task, APP_RC_INPUT_TASK_PRIORITY, 0, APP_RC_INPUT_TASK_STACK_BYTES);
-    RC_INPUT_TASKHandle = osThreadCreate(osThread(RC_INPUT_TASK), NULL);
 
     osThreadDef(REMOTE_TASK, Remote_Task, APP_REMOTE_TASK_PRIORITY, 0, APP_REMOTE_TASK_STACK_BYTES);
     REMOTE_TASKHandle = osThreadCreate(osThread(REMOTE_TASK), NULL);
@@ -74,10 +68,4 @@ static void Remote_Task(void const *argument)
 {
     (void)argument;
     remote_task();
-}
-
-static void RC_Input_Task(void const *argument)
-{
-    (void)argument;
-    rc_input_adapter_task();
 }

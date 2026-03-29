@@ -120,13 +120,6 @@ typedef struct {
 } INS_Data_t;
 
 typedef struct {
-    int16_t ch[4];
-    uint8_t sw[2];
-    uint8_t online;
-    uint8_t reserved;
-} RC_Data_t;
-
-typedef struct {
     float vx_cmd;
     float turn_cmd;
     float leg_set;

@@ -295,7 +295,6 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/remote_orchestration.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_io/rc_input_adapter.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_task.c

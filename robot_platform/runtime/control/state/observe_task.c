@@ -12,7 +12,7 @@ void Observe_task(void)
     platform_observe_bus_t runtime_bus = {0};
     INS_Data_t ins_msg = {0};
     Chassis_Cmd_t cmd_msg = {0};
-    Actuator_Feedback_t feedback_msg = {0};
+    platform_device_feedback_t feedback_msg = {0};
     Chassis_Observe_t observe_msg = {0};
 
     platform_chassis_observer_init(&runtime);

@@ -16,9 +16,8 @@ typedef struct {
   uint32_t command_sequence;
 } platform_device_layer_t;
 
-void platform_device_layer_bind_default(platform_device_layer_t *layer);
-
 platform_device_result_t platform_device_layer_init(platform_device_layer_t *layer);
+platform_device_result_t platform_device_layer_init_default(platform_device_layer_t *layer);
 
 platform_device_result_t platform_device_layer_read_input(platform_device_layer_t *layer,
                                                           platform_device_input_t *input);

@@ -26,7 +26,7 @@ typedef struct
     INS_Data_t ins;
     Chassis_Cmd_t cmd;
     Chassis_Observe_t observe;
-    Actuator_Feedback_t feedback;
+    platform_device_feedback_t feedback;
 } platform_balance_controller_input_t;
 
 typedef struct
@@ -42,7 +42,7 @@ typedef struct
 void platform_balance_controller_init(platform_balance_controller_t *state);
 void platform_balance_controller_apply_inputs(platform_balance_controller_t *state,
                                               const platform_balance_controller_input_t *inputs);
-void platform_balance_controller_step(platform_balance_controller_t *state, const Actuator_Feedback_t *feedback);
+void platform_balance_controller_step(platform_balance_controller_t *state, const platform_device_feedback_t *feedback);
 void platform_balance_controller_build_outputs(const platform_balance_controller_t *state,
                                                platform_balance_controller_output_t *outputs);
 

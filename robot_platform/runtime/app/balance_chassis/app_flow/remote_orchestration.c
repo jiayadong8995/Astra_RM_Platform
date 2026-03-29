@@ -31,34 +31,33 @@ void remote_runtime_init(Remote_Runtime_t *runtime)
 }
 
 void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
-                                 const RC_Data_t *rc_data,
-                                 const INS_Data_t *ins_msg,
-                                 const Chassis_State_t *state_msg)
+                                 const platform_rc_input_t *rc_input,
+                                 const platform_robot_state_t *robot_state)
 {
-    runtime->myPithR = ins_msg->pitch;
-    runtime->x_filter = state_msg->x_filter;
-    runtime->total_yaw = state_msg->total_yaw;
+    runtime->myPithR = robot_state->body.pitch;
+    runtime->x_filter = robot_state->chassis.x;
+    runtime->total_yaw = robot_state->chassis.yaw_total;
     if (runtime->turn_set == 0.0f)
     {
-        runtime->turn_set = state_msg->total_yaw;
+        runtime->turn_set = robot_state->chassis.yaw_total;
     }
 
     runtime->last_recover_flag = runtime->recover_flag;
-    if (!rc_data->online)
+    if (!rc_input->valid)
     {
         runtime->start_flag = 0;
         runtime->recover_flag = 0;
         runtime->jump_flag = 0;
     }
-    else if (app_rc_switch_is_mid(rc_data->sw[0]))
+    else if (app_rc_switch_is_mid(rc_input->switches[0]))
     {
         runtime->start_flag = 1;
         if (runtime->myPithR > PITCH_RECOVER_THRESHOLD || runtime->myPithR < -PITCH_RECOVER_THRESHOLD)
         {
-            runtime->recover_flag = (rc_data->sw[1] == APP_RC_SW_MID) ? 0U : 1U;
+            runtime->recover_flag = (rc_input->switches[1] == APP_RC_SW_MID) ? 0U : 1U;
         }
     }
-    else if (app_rc_switch_is_down(rc_data->sw[0]))
+    else if (app_rc_switch_is_down(rc_input->switches[0]))
     {
         runtime->start_flag = 0;
         runtime->recover_flag = 0;
@@ -67,20 +66,23 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
 
     if (runtime->start_flag == 1)
     {
-        if (app_rc_switch_is_mid(rc_data->sw[1]))
+        if (app_rc_switch_is_mid(rc_input->switches[1]))
         {
-            runtime->jump_flag = (rc_data->ch[3] == 660) ? 1U : 0U;
+            runtime->jump_flag = (rc_input->channels[3] == 660) ? 1U : 0U;
         }
-        else if (app_rc_switch_is_down(rc_data->sw[1]))
+        else if (app_rc_switch_is_down(rc_input->switches[1]))
         {
             runtime->jump_flag = 0;
         }
 
         runtime->leg_set = LEG_LENGTH_DEFAULT;
-        runtime->turn_set = runtime->turn_set - rc_data->ch[2] * RC_TO_TURN;
+        platform_constrain_remote_leg_set(&runtime->leg_set,
+                                          (robot_state->legs.left.length + robot_state->legs.right.length) / 2.0f,
+                                          0.1f);
+        runtime->turn_set = runtime->turn_set - rc_input->channels[2] * RC_TO_TURN;
 
         {
-            float vx_speed_cmd = -rc_data->ch[1] * RC_TO_VX;
+            float vx_speed_cmd = -rc_input->channels[1] * RC_TO_VX;
             platform_slew_to_target(vx_speed_cmd, &runtime->v_set, RC_SPEED_SLOPE);
             platform_float_clamp(&runtime->v_set, -RC_VX_MAX, RC_VX_MAX);
         }
@@ -96,14 +98,6 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
 
     platform_constrain_remote_turn(&runtime->turn_set, runtime->total_yaw, 0.3f);
     platform_float_clamp(&runtime->leg_set, LEG_LENGTH_MIN, LEG_LENGTH_MAX);
-}
-
-void remote_runtime_limit_leg_set(Remote_Runtime_t *runtime,
-                                  const Leg_Output_t *right_msg,
-                                  const Leg_Output_t *left_msg)
-{
-    float leg_length = (left_msg->leg_length + right_msg->leg_length) / 2.0f;
-    platform_constrain_remote_leg_set(&runtime->leg_set, leg_length, 0.1f);
 }
 
 platform_robot_intent_t remote_runtime_build_intent(const Remote_Runtime_t *runtime)
