@@ -1,42 +1,21 @@
 # Runtime Architecture Blueprint
 
-这份文档用于固定当前阶段认可的运行时架构草案。
+这份文档只固定当前运行时正式架构，不再记录过程性迁移讨论。
 
-它不讨论遗产代码如何迁移，也不绑定当前仓库里某个具体实现。
-它只回答四个问题：
+## 1. 目标
 
-1. 我们到底想解决什么问题
-2. 运行时应该分成哪几层
-3. 正式数据流应该怎么走
-4. 各层之间应该用什么通信方式
+当前运行时架构需要同时满足：
 
----
-
-## 1. 设计目标
-
-当前运行时架构的设计必须满足下面几个约束：
-
-1. 满足开闭原则
-   - 新增设备、新增模式、新增控制器、新增后端时，不应频繁修改主控制链
+1. 开闭原则
+   - 新增设备、模式、控制器、后端时，不频繁改主链
 2. 解耦设备与应用
-   - 应用层不直接依赖驱动、句柄、板级细节
+   - `app` 不直接依赖驱动、句柄、板级细节
 3. 解耦业务与通用能力
-   - 业务模式与机器人专属控制逻辑，不应直接混入公共算法库
+   - 机器人专属控制逻辑不混进通用算法库
 4. 支持 `hw` 与 `sitl`
-   - 核心控制链尽量共用，环境差异收敛在设备与后端适配层
-5. 控制主链保持清晰
-   - 不再围绕 legacy task 文件组织架构
-   - 不把“全量发布订阅”误当成系统分层
+   - 核心控制链尽量共用，差异收敛在设备 profile 和 backend
 
-一句话：
-
-当前架构的目标是让主控制链稳定、边界清晰、扩展点明确，而不是把旧代码搬进新目录。
-
----
-
-## 2. 顶层架构
-
-当前建议的顶层结构如下：
+## 2. 顶层结构
 
 ```text
 robot_platform/
@@ -49,214 +28,113 @@ robot_platform/
   sim/
 ```
 
-其中：
+分层职责：
 
 - `generated`
-  - CubeMX 生成资产
+  - CubeMX 生成资产和启动代码
 - `bsp`
-  - 板级支持与底层后端实现
+  - 板级支持与底层后端桩
 - `device`
-  - 统一设备语义
+  - 统一设备语义，按 profile 装配具体实现
 - `control`
-  - 状态形成与控制求解主链
+  - 状态形成、控制求解、约束、执行映射
 - `app`
-  - 模式管理、任务组织、业务装配
+  - bringup、mode/intent、业务装配
 - `sim`
-  - 仿真后端与验证适配
+  - 仿真后端和验证接入
 
-注意：
-
-- 不单独引入一个厚重的 `runtime_service` 层作为长期目标
-- 不把 `module` 作为机器人专属控制逻辑的归属层
-- 通用算法原件收敛到 `runtime/module`
-
----
-
-## 3. 分层职责
-
-## 3.1 `runtime/generated`
-
-职责：
-
-- 启动代码
-- 时钟初始化
-- HAL 初始化
-- CubeMX 生成的外设初始化
-
-原则：
-
-- 不承接人工业务逻辑
-- 不承接控制策略
-
-## 3.2 `runtime/bsp`
-
-职责：
-
-- 板级支持
-- 底层总线访问
-- 板级后端适配
-
-建议结构：
+## 3. 正式主数据流
 
 ```text
-runtime/bsp/
-  boards/
-  backends/
+DeviceInput
+  -> RobotState
+  -> RobotIntent
+  -> ActuatorCommand
+  -> DeviceCommand
+  -> Backend
+  -> DeviceFeedback
+  -> RobotState
 ```
 
-其中：
+正式对象是：
 
-- `boards/`
-  - 真实硬件板级支持
-- `backends/`
-  - `sitl` 等后端底层桩实现
+- `platform_device_input_t`
+- `platform_robot_state_t`
+- `platform_robot_intent_t`
+- `platform_actuator_command_t`
+- `platform_device_command_t`
+- `platform_device_feedback_t`
 
-原则：
+旧对象已经退出主路径，不再作为正式边界。
 
-- 只负责底层访问能力
-- 不形成业务状态
-- 不承接控制求解
+## 4. 通信原则
 
-## 3.3 `runtime/device`
+- 主控制链使用直接接口和明确结构体
+- 轻量 pub-sub 只用于广播和内部中间消息
+- 不做“全量 topic 化”架构
 
-职责：
+## 5. 当前实现落点
 
-- 提供统一设备语义
-- 屏蔽驱动和硬件差异
+### `runtime/device`
 
-当前建议的设备类型：
+当前已经收成：
 
-- `imu`
-- `remote`
-- `actuator`
+- `device_layer`
+- `device_profile`
+- `imu / remote / actuator` 设备节点
 
-注意：
+要求：
 
-- `actuator` 是长期语义名
-- 当前第一版只实现 `motor`
-- 后续可以在不修改主架构的前提下扩展其他执行器
-- 统一的是设备接口，不是 concrete adapter 文件
-- `hw` 与 `sitl` 的设备实现必须按 backend 分离
+- `hw` 与 `sitl` 通过 profile 装配
+- 上层不直接依赖驱动私有头
 
-建议结构：
+### `runtime/control`
 
-```text
-runtime/device/
-  device_types.h
-  imu/
-  remote/
-  actuator/
-    actuator_device.h
-    motor/
-```
-
-职责边界：
-
-- 上层看到的是设备能力
-- 上层不应该直接碰：
-  - `FDCAN_HandleTypeDef`
-  - UART DMA buffer
-  - 具体寄存器和驱动私有结构
-
-实现原则：
-
-- 统一 `device` 接口
-- 分离 `hw/sitl` concrete adapter
-- 不允许一份设备实现同时硬依赖真实板级驱动和仿真 backend
-
-## 3.4 `runtime/control`
-
-职责：
-
-- 正式状态形成
-- 观测与状态整理
-- 控制求解
-- 安全约束与输出裁剪
-- 执行命令映射
-
-这是系统的核心主链层。
-
-它不负责：
-
-- 业务模式管理
-- 板级初始化
-- 具体驱动访问
-
-建议结构：
-
-```text
-runtime/control/
-  contracts/
-  state/
-  controllers/
-  constraints/
-  execution/
-```
-
-各子目录职责：
+当前已经收成：
 
 - `contracts/`
-  - 正式边界数据定义
 - `state/`
-  - 状态形成与观测整理
 - `controllers/`
-  - 机器人专属控制组合逻辑
 - `constraints/`
-  - 限幅、安全、保护
 - `execution/`
-  - `ActuatorCommand -> DeviceCommand` 映射
+- `internal/`
 
-通用算法、数学工具和控制小原件统一留在 `runtime/module`，不再和 `control` 重叠。
-- 基础滤波器
+要求：
 
-这些内容统一留在 `runtime/module`，不再在 `control` 内重复设一层目录。
+- `contracts` 是唯一正式外部边界
+- `internal` 只保留控制内部模型和参数
+- 通用算法原件统一留在 `runtime/module`
 
-## 3.5 `runtime/app`
+### `runtime/app`
 
-职责：
+当前已经收成：
 
-- 启动和任务组织
-- 生命周期管理
-- 模式管理
+- `app_bringup/`
+- `app_intent/`
+- `app_io/`
+- `app_config/`
 
-## 4. 阶段交付标准
+要求：
 
-当前这轮架构重构不是无限进行，达到下面几条就应进入“收尾与构建恢复”：
+- `app` 只保留任务组织、意图生成、业务装配
+- 不再承接控制运行态和设备细节
 
-1. `device` 形成稳定的 profile + nodes 模型
-2. `control` 以 contracts 作为唯一正式外部边界
-3. `app` 退回业务装配层
-4. 旧主路径对象彻底退出
-5. 文档口径与代码一致
+## 6. 当前交付标准
 
-到这一步，后续工作应从“继续改架构”切换到“恢复构建、补验证、开始功能迁移”。
-- 机器人意图生成
-- 业务装配
+这一轮架构重构达到下面几条，就视为阶段交付完成：
 
-它回答的问题是：
-
-- 机器人要做什么
-- 系统怎么组织运行
-
-它不该负责：
-
-- 传感器原始数据整理
-- 观测量形成
-- 控制求解
-- 执行器命令翻译
-- 硬件句柄访问
-
-建议结构：
-
-```text
-runtime/app/
-  <robot>/
-    bringup/
-    modes/
-    orchestration/
-    config/
-    interfaces/
-```
+1. `device`
+   - 稳定为 `device_layer + device_profile + device nodes`
+2. `control`
+   - 以 contracts 作为唯一正式外部边界
+3. `app`
+   - 退回业务装配层
+4. 旧主路径对象
+   - 彻底退出正式主链
+5. 文档与代码
+   - 口径一致
+6. 构建
+   - `hw_elf` 和 `sitl` 恢复可构建
 
 ## 3.6 `sim`
 
