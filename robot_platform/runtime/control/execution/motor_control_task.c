@@ -13,7 +13,8 @@ void motor_control_task(void)
     platform_actuator_gateway_t runtime = {0};
     platform_actuator_bus_t runtime_bus = {0};
     INS_Data_t ins_msg = {0};
-    Actuator_Cmd_t actuator_msg = {0};
+    platform_actuator_command_t actuator_msg = {0};
+    platform_device_feedback_t device_feedback = {0};
     Actuator_Feedback_t feedback_msg = {0};
     platform_actuator_bus_init(&runtime_bus);
     platform_actuator_bus_wait_ready(&runtime_bus, &ins_msg);
@@ -23,8 +24,11 @@ void motor_control_task(void)
     while(1)
     {
         platform_actuator_bus_pull_cmd(&runtime_bus, &actuator_msg);
-        platform_actuator_gateway_capture_feedback(&runtime, &feedback_msg);
-        platform_actuator_bus_publish_feedback(&runtime_bus, &feedback_msg);
+        if (platform_actuator_gateway_capture_feedback(&runtime, &device_feedback) == PLATFORM_DEVICE_RESULT_OK)
+        {
+            platform_actuator_gateway_build_legacy_feedback(&device_feedback, &feedback_msg);
+            platform_actuator_bus_publish_feedback(&runtime_bus, &device_feedback, &feedback_msg);
+        }
         systick = osKernelSysTick();
         platform_actuator_gateway_dispatch_command(&runtime, &actuator_msg, systick);
         osDelay(MOTOR_CONTROL_TASK_PERIOD_MS);

@@ -51,9 +51,11 @@ void Chassis_task(void)
         platform_balance_controller_step(&runtime_state, &inputs.feedback);
         platform_balance_controller_build_outputs(&runtime_state, &outputs);
         chassis_runtime_bus_publish_outputs(&runtime_bus,
+                                           &outputs.robot_state,
                                            &outputs.state,
                                            &outputs.right_leg,
                                            &outputs.left_leg,
+                                           &outputs.actuator_command,
                                            &outputs.actuator_cmd);
 
 		osDelay(CHASSIS_TASK_PERIOD_MS);
