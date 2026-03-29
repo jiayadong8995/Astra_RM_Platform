@@ -1,6 +1,7 @@
 #ifndef BALANCE_CHASSIS_RUNTIME_SERVICE_SENSING_INS_RUNTIME_H
 #define BALANCE_CHASSIS_RUNTIME_SERVICE_SENSING_INS_RUNTIME_H
 
+#include "../../control/contracts/robot_state.h"
 #include "../../app/balance_chassis/app_config/robot_def.h"
 #include "../../app/balance_chassis/app_config/runtime_state.h"
 #include "mahony_filter.h"
@@ -24,5 +25,7 @@ void ins_runtime_apply_sample(INS_Runtime_State_t *state,
                               const float gyro[3]);
 
 void ins_runtime_build_msg(const INS_Runtime_State_t *state, INS_Data_t *msg);
+
+void ins_runtime_fill_robot_state(const INS_Runtime_State_t *state, platform_robot_state_t *robot_state);
 
 #endif

@@ -108,6 +108,26 @@ void ins_runtime_build_msg(const INS_Runtime_State_t *state, INS_Data_t *msg)
     msg->ready = state->ins.ins_flag;
 }
 
+void ins_runtime_fill_robot_state(const INS_Runtime_State_t *state, platform_robot_state_t *robot_state)
+{
+    robot_state->timestamp_us = state->dwt_count;
+    robot_state->body.roll = state->ins.Roll;
+    robot_state->body.pitch = state->ins.Pitch;
+    robot_state->body.yaw = state->ins.Yaw;
+    robot_state->body.gyro[0] = state->ins.Gyro[0];
+    robot_state->body.gyro[1] = state->ins.Gyro[1];
+    robot_state->body.gyro[2] = state->ins.Gyro[2];
+    robot_state->body.accel[0] = state->ins.MotionAccel_b[0];
+    robot_state->body.accel[1] = state->ins.MotionAccel_b[1];
+    robot_state->body.accel[2] = state->ins.MotionAccel_b[2];
+    robot_state->body.orientation_valid = (state->ins.ins_flag != 0U);
+
+    robot_state->chassis.yaw_total = state->ins.YawTotalAngle;
+
+    robot_state->health.imu_ok = (state->ins.ins_flag != 0U);
+    robot_state->health.state_valid = robot_state->body.orientation_valid;
+}
+
 static void body_frame_to_earth_frame(const float *vec_bf, float *vec_ef, const float *q)
 {
     vec_ef[0] = 2.0f * ((0.5f - q[2] * q[2] - q[3] * q[3]) * vec_bf[0]

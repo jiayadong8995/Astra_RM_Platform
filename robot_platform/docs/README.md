@@ -2,7 +2,13 @@
 
 这里仅保留当前还能直接指导平台开发、验证和环境搭建的文档。
 
-## 当前有效文档
+当前文档按三类管理：
+
+- 正式文档：当前架构与迁移必须遵守
+- 参考文档：保留研究结论，但不作为当前唯一口径
+- 待瘦身文档：内容有历史价值，但应逐步并入正式文档后删除
+
+## 正式文档
 
 1. [platform_architecture.md](./platform_architecture.md)
    当前平台项目的统一架构说明，定义项目是什么、目标架构是什么、当前边界和演进目标是什么。
@@ -12,14 +18,38 @@
    约束 `runtime/generated/` 的边界，避免把业务逻辑重新塞回生成目录。
 4. [wsl_environment_setup.md](./wsl_environment_setup.md)
    记录当前仓库在 WSL 下跑通 `generate` / `build` 所需的环境前提。
-5. [sim_architecture_research.md](./sim_architecture_research.md)
-   调研当前 `sim/SITL` 架构方向，说明为什么采用平台公共 `sim core` 与项目适配层的结构。
-6. [project_overview_and_target_architecture.md](./project_overview_and_target_architecture.md)
+5. [project_overview_and_target_architecture.md](./project_overview_and_target_architecture.md)
    项目总览与目标架构说明，先建立整个平台的统一地图。
-7. [runtime_realignment_plan.md](./runtime_realignment_plan.md)
-   基于参考项目给出运行时结构回正方案，定义目标层次和拆分批次。
-8. [runtime_file_migration_map.md](./runtime_file_migration_map.md)
-   文件级迁移映射表，明确当前代码分别应留在哪一层、应如何分批迁移。
+6. [runtime_architecture_blueprint.md](./runtime_architecture_blueprint.md)
+   当前运行时目标架构蓝图，固定顶层分层、主数据流和通信原则。
+7. [runtime_architecture_task_list.md](./runtime_architecture_task_list.md)
+   当前架构阶段执行清单，定义先做什么、后做什么，以及当前禁区。
+8. [runtime_contracts_draft.md](./runtime_contracts_draft.md)
+   主控制链正式契约草案，定义 `DeviceInput / RobotState / RobotIntent / ActuatorCommand / DeviceCommand / DeviceFeedback`。
+9. [runtime_capability_boundaries.md](./runtime_capability_boundaries.md)
+   运行时能力边界表，定义哪些能力属于 `device / control / app / sim`，避免继续按 legacy task 拆系统。
+10. [runtime_migration_stages.md](./runtime_migration_stages.md)
+   正式迁移阶段清单，定义应先立什么、后立什么，以及每阶段进入条件、退出条件和禁区。
+11. [runtime_communication_matrix.md](./runtime_communication_matrix.md)
+   运行时通信矩阵，固定哪些边界应使用直接接口，哪些场景才允许轻量 pub-sub。
+
+## 参考文档
+
+以下文档保留为参考研究，不再视为当前唯一口径：
+
+1. [app_layer_architecture_research.md](./app_layer_architecture_research.md)
+   记录 `app` 层拆分调研结论，可用于回看为什么放弃以 app 目录细拆为主线。
+2. [sim_architecture_research.md](./sim_architecture_research.md)
+   记录 `sim` 方向调研结论，可作为后续验证与 backend 设计的参考输入。
+
+## 待瘦身文档
+
+以下文档仍有价值，但后续应逐步并入正式文档，然后删除：
+
+1. [runtime_realignment_plan.md](./runtime_realignment_plan.md)
+   仍保留了上一轮“回正”阶段的语言和拆分方式，需要逐步并入新版架构蓝图与任务清单。
+2. [runtime_file_migration_map.md](./runtime_file_migration_map.md)
+   仍部分依赖旧层次口径，后续应在正式迁移开始前按新版契约和迁移阶段重写或替换。
 
 ## 已移除内容
 

@@ -37,9 +37,29 @@ set(PLATFORM_LINKER_SCRIPT ${PLATFORM_ROOT}/cmake/linker/stm32h723_flash.ld)
 set(PLATFORM_BOARD_BSP_DIR ${PLATFORM_RUNTIME_DIR}/bsp/boards/stm32h7_ctrl_board)
 set(PLATFORM_REMOTE_CONTROL_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/remote_control)
 set(PLATFORM_DM_MOTOR_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/dm_motor)
+set(PLATFORM_DEVICE_DIR ${PLATFORM_RUNTIME_DIR}/device)
 set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
 set(PLATFORM_RUNTIME_SERVICE_DIR ${PLATFORM_RUNTIME_DIR}/runtime_service)
+set(PLATFORM_CONTROL_CONTRACT_DIR ${PLATFORM_RUNTIME_DIR}/control/contracts)
 set(PLATFORM_BMI088_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/bmi088)
+
+set(BALANCE_CHASSIS_DEVICE_SOURCES)
+
+if(PLATFORM_TARGET_HW)
+  list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
+    ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_hw.c
+    ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_hw.c
+    ${PLATFORM_DEVICE_DIR}/actuator/motor/motor_actuator_device_hw.c
+  )
+endif()
+
+if(PLATFORM_TARGET_SIM)
+  list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
+    ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_sitl.c
+    ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_sitl.c
+    ${PLATFORM_DEVICE_DIR}/actuator/motor/motor_actuator_device_sitl.c
+  )
+endif()
 if(PLATFORM_TARGET_HW)
 
 
@@ -151,6 +171,7 @@ target_include_directories(balance_chassis_bsp_seed
     ${PLATFORM_BOARD_BSP_DIR}
     ${PLATFORM_REMOTE_CONTROL_DIR}
     ${PLATFORM_DM_MOTOR_DIR}
+    ${PLATFORM_CONTROL_CONTRACT_DIR}
     ${PLATFORM_LEGACY_APP_DIR}
     ${CHASSIS_FREERTOS_DIR}/include
     ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS
@@ -190,6 +211,7 @@ target_link_libraries(balance_chassis_hw_seed.elf
   PRIVATE
     balance_chassis_generated_raw
     balance_chassis_bsp_seed
+    balance_chassis_device
 )
 
 target_include_directories(balance_chassis_hw_seed.elf
@@ -345,6 +367,7 @@ if(PLATFORM_TARGET_SIM)
       ${PLATFORM_BMI088_DIR}
       ${PLATFORM_REMOTE_CONTROL_DIR}
       ${PLATFORM_LEGACY_APP_DIR}
+      ${PLATFORM_CONTROL_CONTRACT_DIR}
       ${PLATFORM_RUNTIME_SERVICE_DIR}
       # CMSIS / Core headers needed by FreeRTOS CMSIS wrapper and others
       ${CHASSIS_HAL_DIR}/Inc
@@ -390,7 +413,69 @@ if(PLATFORM_TARGET_SIM)
   target_link_libraries(balance_chassis_sitl
     PRIVATE
       cmsis_dsp_sitl
+      balance_chassis_device
       pthread
       m
   )
+endif()
+
+if((PLATFORM_TARGET_HW OR PLATFORM_TARGET_SIM) AND NOT TARGET balance_chassis_device)
+  add_library(balance_chassis_device STATIC
+    ${BALANCE_CHASSIS_DEVICE_SOURCES}
+  )
+
+  target_include_directories(balance_chassis_device
+    PUBLIC
+      ${PLATFORM_DEVICE_DIR}
+      ${PLATFORM_DEVICE_DIR}/imu
+      ${PLATFORM_DEVICE_DIR}/remote
+      ${PLATFORM_DEVICE_DIR}/actuator
+      ${PLATFORM_DEVICE_DIR}/actuator/motor
+      ${PLATFORM_CONTROL_CONTRACT_DIR}
+  )
+
+  target_compile_options(balance_chassis_device
+    PRIVATE
+      -Wall
+      -Wextra
+      -Wno-unused-parameter
+  )
+
+  if(PLATFORM_TARGET_HW)
+    target_include_directories(balance_chassis_device
+      PUBLIC
+        ${PLATFORM_BOARD_BSP_DIR}
+        ${PLATFORM_REMOTE_CONTROL_DIR}
+        ${PLATFORM_DM_MOTOR_DIR}
+        ${PLATFORM_BMI088_DIR}
+        ${GENERATED_RAW_DIR}/Inc
+        ${CHASSIS_HAL_DIR}/Inc
+        ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
+        ${CHASSIS_CMSIS_DIR}/Include
+        ${CHASSIS_CMSIS_DIR}/DSP/Include
+    )
+    target_link_libraries(balance_chassis_device
+      PUBLIC
+        balance_chassis_generated_raw
+        balance_chassis_bsp_seed
+    )
+    target_compile_definitions(balance_chassis_device
+      PUBLIC
+        USE_HAL_DRIVER
+        STM32H723xx
+        PLATFORM_DEVICE_BACKEND_HW
+    )
+    target_compile_options(balance_chassis_device
+      PRIVATE
+        ${BALANCE_CHASSIS_COMMON_FLAGS}
+    )
+  endif()
+
+  if(PLATFORM_TARGET_SIM)
+    target_compile_definitions(balance_chassis_device
+      PUBLIC
+        PLATFORM_DEVICE_BACKEND_SITL
+        SITL_BUILD
+    )
+  endif()
 endif()

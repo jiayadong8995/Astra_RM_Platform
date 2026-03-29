@@ -117,6 +117,47 @@ Chassis_Cmd_t remote_runtime_build_cmd(const Remote_Runtime_t *runtime)
     return cmd;
 }
 
+platform_robot_intent_t remote_runtime_build_intent(const Remote_Runtime_t *runtime)
+{
+    platform_robot_intent_t intent = {
+        .mode = PLATFORM_ROBOT_MODE_IDLE,
+        .motion_target = {
+            .vx = runtime->v_set,
+            .x = runtime->x_set,
+            .yaw_rate = 0.0f,
+            .yaw_hold = true,
+            .velocity_frame = PLATFORM_FRAME_BODY,
+        },
+        .posture_target = {
+            .leg_length = runtime->leg_set,
+            .body_pitch_ref = 0.0f,
+            .stance_height = runtime->leg_set,
+        },
+        .behavior_request = {
+            .jump_request = (runtime->jump_flag != 0U),
+            .recover_request = (runtime->recover_flag != 0U),
+            .stand_request = (runtime->start_flag != 0U),
+            .emergency_stop = (runtime->start_flag == 0U),
+        },
+        .enable = {
+            .start = (runtime->start_flag != 0U),
+            .control_enable = (runtime->start_flag != 0U),
+            .actuator_enable = (runtime->start_flag != 0U),
+        },
+    };
+
+    if (runtime->start_flag != 0U)
+    {
+        intent.mode = (runtime->recover_flag != 0U) ? PLATFORM_ROBOT_MODE_RECOVER : PLATFORM_ROBOT_MODE_ACTIVE;
+        if (runtime->jump_flag != 0U)
+        {
+            intent.mode = PLATFORM_ROBOT_MODE_JUMP;
+        }
+    }
+
+    return intent;
+}
+
 static void slope_following(float *target, float *set, float acc)
 {
     if (*target > *set)

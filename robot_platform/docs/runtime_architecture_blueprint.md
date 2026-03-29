@@ -135,14 +135,18 @@ runtime/bsp/
 - `actuator` 是长期语义名
 - 当前第一版只实现 `motor`
 - 后续可以在不修改主架构的前提下扩展其他执行器
+- 统一的是设备接口，不是 concrete adapter 文件
+- `hw` 与 `sitl` 的设备实现必须按 backend 分离
 
 建议结构：
 
 ```text
 runtime/device/
+  device_types.h
   imu/
   remote/
   actuator/
+    actuator_device.h
     motor/
 ```
 
@@ -153,6 +157,12 @@ runtime/device/
   - `FDCAN_HandleTypeDef`
   - UART DMA buffer
   - 具体寄存器和驱动私有结构
+
+实现原则：
+
+- 统一 `device` 接口
+- 分离 `hw/sitl` concrete adapter
+- 不允许一份设备实现同时硬依赖真实板级驱动和仿真 backend
 
 ## 3.4 `runtime/control`
 
