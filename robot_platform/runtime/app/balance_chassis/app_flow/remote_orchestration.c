@@ -106,19 +106,6 @@ void remote_runtime_limit_leg_set(Remote_Runtime_t *runtime,
     platform_constrain_remote_leg_set(&runtime->leg_set, leg_length, 0.1f);
 }
 
-Chassis_Cmd_t remote_runtime_build_cmd(const Remote_Runtime_t *runtime)
-{
-    Chassis_Cmd_t cmd = {
-        .vx_cmd = runtime->v_set,
-        .turn_cmd = runtime->turn_set,
-        .leg_set = runtime->leg_set,
-        .start_flag = runtime->start_flag,
-        .jump_flag = runtime->jump_flag,
-        .recover_flag = runtime->recover_flag,
-    };
-    return cmd;
-}
-
 platform_robot_intent_t remote_runtime_build_intent(const Remote_Runtime_t *runtime)
 {
     platform_robot_intent_t intent = {
@@ -126,6 +113,7 @@ platform_robot_intent_t remote_runtime_build_intent(const Remote_Runtime_t *runt
         .motion_target = {
             .vx = runtime->v_set,
             .x = runtime->x_set,
+            .yaw_target = runtime->turn_set,
             .yaw_rate = 0.0f,
             .yaw_hold = true,
             .velocity_frame = PLATFORM_FRAME_BODY,
@@ -158,4 +146,18 @@ platform_robot_intent_t remote_runtime_build_intent(const Remote_Runtime_t *runt
     }
 
     return intent;
+}
+
+Chassis_Cmd_t remote_runtime_build_cmd_from_intent(const platform_robot_intent_t *intent)
+{
+    Chassis_Cmd_t cmd = {
+        .vx_cmd = intent->motion_target.vx,
+        .turn_cmd = intent->motion_target.yaw_hold ? intent->motion_target.yaw_target : intent->motion_target.yaw_rate,
+        .leg_set = intent->posture_target.leg_length,
+        .start_flag = intent->enable.start ? 1U : 0U,
+        .jump_flag = intent->behavior_request.jump_request ? 1U : 0U,
+        .recover_flag = intent->behavior_request.recover_request ? 1U : 0U,
+    };
+
+    return cmd;
 }

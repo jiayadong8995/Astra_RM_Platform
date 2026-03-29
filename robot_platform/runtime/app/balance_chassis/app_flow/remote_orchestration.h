@@ -15,8 +15,7 @@ void remote_runtime_limit_leg_set(Remote_Runtime_t *runtime,
                                   const Leg_Output_t *right_msg,
                                   const Leg_Output_t *left_msg);
 
-Chassis_Cmd_t remote_runtime_build_cmd(const Remote_Runtime_t *runtime);
-
 platform_robot_intent_t remote_runtime_build_intent(const Remote_Runtime_t *runtime);
+Chassis_Cmd_t remote_runtime_build_cmd_from_intent(const platform_robot_intent_t *intent);
 
 #endif

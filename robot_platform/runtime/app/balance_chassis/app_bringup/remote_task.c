@@ -30,6 +30,7 @@ void remote_task(void)
     Chassis_State_t state_msg = {0};
     Leg_Output_t right_msg = {0};
     Leg_Output_t left_msg = {0};
+    platform_robot_intent_t intent = {0};
     Chassis_Cmd_t cmd_msg = {0};
 
     remote_runtime_init(&cmd_state);
@@ -39,7 +40,8 @@ void remote_task(void)
         remote_runtime_bus_pull_inputs(&runtime_bus, &rc_msg, &ins_msg, &state_msg, &right_msg, &left_msg);
         remote_runtime_apply_inputs(&cmd_state, &rc_msg, &ins_msg, &state_msg);
 		remote_runtime_limit_leg_set(&cmd_state, &right_msg, &left_msg);
-        cmd_msg = remote_runtime_build_cmd(&cmd_state);
+        intent = remote_runtime_build_intent(&cmd_state);
+        cmd_msg = remote_runtime_build_cmd_from_intent(&intent);
         remote_runtime_bus_publish_cmd(&runtime_bus, &cmd_msg);
 
 		osDelay(REMOTE_TASK_PERIOD_MS);

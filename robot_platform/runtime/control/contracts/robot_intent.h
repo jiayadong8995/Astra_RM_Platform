@@ -6,6 +6,7 @@
 typedef struct {
   float vx;
   float x;
+  float yaw_target;
   float yaw_rate;
   bool yaw_hold;
   platform_velocity_frame_t velocity_frame;
