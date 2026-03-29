@@ -8,7 +8,7 @@ static void earth_frame_to_body_frame(const float *vec_ef, float *vec_bf, const 
 void platform_ins_state_estimator_init(platform_ins_state_estimator_t *state)
 {
     mahony_init(&state->mahony, 1.0f, 0.0f, 0.001f);
-    state->ins.AccelLPF = 0.0089f;
+    state->ins.sensor.accel_lpf = 0.0089f;
     state->gravity[0] = 0.0f;
     state->gravity[1] = 0.0f;
     state->gravity[2] = 9.81f;
@@ -25,12 +25,12 @@ void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *s
 
     state->mahony.dt = dt;
 
-    state->ins.Accel[X] = accel[X];
-    state->ins.Accel[Y] = accel[Y];
-    state->ins.Accel[Z] = accel[Z];
-    state->ins.Gyro[X] = gyro[X];
-    state->ins.Gyro[Y] = gyro[Y];
-    state->ins.Gyro[Z] = gyro[Z];
+    state->ins.sensor.accel[X] = accel[X];
+    state->ins.sensor.accel[Y] = accel[Y];
+    state->ins.sensor.accel[Z] = accel[Z];
+    state->ins.sensor.gyro[X] = gyro[X];
+    state->ins.sensor.gyro[Y] = gyro[Y];
+    state->ins.sensor.gyro[Z] = gyro[Z];
 
     state->accel.x = accel[0];
     state->accel.y = accel[1];
@@ -44,49 +44,49 @@ void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *s
     mahony_output(&state->mahony);
     RotationMatrix_update(&state->mahony);
 
-    state->ins.q[0] = state->mahony.q0;
-    state->ins.q[1] = state->mahony.q1;
-    state->ins.q[2] = state->mahony.q2;
-    state->ins.q[3] = state->mahony.q3;
+    state->ins.sensor.quaternion[0] = state->mahony.q0;
+    state->ins.sensor.quaternion[1] = state->mahony.q1;
+    state->ins.sensor.quaternion[2] = state->mahony.q2;
+    state->ins.sensor.quaternion[3] = state->mahony.q3;
 
-    earth_frame_to_body_frame(state->gravity, gravity_b, state->ins.q);
+    earth_frame_to_body_frame(state->gravity, gravity_b, state->ins.sensor.quaternion);
     for (uint8_t i = 0; i < 3; i++)
     {
-        state->ins.MotionAccel_b[i] = (state->ins.Accel[i] - gravity_b[i]) * dt / (state->ins.AccelLPF + dt)
-                                    + state->ins.MotionAccel_b[i] * state->ins.AccelLPF / (state->ins.AccelLPF + dt);
+        state->ins.sensor.body_accel[i] = (state->ins.sensor.accel[i] - gravity_b[i]) * dt / (state->ins.sensor.accel_lpf + dt)
+                                        + state->ins.sensor.body_accel[i] * state->ins.sensor.accel_lpf / (state->ins.sensor.accel_lpf + dt);
     }
-    body_frame_to_earth_frame(state->ins.MotionAccel_b, state->ins.MotionAccel_n, state->ins.q);
+    body_frame_to_earth_frame(state->ins.sensor.body_accel, state->ins.sensor.world_accel, state->ins.sensor.quaternion);
 
-    if (fabsf(state->ins.MotionAccel_n[0]) < 0.02f)
+    if (fabsf(state->ins.sensor.world_accel[0]) < 0.02f)
     {
-        state->ins.MotionAccel_n[0] = 0.0f;
+        state->ins.sensor.world_accel[0] = 0.0f;
     }
-    if (fabsf(state->ins.MotionAccel_n[1]) < 0.02f)
+    if (fabsf(state->ins.sensor.world_accel[1]) < 0.02f)
     {
-        state->ins.MotionAccel_n[1] = 0.0f;
+        state->ins.sensor.world_accel[1] = 0.0f;
     }
-    if (fabsf(state->ins.MotionAccel_n[2]) < 0.04f)
+    if (fabsf(state->ins.sensor.world_accel[2]) < 0.04f)
     {
-        state->ins.MotionAccel_n[2] = 0.0f;
+        state->ins.sensor.world_accel[2] = 0.0f;
     }
 
     if (state->ins_time > 3000.0f)
     {
-        state->ins.ins_flag = 1U;
-        state->ins.Pitch = state->mahony.roll - PITCH_OFFSET;
-        state->ins.Roll = state->mahony.pitch - ROLL_OFFSET;
-        state->ins.Yaw = state->mahony.yaw;
+        state->ins.health.ready = 1U;
+        state->ins.attitude.pitch = state->mahony.roll - PITCH_OFFSET;
+        state->ins.attitude.roll = state->mahony.pitch - ROLL_OFFSET;
+        state->ins.attitude.yaw = state->mahony.yaw;
 
-        if (state->ins.Yaw - state->ins.YawAngleLast > 3.1415926f)
+        if (state->ins.attitude.yaw - state->ins.attitude.yaw_last > 3.1415926f)
         {
-            state->ins.YawRoundCount--;
+            state->ins.attitude.yaw_turn_count--;
         }
-        else if (state->ins.Yaw - state->ins.YawAngleLast < -3.1415926f)
+        else if (state->ins.attitude.yaw - state->ins.attitude.yaw_last < -3.1415926f)
         {
-            state->ins.YawRoundCount++;
+            state->ins.attitude.yaw_turn_count++;
         }
-        state->ins.YawTotalAngle = 6.283f * state->ins.YawRoundCount + state->ins.Yaw;
-        state->ins.YawAngleLast = state->ins.Yaw;
+        state->ins.attitude.yaw_total = 6.283f * state->ins.attitude.yaw_turn_count + state->ins.attitude.yaw;
+        state->ins.attitude.yaw_last = state->ins.attitude.yaw;
     }
     else
     {
@@ -97,34 +97,34 @@ void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *s
 void platform_ins_state_estimator_build_msg(const platform_ins_state_estimator_t *state,
                                             platform_ins_state_message_t *msg)
 {
-    msg->pitch = state->ins.Pitch;
-    msg->roll = state->ins.Roll;
-    msg->yaw_total = state->ins.YawTotalAngle;
-    msg->gyro[0] = state->ins.Gyro[0];
-    msg->gyro[1] = state->ins.Gyro[1];
-    msg->gyro[2] = state->ins.Gyro[2];
-    msg->accel_b[0] = state->ins.MotionAccel_b[0];
-    msg->accel_b[1] = state->ins.MotionAccel_b[1];
-    msg->accel_b[2] = state->ins.MotionAccel_b[2];
-    msg->ready = state->ins.ins_flag;
+    msg->pitch = state->ins.attitude.pitch;
+    msg->roll = state->ins.attitude.roll;
+    msg->yaw_total = state->ins.attitude.yaw_total;
+    msg->gyro[0] = state->ins.sensor.gyro[0];
+    msg->gyro[1] = state->ins.sensor.gyro[1];
+    msg->gyro[2] = state->ins.sensor.gyro[2];
+    msg->accel_b[0] = state->ins.sensor.body_accel[0];
+    msg->accel_b[1] = state->ins.sensor.body_accel[1];
+    msg->accel_b[2] = state->ins.sensor.body_accel[2];
+    msg->ready = state->ins.health.ready;
 }
 
 void platform_ins_state_estimator_fill_robot_state(const platform_ins_state_estimator_t *state,
                                                    platform_robot_state_t *robot_state)
 {
     robot_state->timestamp_us = state->dwt_count;
-    robot_state->body.roll = state->ins.Roll;
-    robot_state->body.pitch = state->ins.Pitch;
-    robot_state->body.yaw = state->ins.Yaw;
-    robot_state->body.gyro[0] = state->ins.Gyro[0];
-    robot_state->body.gyro[1] = state->ins.Gyro[1];
-    robot_state->body.gyro[2] = state->ins.Gyro[2];
-    robot_state->body.accel[0] = state->ins.MotionAccel_b[0];
-    robot_state->body.accel[1] = state->ins.MotionAccel_b[1];
-    robot_state->body.accel[2] = state->ins.MotionAccel_b[2];
-    robot_state->body.orientation_valid = (state->ins.ins_flag != 0U);
-    robot_state->chassis.yaw_total = state->ins.YawTotalAngle;
-    robot_state->health.imu_ok = (state->ins.ins_flag != 0U);
+    robot_state->body.roll = state->ins.attitude.roll;
+    robot_state->body.pitch = state->ins.attitude.pitch;
+    robot_state->body.yaw = state->ins.attitude.yaw;
+    robot_state->body.gyro[0] = state->ins.sensor.gyro[0];
+    robot_state->body.gyro[1] = state->ins.sensor.gyro[1];
+    robot_state->body.gyro[2] = state->ins.sensor.gyro[2];
+    robot_state->body.accel[0] = state->ins.sensor.body_accel[0];
+    robot_state->body.accel[1] = state->ins.sensor.body_accel[1];
+    robot_state->body.accel[2] = state->ins.sensor.body_accel[2];
+    robot_state->body.orientation_valid = (state->ins.health.ready != 0U);
+    robot_state->chassis.yaw_total = state->ins.attitude.yaw_total;
+    robot_state->health.imu_ok = (state->ins.health.ready != 0U);
     robot_state->health.state_valid = robot_state->body.orientation_valid;
 }
 

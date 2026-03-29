@@ -12,33 +12,34 @@
 
 typedef struct
 {
-    float q[4];
+    float quaternion[4];
+    float gyro[3];
+    float accel[3];
+    float body_accel[3];
+    float world_accel[3];
+    float accel_lpf;
+} platform_ins_sensor_state_t;
 
-    float Gyro[3];
-    float Accel[3];
-    float MotionAccel_b[3];
-    float MotionAccel_n[3];
+typedef struct
+{
+    float roll;
+    float pitch;
+    float yaw;
+    float yaw_total;
+    float yaw_last;
+    int32_t yaw_turn_count;
+} platform_ins_attitude_state_t;
 
-    float AccelLPF;
+typedef struct
+{
+    uint8_t ready;
+} platform_ins_health_state_t;
 
-    float xn[3];
-    float yn[3];
-    float zn[3];
-
-    float atanxz;
-    float atanyz;
-
-    float Roll;
-    float Pitch;
-    float Yaw;
-    float YawTotalAngle;
-    float YawAngleLast;
-    float YawRoundCount;
-
-    float v_n;
-    float x_n;
-
-    uint8_t ins_flag;
+typedef struct
+{
+    platform_ins_sensor_state_t sensor;
+    platform_ins_attitude_state_t attitude;
+    platform_ins_health_state_t health;
 } platform_ins_runtime_t;
 
 #endif

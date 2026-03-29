@@ -15,40 +15,58 @@ typedef struct
 
 typedef struct
 {
-    platform_wheel_runtime_t wheel_motor[2];
+    float velocity_target;
+    float position_target;
+    float yaw_target;
+    float roll_target;
+    float leg_length_target;
+    float previous_leg_length_target;
+} platform_balance_target_state_t;
 
-    float v_set;
-    float x_set;
-    float turn_set;
-    float roll_set;
-    float leg_set;
-    float last_leg_set;
+typedef struct
+{
+    float velocity;
+    float position;
+} platform_balance_observe_state_t;
 
-    float v_filter;
-    float x_filter;
-
-    float right_body_pitch;
-    float right_body_pitch_rate;
-    float left_body_pitch;
-    float left_body_pitch_rate;
+typedef struct
+{
+    float right_pitch;
+    float right_pitch_rate;
+    float left_pitch;
+    float left_pitch_rate;
     float roll;
-    float total_yaw;
-    float theta_err;
+    float yaw_total;
+    float leg_theta_error;
+} platform_balance_attitude_state_t;
 
-    float turn_torque_compensation;
-    float roll_force_compensation;
-    float leg_pitch_compensation;
+typedef struct
+{
+    float turn_torque;
+    float roll_force;
+    float leg_pitch;
+} platform_balance_compensation_state_t;
 
-    uint8_t start_flag;
-
-    uint8_t jump_flag;
-    float jump_leg;
-    uint32_t jump_time;
+typedef struct
+{
+    uint8_t start_enabled;
+    uint8_t jump_requested;
+    float jump_leg_length;
+    uint32_t jump_elapsed_ticks;
     uint8_t jump_phase;
+    uint8_t last_recover_requested;
+    uint8_t recover_requested;
+    uint8_t grounded;
+} platform_balance_mode_state_t;
 
-    uint8_t last_recover_flag;
-    uint8_t recover_flag;
-    uint8_t grounded_flag;
+typedef struct
+{
+    platform_wheel_runtime_t wheel_motor[2];
+    platform_balance_target_state_t target;
+    platform_balance_observe_state_t observe;
+    platform_balance_attitude_state_t attitude;
+    platform_balance_compensation_state_t compensation;
+    platform_balance_mode_state_t mode;
 } platform_balance_runtime_t;
 
 #endif

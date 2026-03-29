@@ -13,8 +13,8 @@ void VMC_calc_1_right(vmc_leg_t *vmc, platform_ins_runtime_t *ins, float dt) {
     static float PitchR = 0.0f;
     static float PithGyroR = 0.0f;
 
-    PitchR = ins->Pitch;
-    PithGyroR =ins->Gyro[0];
+    PitchR = ins->attitude.pitch;
+    PithGyroR = ins->sensor.gyro[0];
 
     vmc->YD = vmc->l4 * arm_sin_f32(vmc->phi4); // D的y坐标
     vmc->YB = vmc->l1 * arm_sin_f32(vmc->phi1); // B的y坐标
@@ -108,8 +108,8 @@ void VMC_calc_1_left(vmc_leg_t *vmc, platform_ins_runtime_t *ins, float dt) {
     static float PitchL = 0.0f;
     static float PithGyroL = 0.0f;
 
-    PitchL = 0.0f - ins->Pitch;
-    PithGyroL = 0.0f - ins->Gyro[0];
+    PitchL = 0.0f - ins->attitude.pitch;
+    PithGyroL = 0.0f - ins->sensor.gyro[0];
 
     vmc->YD = vmc->l4 * arm_sin_f32(vmc->phi4); // D的y坐标
     vmc->YB = vmc->l1 * arm_sin_f32(vmc->phi1); // B的y坐标
