@@ -45,3 +45,9 @@ runtime/device/
 
 当前第一版只把 `motor` 作为 `actuator` 的具体实现落下来。
 原先 `runtime/bsp/devices` 中的驱动资产已经并入这一层，避免“驱动目录”和“设备语义目录”双重并存。
+
+下一步还需要继续收紧：
+
+- `device` 对上只暴露稳定设备语义
+- `app / control` 不应继续直接依赖具体驱动头
+- backend 默认绑定应继续压缩到最少暴露面

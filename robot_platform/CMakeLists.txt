@@ -288,13 +288,14 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_DEVICE_REMOTE_DIR}/remote_control.c
   )
 
-  set(BALANCE_CHASSIS_LEGACY_APP_SOURCES
-    ${PLATFORM_LEGACY_APP_DIR}/legacy/chassis_task.c
+  set(BALANCE_CHASSIS_APP_SOURCES
+    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/chassis_task.c
     ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/remote_task.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/remote_orchestration.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_io/rc_input_bridge.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_io/rc_input_adapter.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_task.c
@@ -307,7 +308,6 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
     ${PLATFORM_MODULE_CONTROL_LIB_DIR}/control_math.c
-    ${PLATFORM_LEGACY_APP_DIR}/legacy/remote_task.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC/VMC_calc.c
@@ -361,7 +361,7 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_LEGACY_APP_DIR}/app_bringup/freertos_app.c
     ${BALANCE_CHASSIS_FREERTOS_SOURCES}
     ${BALANCE_CHASSIS_SITL_BSP_SOURCES}
-    ${BALANCE_CHASSIS_LEGACY_APP_SOURCES}
+    ${BALANCE_CHASSIS_APP_SOURCES}
   )
 
   target_include_directories(balance_chassis_sitl

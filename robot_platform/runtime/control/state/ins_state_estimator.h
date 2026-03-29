@@ -2,7 +2,7 @@
 #define PLATFORM_CONTROL_STATE_INS_STATE_ESTIMATOR_H
 
 #include "../../app/balance_chassis/app_config/robot_def.h"
-#include "../../app/balance_chassis/app_config/runtime_state.h"
+#include "../internal/runtime_state.h"
 #include "../contracts/robot_state.h"
 #include "mahony_filter.h"
 

@@ -5,6 +5,7 @@
 #include "cmsis_os.h"
 #include "../../app/balance_chassis/app_config/app_params.h"
 #include "../../app/balance_chassis/app_config/robot_def.h"
+#include "../../device/device_layer.h"
 #include "ins_state_estimator.h"
 #include "ins_topics.h"
 
@@ -20,14 +21,17 @@ void INS_Init(void)
 void INS_task(void)
 {
      INS_Data_t msg = {0};
+     platform_imu_sample_t sample = {0};
      float ins_dt = 0.0f;
      INS_Init();
 
      while(1)
      {
         ins_dt = DWT_GetDeltaT(&runtime_state.dwt_count);
-        BMI088_Read(&BMI088);
-        platform_ins_state_estimator_apply_sample(&runtime_state, ins_dt, BMI088.Accel, BMI088.Gyro);
+        if (platform_device_read_default_imu(&sample) == PLATFORM_DEVICE_RESULT_OK && sample.valid)
+        {
+            platform_ins_state_estimator_apply_sample(&runtime_state, ins_dt, sample.accel, sample.gyro);
+        }
         platform_ins_state_estimator_build_msg(&runtime_state, &msg);
         platform_ins_bus_publish(&runtime_bus, &msg);
 

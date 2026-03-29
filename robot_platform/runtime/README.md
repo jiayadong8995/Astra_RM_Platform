@@ -28,6 +28,6 @@ runtime/
 当前原则：
 
 - 不再引入 `osal/` 作为目标层
-- 不再围绕 legacy task 组织整体架构
+- 不再围绕所谓 legacy 目录组织整体架构
 - 主控制链优先围绕正式 contracts 迁移
 - `hw` 与 `sitl` 的具体设备实现必须分离

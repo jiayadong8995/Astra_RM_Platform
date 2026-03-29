@@ -3,7 +3,7 @@
 
 #include "main.h"
 #include "app_config/robot_def.h"
-#include "app_config/runtime_state.h"
+#include "../../../control/internal/runtime_state.h"
 
 #define pi 3.1415926f
 
@@ -71,4 +71,3 @@ extern uint8_t ground_detectionL(vmc_leg_t *vmc,INS_t *ins);//左腿离地检测
 extern float LQR_K_calc(float *coe,float len);
 	
 #endif
-

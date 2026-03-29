@@ -2,14 +2,14 @@
 
 #include "FreeRTOS.h"
 #include "cmsis_os.h"
-#include "../app_io/rc_input_bridge.h"
+#include "../app_io/rc_input_adapter.h"
 
 #include "../app_config/app_params.h"
 #include "../../../control/state/observe_task.h"
 #include "../../../control/state/ins_task.h"
 #include "../../../control/execution/motor_control_task.h"
-#include "../legacy/chassis_task.h"
-#include "../legacy/remote_task.h"
+#include "chassis_task.h"
+#include "remote_task.h"
 
 osThreadId INS_TASKHandle;
 osThreadId CHASSIS_TASKHandle;
@@ -79,5 +79,5 @@ static void Remote_Task(void const *argument)
 static void RC_Input_Task(void const *argument)
 {
     (void)argument;
-    rc_input_task();
+    rc_input_adapter_task();
 }

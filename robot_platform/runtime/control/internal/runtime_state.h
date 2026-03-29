@@ -1,10 +1,7 @@
-#ifndef BALANCE_CHASSIS_APP_CONFIG_RUNTIME_STATE_H
-#define BALANCE_CHASSIS_APP_CONFIG_RUNTIME_STATE_H
+#ifndef PLATFORM_CONTROL_INTERNAL_RUNTIME_STATE_H
+#define PLATFORM_CONTROL_INTERNAL_RUNTIME_STATE_H
 
-#include "main.h"
-#include "../../../device/actuator/motor/dm4310/dm4310_drv.h"
-#include "../../../device/imu/bmi088/BMI088driver.h"
-#include "QuaternionEKF.h"
+#include <stdint.h>
 
 #define X 0
 #define Y 1
@@ -46,18 +43,17 @@ typedef struct
 
 typedef struct
 {
-    uint8_t flag;
-
-    float scale[3];
-
-    float Yaw;
-    float Pitch;
-    float Roll;
-} IMU_Param_t;
+    float speed;
+    float w_speed;
+    float torque;
+    float torque_set;
+    int16_t give_current;
+    float chassis_x;
+} platform_wheel_runtime_t;
 
 typedef struct
 {
-    chassis_motor_t wheel_motor[2];
+    platform_wheel_runtime_t wheel_motor[2];
 
     float v_set;
     float x_set;

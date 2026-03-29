@@ -2,7 +2,7 @@
 #define PLATFORM_CONTROL_CONTROLLERS_BALANCE_CONTROLLER_H
 
 #include "../../app/balance_chassis/app_config/robot_def.h"
-#include "../../app/balance_chassis/app_config/runtime_state.h"
+#include "../internal/runtime_state.h"
 #include "pid.h"
 #include "VMC_calc.h"
 
