@@ -27,6 +27,8 @@
 
 1. [sim_architecture_research.md](./sim_architecture_research.md)
    `sim` 方向的参考研究，不作为当前唯一实现口径。
+2. [ros_robot_algorithm_placement_research.md](./ros_robot_algorithm_placement_research.md)
+   ROS 与高质量机器人项目的算法归属调研，用于校验 `device / control / app` 的职责边界。
 
 ## 已收口内容
 

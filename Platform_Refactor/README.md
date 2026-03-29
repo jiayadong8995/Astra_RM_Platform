@@ -27,8 +27,10 @@
 ```text
 Platform_Refactor/
   README.md
-  05_SITL_Roadmap.md
 ```
+
+这里不再保留过程性路线拆解文档。
+当前主线和执行文档统一看 `robot_platform/docs/`。
 
 ## 使用方式
 
