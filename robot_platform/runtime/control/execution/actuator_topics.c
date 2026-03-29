@@ -2,14 +2,14 @@
 
 #include "cmsis_os.h"
 
-void actuator_runtime_bus_init(Actuator_Runtime_Bus_t *bus)
+void platform_actuator_bus_init(platform_actuator_bus_t *bus)
 {
     bus->ins_sub = SubRegister("ins_data", sizeof(INS_Data_t));
     bus->actuator_cmd_sub = SubRegister("actuator_cmd", sizeof(Actuator_Cmd_t));
     bus->actuator_feedback_pub = PubRegister("actuator_feedback", sizeof(Actuator_Feedback_t));
 }
 
-void actuator_runtime_bus_wait_ready(Actuator_Runtime_Bus_t *bus, INS_Data_t *ins_msg)
+void platform_actuator_bus_wait_ready(platform_actuator_bus_t *bus, INS_Data_t *ins_msg)
 {
     while (ins_msg->ready == 0U)
     {
@@ -24,12 +24,12 @@ void actuator_runtime_bus_wait_ready(Actuator_Runtime_Bus_t *bus, INS_Data_t *in
     }
 }
 
-void actuator_runtime_bus_pull_cmd(Actuator_Runtime_Bus_t *bus, Actuator_Cmd_t *actuator_msg)
+void platform_actuator_bus_pull_cmd(platform_actuator_bus_t *bus, Actuator_Cmd_t *actuator_msg)
 {
     SubGetMessage(bus->actuator_cmd_sub, actuator_msg);
 }
 
-void actuator_runtime_bus_publish_feedback(Actuator_Runtime_Bus_t *bus, const Actuator_Feedback_t *feedback_msg)
+void platform_actuator_bus_publish_feedback(platform_actuator_bus_t *bus, const Actuator_Feedback_t *feedback_msg)
 {
     PubPushMessage(bus->actuator_feedback_pub, (void *)feedback_msg);
 }

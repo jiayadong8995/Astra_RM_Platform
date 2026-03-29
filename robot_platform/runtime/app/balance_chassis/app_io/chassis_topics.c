@@ -15,7 +15,7 @@ void chassis_runtime_bus_init(Chassis_Runtime_Bus_t *bus)
     bus->actuator_cmd_pub = PubRegister("actuator_cmd", sizeof(Actuator_Cmd_t));
 }
 
-void chassis_runtime_bus_wait_ready(Chassis_Runtime_Bus_t *bus, Chassis_Bus_Input_t *inputs)
+void chassis_runtime_bus_wait_ready(Chassis_Runtime_Bus_t *bus, platform_balance_controller_input_t *inputs)
 {
     while (inputs->ins.ready == 0U || inputs->feedback.ready == 0U)
     {
@@ -24,7 +24,7 @@ void chassis_runtime_bus_wait_ready(Chassis_Runtime_Bus_t *bus, Chassis_Bus_Inpu
     }
 }
 
-void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus, Chassis_Bus_Input_t *inputs)
+void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus, platform_balance_controller_input_t *inputs)
 {
     SubGetMessage(bus->ins_sub, &inputs->ins);
     SubGetMessage(bus->cmd_sub, &inputs->cmd);
@@ -32,7 +32,7 @@ void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus, Chassis_Bus_Inp
     SubGetMessage(bus->actuator_feedback_sub, &inputs->feedback);
 }
 
-void chassis_runtime_bus_publish_outputs(Chassis_Runtime_Bus_t *bus, const Chassis_Bus_Output_t *outputs)
+void chassis_runtime_bus_publish_outputs(Chassis_Runtime_Bus_t *bus, const platform_balance_controller_output_t *outputs)
 {
     PubPushMessage(bus->chassis_state_pub, (void *)&outputs->state);
     PubPushMessage(bus->leg_right_pub, (void *)&outputs->right_leg);

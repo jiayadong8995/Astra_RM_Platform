@@ -1,11 +1,11 @@
-#include "ins_runtime.h"
+#include "ins_state_estimator.h"
 
 #include <math.h>
 
 static void body_frame_to_earth_frame(const float *vec_bf, float *vec_ef, const float *q);
 static void earth_frame_to_body_frame(const float *vec_ef, float *vec_bf, const float *q);
 
-void ins_runtime_state_init(INS_Runtime_State_t *state)
+void platform_ins_state_estimator_init(platform_ins_state_estimator_t *state)
 {
     mahony_init(&state->mahony, 1.0f, 0.0f, 0.001f);
     state->ins.AccelLPF = 0.0089f;
@@ -16,10 +16,10 @@ void ins_runtime_state_init(INS_Runtime_State_t *state)
     state->ins_time = 0.0f;
 }
 
-void ins_runtime_apply_sample(INS_Runtime_State_t *state,
-                              float dt,
-                              const float accel[3],
-                              const float gyro[3])
+void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *state,
+                                               float dt,
+                                               const float accel[3],
+                                               const float gyro[3])
 {
     float gravity_b[3];
 
@@ -94,7 +94,7 @@ void ins_runtime_apply_sample(INS_Runtime_State_t *state,
     }
 }
 
-void ins_runtime_build_msg(const INS_Runtime_State_t *state, INS_Data_t *msg)
+void platform_ins_state_estimator_build_msg(const platform_ins_state_estimator_t *state, INS_Data_t *msg)
 {
     msg->pitch = state->ins.Pitch;
     msg->roll = state->ins.Roll;
@@ -108,7 +108,8 @@ void ins_runtime_build_msg(const INS_Runtime_State_t *state, INS_Data_t *msg)
     msg->ready = state->ins.ins_flag;
 }
 
-void ins_runtime_fill_robot_state(const INS_Runtime_State_t *state, platform_robot_state_t *robot_state)
+void platform_ins_state_estimator_fill_robot_state(const platform_ins_state_estimator_t *state,
+                                                   platform_robot_state_t *robot_state)
 {
     robot_state->timestamp_us = state->dwt_count;
     robot_state->body.roll = state->ins.Roll;
@@ -121,9 +122,7 @@ void ins_runtime_fill_robot_state(const INS_Runtime_State_t *state, platform_rob
     robot_state->body.accel[1] = state->ins.MotionAccel_b[1];
     robot_state->body.accel[2] = state->ins.MotionAccel_b[2];
     robot_state->body.orientation_valid = (state->ins.ins_flag != 0U);
-
     robot_state->chassis.yaw_total = state->ins.YawTotalAngle;
-
     robot_state->health.imu_ok = (state->ins.ins_flag != 0U);
     robot_state->health.state_valid = robot_state->body.orientation_valid;
 }
@@ -133,11 +132,9 @@ static void body_frame_to_earth_frame(const float *vec_bf, float *vec_ef, const 
     vec_ef[0] = 2.0f * ((0.5f - q[2] * q[2] - q[3] * q[3]) * vec_bf[0]
                       + (q[1] * q[2] - q[0] * q[3]) * vec_bf[1]
                       + (q[1] * q[3] + q[0] * q[2]) * vec_bf[2]);
-
     vec_ef[1] = 2.0f * ((q[1] * q[2] + q[0] * q[3]) * vec_bf[0]
                       + (0.5f - q[1] * q[1] - q[3] * q[3]) * vec_bf[1]
                       + (q[2] * q[3] - q[0] * q[1]) * vec_bf[2]);
-
     vec_ef[2] = 2.0f * ((q[1] * q[3] - q[0] * q[2]) * vec_bf[0]
                       + (q[2] * q[3] + q[0] * q[1]) * vec_bf[1]
                       + (0.5f - q[1] * q[1] - q[2] * q[2]) * vec_bf[2]);
@@ -148,11 +145,9 @@ static void earth_frame_to_body_frame(const float *vec_ef, float *vec_bf, const 
     vec_bf[0] = 2.0f * ((0.5f - q[2] * q[2] - q[3] * q[3]) * vec_ef[0]
                       + (q[1] * q[2] + q[0] * q[3]) * vec_ef[1]
                       + (q[1] * q[3] - q[0] * q[2]) * vec_ef[2]);
-
     vec_bf[1] = 2.0f * ((q[1] * q[2] - q[0] * q[3]) * vec_ef[0]
                       + (0.5f - q[1] * q[1] - q[3] * q[3]) * vec_ef[1]
                       + (q[2] * q[3] + q[0] * q[1]) * vec_ef[2]);
-
     vec_bf[2] = 2.0f * ((q[1] * q[3] + q[0] * q[2]) * vec_ef[0]
                       + (q[2] * q[3] - q[0] * q[1]) * vec_ef[1]
                       + (0.5f - q[1] * q[1] - q[2] * q[2]) * vec_ef[2]);

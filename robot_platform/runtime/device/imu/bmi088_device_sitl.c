@@ -4,12 +4,19 @@ static platform_device_result_t platform_bmi088_init(platform_imu_device_t *devi
 static platform_device_result_t platform_bmi088_read_sample(platform_imu_device_t *device,
                                                             platform_imu_sample_t *sample);
 
-void platform_bmi088_device_bind_default(platform_imu_device_t *device)
+void platform_bmi088_device_bind(platform_imu_device_t *device,
+                                 const platform_bmi088_device_config_t *config)
 {
+  (void)config;
   device->name = "bmi088_sitl_stub";
   device->context = 0;
   device->ops.init = platform_bmi088_init;
   device->ops.read_sample = platform_bmi088_read_sample;
+}
+
+void platform_bmi088_device_bind_default(platform_imu_device_t *device)
+{
+  platform_bmi088_device_bind(device, 0);
 }
 
 static platform_device_result_t platform_bmi088_init(platform_imu_device_t *device)
@@ -32,5 +39,6 @@ static platform_device_result_t platform_bmi088_read_sample(platform_imu_device_
   sample->temperature = 0.0f;
   sample->sample_time_us = 0U;
   sample->valid = false;
+  device->stamp.valid = false;
   return PLATFORM_DEVICE_RESULT_UNAVAILABLE;
 }

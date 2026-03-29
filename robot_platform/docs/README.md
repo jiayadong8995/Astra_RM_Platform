@@ -18,19 +18,17 @@
    约束 `runtime/generated/` 的边界，避免把业务逻辑重新塞回生成目录。
 4. [wsl_environment_setup.md](./wsl_environment_setup.md)
    记录当前仓库在 WSL 下跑通 `generate` / `build` 所需的环境前提。
-5. [project_overview_and_target_architecture.md](./project_overview_and_target_architecture.md)
-   项目总览与目标架构说明，先建立整个平台的统一地图。
-6. [runtime_architecture_blueprint.md](./runtime_architecture_blueprint.md)
+5. [runtime_architecture_blueprint.md](./runtime_architecture_blueprint.md)
    当前运行时目标架构蓝图，固定顶层分层、主数据流和通信原则。
-7. [runtime_architecture_task_list.md](./runtime_architecture_task_list.md)
+6. [runtime_architecture_task_list.md](./runtime_architecture_task_list.md)
    当前架构阶段执行清单，定义先做什么、后做什么，以及当前禁区。
-8. [runtime_contracts_draft.md](./runtime_contracts_draft.md)
+7. [runtime_contracts_draft.md](./runtime_contracts_draft.md)
    主控制链正式契约草案，定义 `DeviceInput / RobotState / RobotIntent / ActuatorCommand / DeviceCommand / DeviceFeedback`。
-9. [runtime_capability_boundaries.md](./runtime_capability_boundaries.md)
+8. [runtime_capability_boundaries.md](./runtime_capability_boundaries.md)
    运行时能力边界表，定义哪些能力属于 `device / control / app / sim`，避免继续按 legacy task 拆系统。
-10. [runtime_migration_stages.md](./runtime_migration_stages.md)
+9. [runtime_migration_stages.md](./runtime_migration_stages.md)
    正式迁移阶段清单，定义应先立什么、后立什么，以及每阶段进入条件、退出条件和禁区。
-11. [runtime_communication_matrix.md](./runtime_communication_matrix.md)
+10. [runtime_communication_matrix.md](./runtime_communication_matrix.md)
    运行时通信矩阵，固定哪些边界应使用直接接口，哪些场景才允许轻量 pub-sub。
 
 ## 参考文档
@@ -44,12 +42,9 @@
 
 ## 待瘦身文档
 
-以下文档仍有价值，但后续应逐步并入正式文档，然后删除：
+以下文档仍有价值，但不作为当前正式执行依据：
 
-1. [runtime_realignment_plan.md](./runtime_realignment_plan.md)
-   仍保留了上一轮“回正”阶段的语言和拆分方式，需要逐步并入新版架构蓝图与任务清单。
-2. [runtime_file_migration_map.md](./runtime_file_migration_map.md)
-   仍部分依赖旧层次口径，后续应在正式迁移开始前按新版契约和迁移阶段重写或替换。
+当前已无。
 
 ## 已移除内容
 
@@ -57,6 +52,9 @@
 
 - 早期 `phase0/phase1/phase2` 分阶段方案
 - `Chassis` 导入清单一类的过程性迁移草稿
+- `project_overview_and_target_architecture.md`
+- `runtime_realignment_plan.md`
+- `runtime_file_migration_map.md`
 
 原因：
 

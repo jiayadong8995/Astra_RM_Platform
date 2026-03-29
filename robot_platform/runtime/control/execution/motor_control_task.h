@@ -1,0 +1,6 @@
+#ifndef PLATFORM_CONTROL_EXECUTION_MOTOR_CONTROL_TASK_H
+#define PLATFORM_CONTROL_EXECUTION_MOTOR_CONTROL_TASK_H
+
+void motor_control_task(void);
+
+#endif

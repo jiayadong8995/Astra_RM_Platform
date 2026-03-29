@@ -6,12 +6,23 @@ static platform_device_result_t platform_dbus_remote_init(platform_remote_device
 static platform_device_result_t platform_dbus_remote_read_input(platform_remote_device_t *device,
                                                                 platform_rc_input_t *input);
 
-void platform_dbus_remote_device_bind_default(platform_remote_device_t *device)
+static platform_dbus_remote_device_config_t g_platform_dbus_remote_config = {
+  .acquire_fn = (const void *(*)(void))get_remote_control_point,
+  .is_error_fn = RC_data_is_error,
+};
+
+void platform_dbus_remote_device_bind(platform_remote_device_t *device,
+                                      const platform_dbus_remote_device_config_t *config)
 {
-  device->name = "dbus_remote_hw";
-  device->context = 0;
+  device->name = "dbus_remote";
+  device->context = (void *)config;
   device->ops.init = platform_dbus_remote_init;
   device->ops.read_input = platform_dbus_remote_read_input;
+}
+
+void platform_dbus_remote_device_bind_default(platform_remote_device_t *device)
+{
+  platform_dbus_remote_device_bind(device, &g_platform_dbus_remote_config);
 }
 
 static platform_device_result_t platform_dbus_remote_init(platform_remote_device_t *device)
@@ -23,8 +34,19 @@ static platform_device_result_t platform_dbus_remote_init(platform_remote_device
 static platform_device_result_t platform_dbus_remote_read_input(platform_remote_device_t *device,
                                                                 platform_rc_input_t *input)
 {
-  const RC_ctrl_t *rc = get_remote_control_point();
-  (void)device;
+  platform_dbus_remote_device_config_t *config = (platform_dbus_remote_device_config_t *)device->context;
+  const RC_ctrl_t *rc = 0;
+
+  if (config == 0 || config->acquire_fn == 0 || config->is_error_fn == 0)
+  {
+    return PLATFORM_DEVICE_RESULT_INVALID;
+  }
+
+  rc = (const RC_ctrl_t *)config->acquire_fn();
+  if (rc == 0)
+  {
+    return PLATFORM_DEVICE_RESULT_INVALID;
+  }
 
   input->channels[0] = rc->rc.ch[0];
   input->channels[1] = rc->rc.ch[1];
@@ -40,6 +62,7 @@ static platform_device_result_t platform_dbus_remote_read_input(platform_remote_
   input->mouse_right = rc->mouse.press_r;
   input->keyboard_mask = rc->key.v;
   input->source = 0U;
-  input->valid = (RC_data_is_error() == 0U);
+  input->valid = (config->is_error_fn() == 0U);
+  device->stamp.valid = input->valid;
   return input->valid ? PLATFORM_DEVICE_RESULT_OK : PLATFORM_DEVICE_RESULT_INVALID;
 }

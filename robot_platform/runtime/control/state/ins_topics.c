@@ -1,11 +1,11 @@
 #include "ins_topics.h"
 
-void ins_runtime_bus_init(INS_Runtime_Bus_t *bus)
+void platform_ins_bus_init(platform_ins_bus_t *bus)
 {
     bus->ins_pub = PubRegister("ins_data", sizeof(INS_Data_t));
 }
 
-void ins_runtime_bus_publish(INS_Runtime_Bus_t *bus, const INS_Data_t *msg)
+void platform_ins_bus_publish(platform_ins_bus_t *bus, const INS_Data_t *msg)
 {
     PubPushMessage(bus->ins_pub, (void *)msg);
 }

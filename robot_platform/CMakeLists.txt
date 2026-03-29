@@ -39,7 +39,6 @@ set(PLATFORM_REMOTE_CONTROL_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/remote_contr
 set(PLATFORM_DM_MOTOR_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/dm_motor)
 set(PLATFORM_DEVICE_DIR ${PLATFORM_RUNTIME_DIR}/device)
 set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
-set(PLATFORM_RUNTIME_SERVICE_DIR ${PLATFORM_RUNTIME_DIR}/runtime_service)
 set(PLATFORM_CONTROL_CONTRACT_DIR ${PLATFORM_RUNTIME_DIR}/control/contracts)
 set(PLATFORM_BMI088_DIR ${PLATFORM_RUNTIME_DIR}/bsp/devices/bmi088)
 
@@ -288,20 +287,19 @@ if(PLATFORM_TARGET_SIM)
   set(BALANCE_CHASSIS_LEGACY_APP_SOURCES
     ${PLATFORM_LEGACY_APP_DIR}/legacy/chassis_task.c
     ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_flow/chassis_orchestration.c
     ${PLATFORM_LEGACY_APP_DIR}/app_flow/remote_orchestration.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/control_runtime/chassis_control_support.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/sensing/INS_task.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/sensing/ins_runtime.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/sensing/ins_topics.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/observe/observe_orchestration.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/observe/observe_topics.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/observe/observe_task.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/actuator/actuator_runtime.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/actuator/actuator_topics.c
-    ${PLATFORM_RUNTIME_SERVICE_DIR}/actuator/motor_control_task.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/ins_topics.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/ins_task.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/observe_topics.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
+    ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
+    ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
+    ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
+    ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
     ${PLATFORM_LEGACY_APP_DIR}/legacy/remote_task.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
@@ -370,7 +368,6 @@ if(PLATFORM_TARGET_SIM)
       ${PLATFORM_REMOTE_CONTROL_DIR}
       ${PLATFORM_LEGACY_APP_DIR}
       ${PLATFORM_CONTROL_CONTRACT_DIR}
-      ${PLATFORM_RUNTIME_SERVICE_DIR}
       # CMSIS / Core headers needed by FreeRTOS CMSIS wrapper and others
       ${CHASSIS_HAL_DIR}/Inc
       ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include

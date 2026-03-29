@@ -1,7 +1,18 @@
 #ifndef BALANCE_CHASSIS_APP_IO_REMOTE_TOPICS_H
 #define BALANCE_CHASSIS_APP_IO_REMOTE_TOPICS_H
 
-#include "topic_contract.h"
+#include "../app_config/robot_def.h"
+#include "message_center.h"
+
+typedef struct
+{
+    Publisher_t *cmd_pub;
+    Subscriber_t *rc_sub;
+    Subscriber_t *ins_sub;
+    Subscriber_t *chassis_state_sub;
+    Subscriber_t *leg_right_sub;
+    Subscriber_t *leg_left_sub;
+} Remote_Runtime_Bus_t;
 
 void remote_runtime_bus_init(Remote_Runtime_Bus_t *bus);
 

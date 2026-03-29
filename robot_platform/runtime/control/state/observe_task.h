@@ -1,0 +1,6 @@
+#ifndef PLATFORM_CONTROL_STATE_OBSERVE_TASK_H
+#define PLATFORM_CONTROL_STATE_OBSERVE_TASK_H
+
+void Observe_task(void);
+
+#endif

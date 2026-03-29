@@ -6,13 +6,20 @@ static platform_device_result_t platform_motor_actuator_write(platform_motor_dev
 static platform_device_result_t platform_motor_actuator_read(platform_motor_device_t *device,
                                                              platform_device_feedback_t *feedback);
 
-void platform_motor_actuator_device_bind_default(platform_motor_device_t *device)
+void platform_motor_actuator_device_bind(platform_motor_device_t *device,
+                                         const platform_motor_actuator_device_config_t *config)
 {
+  (void)config;
   device->name = "motor_actuator_sitl_stub";
   device->context = 0;
   device->ops.init = platform_motor_actuator_init;
   device->ops.write_motor_command = platform_motor_actuator_write;
   device->ops.read_motor_feedback = platform_motor_actuator_read;
+}
+
+void platform_motor_actuator_device_bind_default(platform_motor_device_t *device)
+{
+  platform_motor_actuator_device_bind(device, 0);
 }
 
 static platform_device_result_t platform_motor_actuator_init(platform_motor_device_t *device)

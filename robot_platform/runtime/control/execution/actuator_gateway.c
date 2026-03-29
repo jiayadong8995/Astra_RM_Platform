@@ -1,8 +1,8 @@
-#include "actuator_runtime.h"
+#include "actuator_gateway.h"
 
 #include "fdcan.h"
 
-void actuator_runtime_init(Actuator_Runtime_t *runtime)
+void platform_actuator_gateway_init(platform_actuator_gateway_t *runtime)
 {
     runtime->joint_motor[0] = get_joint_motor_state(0);
     runtime->joint_motor[1] = get_joint_motor_state(1);
@@ -22,7 +22,7 @@ void actuator_runtime_init(Actuator_Runtime_t *runtime)
     enable_motor_mode(&hfdcan1, runtime->joint_motor[3]->para.id, runtime->joint_motor[3]->mode);
 }
 
-void actuator_runtime_capture_feedback(const Actuator_Runtime_t *runtime, Actuator_Feedback_t *feedback_msg)
+void platform_actuator_gateway_capture_feedback(const platform_actuator_gateway_t *runtime, Actuator_Feedback_t *feedback_msg)
 {
     feedback_msg->joint_pos[0] = runtime->joint_motor[0]->para.pos;
     feedback_msg->joint_pos[1] = runtime->joint_motor[1]->para.pos;
@@ -35,7 +35,9 @@ void actuator_runtime_capture_feedback(const Actuator_Runtime_t *runtime, Actuat
     feedback_msg->ready = 1U;
 }
 
-void actuator_runtime_dispatch_command(const Actuator_Runtime_t *runtime, const Actuator_Cmd_t *actuator_msg, uint32_t systick)
+void platform_actuator_gateway_dispatch_command(const platform_actuator_gateway_t *runtime,
+                                                const Actuator_Cmd_t *actuator_msg,
+                                                uint32_t systick)
 {
     if (actuator_msg->start_flag == 0U)
     {

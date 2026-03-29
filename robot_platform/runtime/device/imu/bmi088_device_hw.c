@@ -3,31 +3,42 @@
 #include "../../bsp/devices/bmi088/BMI088driver.h"
 #include "spi.h"
 
-typedef struct {
-  uint8_t calibrate;
-} platform_bmi088_device_context_t;
-
 static platform_device_result_t platform_bmi088_init(platform_imu_device_t *device);
 static platform_device_result_t platform_bmi088_read_sample(platform_imu_device_t *device,
                                                             platform_imu_sample_t *sample);
 
-static platform_bmi088_device_context_t g_platform_bmi088_context = {
+static platform_bmi088_device_config_t g_platform_bmi088_config = {
+  .spi_handle = &hspi2,
+  .sample_state = &BMI088,
   .calibrate = 1U,
+  .init_fn = (void (*)(void *, uint8_t))BMI088_Init,
+  .read_fn = (void (*)(void *))BMI088_Read,
 };
 
-void platform_bmi088_device_bind_default(platform_imu_device_t *device)
+void platform_bmi088_device_bind(platform_imu_device_t *device,
+                                 const platform_bmi088_device_config_t *config)
 {
-  device->name = "bmi088_hw";
-  device->context = &g_platform_bmi088_context;
+  device->name = "bmi088";
+  device->context = (void *)config;
   device->ops.init = platform_bmi088_init;
   device->ops.read_sample = platform_bmi088_read_sample;
 }
 
+void platform_bmi088_device_bind_default(platform_imu_device_t *device)
+{
+  platform_bmi088_device_bind(device, &g_platform_bmi088_config);
+}
+
 static platform_device_result_t platform_bmi088_init(platform_imu_device_t *device)
 {
-  platform_bmi088_device_context_t *context = (platform_bmi088_device_context_t *)device->context;
+  platform_bmi088_device_config_t *context = (platform_bmi088_device_config_t *)device->context;
 
-  BMI088_Init(&hspi2, context->calibrate);
+  if (context == 0 || context->init_fn == 0 || context->spi_handle == 0)
+  {
+    return PLATFORM_DEVICE_RESULT_INVALID;
+  }
+
+  context->init_fn(context->spi_handle, context->calibrate);
   device->stamp.valid = true;
   return PLATFORM_DEVICE_RESULT_OK;
 }
@@ -35,17 +46,24 @@ static platform_device_result_t platform_bmi088_init(platform_imu_device_t *devi
 static platform_device_result_t platform_bmi088_read_sample(platform_imu_device_t *device,
                                                             platform_imu_sample_t *sample)
 {
-  (void)device;
+  platform_bmi088_device_config_t *context = (platform_bmi088_device_config_t *)device->context;
+  IMU_Data_t *bmi088_state = (IMU_Data_t *)context->sample_state;
 
-  BMI088_Read(&BMI088);
+  if (context == 0 || context->read_fn == 0 || bmi088_state == 0)
+  {
+    return PLATFORM_DEVICE_RESULT_INVALID;
+  }
 
-  sample->accel[0] = BMI088.Accel[0];
-  sample->accel[1] = BMI088.Accel[1];
-  sample->accel[2] = BMI088.Accel[2];
-  sample->gyro[0] = BMI088.Gyro[0];
-  sample->gyro[1] = BMI088.Gyro[1];
-  sample->gyro[2] = BMI088.Gyro[2];
-  sample->temperature = BMI088.Temperature;
+  context->read_fn(context->sample_state);
+
+  sample->accel[0] = bmi088_state->Accel[0];
+  sample->accel[1] = bmi088_state->Accel[1];
+  sample->accel[2] = bmi088_state->Accel[2];
+  sample->gyro[0] = bmi088_state->Gyro[0];
+  sample->gyro[1] = bmi088_state->Gyro[1];
+  sample->gyro[2] = bmi088_state->Gyro[2];
+  sample->temperature = bmi088_state->Temperature;
   sample->valid = true;
+  device->stamp.valid = true;
   return PLATFORM_DEVICE_RESULT_OK;
 }

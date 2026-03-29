@@ -21,31 +21,31 @@
 #include "can_bsp.h"
 #include "../app_config/app_params.h"
 #include "../app_config/robot_def.h"
-#include "../app_flow/chassis_orchestration.h"
 #include "../app_io/chassis_topics.h"
+#include "../../../control/controllers/balance_controller.h"
 
 static Chassis_Runtime_Bus_t runtime_bus;
-static Chassis_Runtime_State_t runtime_state;
+static platform_balance_controller_t runtime_state;
 
 void Chassis_task(void)
 {
-    Chassis_Bus_Input_t inputs = {0};
-    Chassis_Bus_Output_t outputs = {0};
+    platform_balance_controller_input_t inputs = {0};
+    platform_balance_controller_output_t outputs = {0};
 
     chassis_runtime_bus_init(&runtime_bus);
     chassis_runtime_bus_wait_ready(&runtime_bus, &inputs);
 
-    chassis_runtime_state_init(&runtime_state);
-    chassis_runtime_apply_bus_inputs(&runtime_state, &inputs);
+    platform_balance_controller_init(&runtime_state);
+    platform_balance_controller_apply_inputs(&runtime_state, &inputs);
 
     osDelay(APP_CHASSIS_STARTUP_DELAY_MS);
 
 	while(1)
 	{	
         chassis_runtime_bus_pull_inputs(&runtime_bus, &inputs);
-        chassis_runtime_apply_bus_inputs(&runtime_state, &inputs);
-        chassis_runtime_step(&runtime_state, &inputs.feedback);
-        chassis_runtime_build_bus_outputs(&runtime_state, &outputs);
+        platform_balance_controller_apply_inputs(&runtime_state, &inputs);
+        platform_balance_controller_step(&runtime_state, &inputs.feedback);
+        platform_balance_controller_build_outputs(&runtime_state, &outputs);
         chassis_runtime_bus_publish_outputs(&runtime_bus, &outputs);
 
 		osDelay(CHASSIS_TASK_PERIOD_MS);

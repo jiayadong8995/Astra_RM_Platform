@@ -4,12 +4,19 @@ static platform_device_result_t platform_dbus_remote_init(platform_remote_device
 static platform_device_result_t platform_dbus_remote_read_input(platform_remote_device_t *device,
                                                                 platform_rc_input_t *input);
 
-void platform_dbus_remote_device_bind_default(platform_remote_device_t *device)
+void platform_dbus_remote_device_bind(platform_remote_device_t *device,
+                                      const platform_dbus_remote_device_config_t *config)
 {
+  (void)config;
   device->name = "dbus_remote_sitl_stub";
   device->context = 0;
   device->ops.init = platform_dbus_remote_init;
   device->ops.read_input = platform_dbus_remote_read_input;
+}
+
+void platform_dbus_remote_device_bind_default(platform_remote_device_t *device)
+{
+  platform_dbus_remote_device_bind(device, 0);
 }
 
 static platform_device_result_t platform_dbus_remote_init(platform_remote_device_t *device)
@@ -40,5 +47,6 @@ static platform_device_result_t platform_dbus_remote_read_input(platform_remote_
   input->source = 1U;
   input->sample_time_us = 0U;
   input->valid = false;
+  device->stamp.valid = false;
   return PLATFORM_DEVICE_RESULT_UNAVAILABLE;
 }

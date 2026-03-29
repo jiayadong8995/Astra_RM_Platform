@@ -5,9 +5,9 @@
 #include "rc_input_bridge.h"
 
 #include "../app_config/app_params.h"
-#include "../../../runtime_service/observe/observe_task.h"
-#include "../../../runtime_service/sensing/INS_task.h"
-#include "../../../runtime_service/actuator/motor_control_task.h"
+#include "../../../control/state/observe_task.h"
+#include "../../../control/state/ins_task.h"
+#include "../../../control/execution/motor_control_task.h"
 #include "../legacy/chassis_task.h"
 #include "../legacy/remote_task.h"
 
