@@ -47,6 +47,7 @@ set(BALANCE_CHASSIS_DEVICE_SOURCES)
 
 if(PLATFORM_TARGET_HW)
   list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
+    ${PLATFORM_DEVICE_DIR}/device_layer.c
     ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_hw.c
     ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_hw.c
     ${PLATFORM_DEVICE_DIR}/actuator/motor/motor_actuator_device_hw.c
@@ -55,6 +56,7 @@ endif()
 
 if(PLATFORM_TARGET_SIM)
   list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
+    ${PLATFORM_DEVICE_DIR}/device_layer.c
     ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_sitl.c
     ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_sitl.c
     ${PLATFORM_DEVICE_DIR}/actuator/motor/motor_actuator_device_sitl.c
