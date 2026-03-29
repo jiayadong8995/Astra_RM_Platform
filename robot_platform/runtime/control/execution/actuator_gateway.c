@@ -13,23 +13,6 @@ platform_device_result_t platform_actuator_gateway_capture_feedback(platform_dev
     return platform_device_read_default_feedback(feedback_msg);
 }
 
-void platform_actuator_gateway_build_legacy_feedback(const platform_device_feedback_t *feedback,
-                                                     Actuator_Feedback_t *feedback_msg)
-{
-    for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i)
-    {
-        feedback_msg->joint_pos[i] = feedback->actuator_feedback.joints[i].position;
-    }
-
-    for (uint8_t i = 0; i < PLATFORM_WHEEL_MOTOR_COUNT; ++i)
-    {
-        feedback_msg->wheel_speed[i] = feedback->actuator_feedback.wheels[i].velocity;
-        feedback_msg->wheel_angle[i] = feedback->actuator_feedback.wheels[i].position;
-    }
-
-    feedback_msg->ready = feedback->actuator_feedback.valid ? 1U : 0U;
-}
-
 void platform_actuator_gateway_dispatch_command(const platform_actuator_command_t *actuator_msg,
                                                 uint32_t systick)
 {

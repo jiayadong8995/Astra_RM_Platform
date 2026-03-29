@@ -335,14 +335,12 @@ project config
 
 - `chassis_observe`
 - `device_feedback`
-- `actuator_feedback`
 
 说明：
 
 - `chassis_observe` 当前仍属于控制链内部中间量
 - 它用于把 `observe_task` 的估计结果显式送入控制链
 - `device_feedback` 是当前执行层回流到控制层的正式设备反馈 topic
-- `actuator_feedback` 只保留兼容用途，不再作为控制主链的正式输入
 - 现阶段不应把这些内部执行 topic 当成长期稳定的外部报告边界固化到 replay/report 协议中，除非后续明确升级为正式观测接口
 
 ### 9.4 禁止的对接方式

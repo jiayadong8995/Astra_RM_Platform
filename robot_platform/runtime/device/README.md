@@ -9,7 +9,7 @@
 - 向上提供设备输入、反馈、命令能力
 - 屏蔽板级后端差异
 
-默认后端绑定现在统一收口在：
+默认后端绑定实现现在只作为 `device_layer` 的内部依赖存在，源码位于：
 
 - `device_backend_hw.c`
 - `device_backend_sitl.c`
@@ -46,8 +46,7 @@ runtime/device/
 当前第一版只把 `motor` 作为 `actuator` 的具体实现落下来。
 原先 `runtime/bsp/devices` 中的驱动资产已经并入这一层，避免“驱动目录”和“设备语义目录”双重并存。
 
-下一步还需要继续收紧：
+当前对上正式暴露的只应是：
 
-- `device` 对上只暴露稳定设备语义
-- `app / control` 不应继续直接依赖具体驱动头
-- backend 默认绑定应继续压缩到最少暴露面
+- `device_layer`
+- 设备子域的稳定设备语义接口

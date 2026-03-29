@@ -133,12 +133,4 @@ typedef struct {
     float x_filter;
 } Chassis_Observe_t;
 
-typedef struct {
-    float joint_pos[4];
-    float wheel_speed[2];
-    float wheel_angle[2];
-    uint8_t ready;
-    uint8_t reserved[3];
-} Actuator_Feedback_t;
-
 #endif

@@ -1,6 +1,6 @@
 #include "device_layer.h"
 
-#include "device_backend.h"
+void platform_device_backend_bind_default(platform_device_layer_t *layer);
 
 static void platform_map_device_command_to_motor_set(const platform_device_command_t *command,
                                                      platform_motor_command_set_t *motor_set);
