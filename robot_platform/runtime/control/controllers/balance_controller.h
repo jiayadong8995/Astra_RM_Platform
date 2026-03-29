@@ -2,6 +2,8 @@
 #define PLATFORM_CONTROL_CONTROLLERS_BALANCE_CONTROLLER_H
 
 #include "../../app/balance_chassis/app_config/robot_def.h"
+#include "../contracts/actuator_command.h"
+#include "../contracts/robot_state.h"
 #include "../internal/runtime_state.h"
 #include "pid.h"
 #include "VMC_calc.h"
@@ -29,6 +31,8 @@ typedef struct
 
 typedef struct
 {
+    platform_robot_state_t robot_state;
+    platform_actuator_command_t actuator_command;
     Chassis_State_t state;
     Leg_Output_t right_leg;
     Leg_Output_t left_leg;
