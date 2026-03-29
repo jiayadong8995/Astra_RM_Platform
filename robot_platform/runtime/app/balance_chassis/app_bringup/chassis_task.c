@@ -44,7 +44,7 @@ void Chassis_task(void)
 	{	
         chassis_runtime_bus_pull_inputs(&runtime_bus,
                                         &inputs.ins,
-                                        &inputs.cmd,
+                                        &inputs.intent,
                                         &inputs.observe,
                                         &inputs.feedback);
         platform_balance_controller_apply_inputs(&runtime_state, &inputs);

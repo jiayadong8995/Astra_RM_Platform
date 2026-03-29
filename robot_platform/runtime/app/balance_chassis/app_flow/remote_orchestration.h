@@ -13,6 +13,5 @@ void remote_runtime_apply_inputs(Remote_Runtime_t *runtime,
                                  const platform_robot_state_t *robot_state);
 
 platform_robot_intent_t remote_runtime_build_intent(const Remote_Runtime_t *runtime);
-Chassis_Cmd_t remote_runtime_build_cmd_from_intent(const platform_robot_intent_t *intent);
 
 #endif

@@ -4,6 +4,7 @@
 #include "../app_config/robot_def.h"
 #include "../../../control/contracts/actuator_command.h"
 #include "../../../control/contracts/device_feedback.h"
+#include "../../../control/contracts/robot_intent.h"
 #include "../../../control/contracts/robot_state.h"
 #include "message_center.h"
 
@@ -25,7 +26,7 @@ void chassis_runtime_bus_wait_ready(Chassis_Runtime_Bus_t *bus,
 
 void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus,
                                      INS_Data_t *ins,
-                                     Chassis_Cmd_t *cmd,
+                                     platform_robot_intent_t *intent,
                                      Chassis_Observe_t *observe,
                                      platform_device_feedback_t *feedback);
 

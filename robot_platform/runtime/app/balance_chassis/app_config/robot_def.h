@@ -120,15 +120,6 @@ typedef struct {
 } INS_Data_t;
 
 typedef struct {
-    float vx_cmd;
-    float turn_cmd;
-    float leg_set;
-    uint8_t start_flag;
-    uint8_t jump_flag;
-    uint8_t recover_flag;
-} Chassis_Cmd_t;
-
-typedef struct {
     float v_filter;
     float x_filter;
 } Chassis_Observe_t;

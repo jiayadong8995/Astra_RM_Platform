@@ -3,15 +3,18 @@
 
 #include "../../app/balance_chassis/app_config/robot_def.h"
 #include "../contracts/actuator_command.h"
+#include "../contracts/device_feedback.h"
+#include "../contracts/robot_intent.h"
 #include "../contracts/robot_state.h"
-#include "../internal/runtime_state.h"
+#include "../internal/balance_runtime.h"
+#include "../internal/ins_runtime.h"
 #include "pid.h"
 #include "VMC_calc.h"
 
 typedef struct
 {
-    INS_t ins;
-    chassis_t chassis;
+    platform_ins_runtime_t ins;
+    platform_balance_runtime_t chassis;
     platform_robot_state_t robot_state;
     platform_actuator_command_t actuator_command;
     vmc_leg_t right_leg;
@@ -26,7 +29,7 @@ typedef struct
 typedef struct
 {
     INS_Data_t ins;
-    Chassis_Cmd_t cmd;
+    platform_robot_intent_t intent;
     Chassis_Observe_t observe;
     platform_device_feedback_t feedback;
 } platform_balance_controller_input_t;

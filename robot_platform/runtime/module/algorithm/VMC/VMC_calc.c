@@ -9,7 +9,7 @@ void VMC_init(vmc_leg_t *vmc)//给杆长赋值
 	vmc->l4=LINK_L4;
 }
 
-void VMC_calc_1_right(vmc_leg_t *vmc, INS_t *ins, float dt) {
+void VMC_calc_1_right(vmc_leg_t *vmc, platform_ins_runtime_t *ins, float dt) {
     static float PitchR = 0.0f;
     static float PithGyroR = 0.0f;
 
@@ -104,7 +104,7 @@ void VMC_calc_1_right(vmc_leg_t *vmc, INS_t *ins, float dt) {
 }
 
 
-void VMC_calc_1_left(vmc_leg_t *vmc, INS_t *ins, float dt) {
+void VMC_calc_1_left(vmc_leg_t *vmc, platform_ins_runtime_t *ins, float dt) {
     static float PitchL = 0.0f;
     static float PithGyroL = 0.0f;
 
@@ -196,7 +196,7 @@ void VMC_calc_2(vmc_leg_t *vmc)//计算期望的关节输出力矩
 
 }
 
-uint8_t ground_detectionR(vmc_leg_t *vmc,INS_t *ins)
+uint8_t ground_detectionR(vmc_leg_t *vmc,platform_ins_runtime_t *ins)
 {
 	vmc->FN=vmc->F0*arm_cos_f32(vmc->theta)+vmc->Tp*arm_sin_f32(vmc->theta)/vmc->L0+FN_WHEEL_GRAVITY;
 	//腿部机构的力+轮子重力，这里忽略了轮子质量*驱动轮竖直方向运动加速度
@@ -210,7 +210,7 @@ uint8_t ground_detectionR(vmc_leg_t *vmc,INS_t *ins)
 	}
 }
 
-uint8_t ground_detectionL(vmc_leg_t *vmc,INS_t *ins)
+uint8_t ground_detectionL(vmc_leg_t *vmc,platform_ins_runtime_t *ins)
 {
 	vmc->FN=vmc->F0*arm_cos_f32(vmc->theta)+vmc->Tp*arm_sin_f32(vmc->theta)/vmc->L0+FN_WHEEL_GRAVITY;
 	//腿部机构的力+轮子重力，这里忽略了轮子质量*驱动轮竖直方向运动加速度
@@ -229,4 +229,3 @@ float LQR_K_calc(float *coe,float len)
    
   return coe[0]*len*len*len+coe[1]*len*len+coe[2]*len+coe[3];
 }
-

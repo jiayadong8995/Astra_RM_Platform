@@ -11,7 +11,7 @@ void Observe_task(void)
     platform_chassis_observer_t runtime = {0};
     platform_observe_bus_t runtime_bus = {0};
     INS_Data_t ins_msg = {0};
-    Chassis_Cmd_t cmd_msg = {0};
+    platform_robot_intent_t intent = {0};
     platform_device_feedback_t feedback_msg = {0};
     Chassis_Observe_t observe_msg = {0};
 
@@ -21,8 +21,8 @@ void Observe_task(void)
 
     while(1)
     {
-        platform_observe_bus_pull_inputs(&runtime_bus, &cmd_msg, &feedback_msg);
-        platform_chassis_observer_apply_inputs(&runtime, &cmd_msg, &feedback_msg, (float)OBSERVE_TASK_PERIOD_MS / 1000.0f);
+        platform_observe_bus_pull_inputs(&runtime_bus, &intent, &feedback_msg);
+        platform_chassis_observer_apply_inputs(&runtime, &intent, &feedback_msg, (float)OBSERVE_TASK_PERIOD_MS / 1000.0f);
         observe_msg = platform_chassis_observer_build_output(&runtime);
         platform_observe_bus_publish(&runtime_bus, &observe_msg);
 

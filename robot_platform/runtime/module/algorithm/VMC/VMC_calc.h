@@ -2,8 +2,7 @@
 #define __VMC_CALC_H
 
 #include "main.h"
-#include "app_config/robot_def.h"
-#include "../../../control/internal/runtime_state.h"
+#include "../../../control/internal/ins_runtime.h"
 
 #define pi 3.1415926f
 
@@ -61,12 +60,12 @@ typedef struct
 
 extern void VMC_init(vmc_leg_t *vmc);//给杆长赋值
 
-extern void VMC_calc_1_right(vmc_leg_t *vmc,INS_t *ins,float dt);//计算theta和d_theta给lqr用，同时也计算腿长L0
-extern void VMC_calc_1_left(vmc_leg_t *vmc,INS_t *ins,float dt);
+extern void VMC_calc_1_right(vmc_leg_t *vmc,platform_ins_runtime_t *ins,float dt);//计算theta和d_theta给lqr用，同时也计算腿长L0
+extern void VMC_calc_1_left(vmc_leg_t *vmc,platform_ins_runtime_t *ins,float dt);
 extern void VMC_calc_2(vmc_leg_t *vmc);//计算期望的关节输出力矩
 
-extern uint8_t ground_detectionR(vmc_leg_t *vmc,INS_t *ins);//右腿离地检测
-extern uint8_t ground_detectionL(vmc_leg_t *vmc,INS_t *ins);//左腿离地检测
+extern uint8_t ground_detectionR(vmc_leg_t *vmc,platform_ins_runtime_t *ins);//右腿离地检测
+extern uint8_t ground_detectionL(vmc_leg_t *vmc,platform_ins_runtime_t *ins);//左腿离地检测
 
 extern float LQR_K_calc(float *coe,float len);
 	

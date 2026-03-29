@@ -313,12 +313,12 @@ project config
 ### 9.1 正式输入 topic
 
 - `ins_data`
-- `chassis_cmd`
+- `robot_intent`
 
 说明：
 
 - `ins_data` 是姿态与惯导输入边界
-- `chassis_cmd` 是遥控/上层控制命令输入边界
+- `robot_intent` 是遥控/上层控制命令输入边界
 
 ### 9.2 正式输出 topic
 

@@ -29,7 +29,6 @@ void remote_task(void)
     platform_rc_input_t rc_input = {0};
     platform_robot_state_t robot_state = {0};
     platform_robot_intent_t intent = {0};
-    Chassis_Cmd_t cmd_msg = {0};
 
     remote_runtime_init(&cmd_state);
     remote_runtime_bus_init(&runtime_bus);
@@ -39,8 +38,7 @@ void remote_task(void)
         remote_runtime_bus_pull_inputs(&runtime_bus, &robot_state);
         remote_runtime_apply_inputs(&cmd_state, &rc_input, &robot_state);
         intent = remote_runtime_build_intent(&cmd_state);
-        cmd_msg = remote_runtime_build_cmd_from_intent(&intent);
-        remote_runtime_bus_publish_cmd(&runtime_bus, &cmd_msg);
+        remote_runtime_bus_publish_intent(&runtime_bus, &intent);
 
 		osDelay(REMOTE_TASK_PERIOD_MS);
 	}

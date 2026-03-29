@@ -141,17 +141,3 @@ platform_robot_intent_t remote_runtime_build_intent(const Remote_Runtime_t *runt
 
     return intent;
 }
-
-Chassis_Cmd_t remote_runtime_build_cmd_from_intent(const platform_robot_intent_t *intent)
-{
-    Chassis_Cmd_t cmd = {
-        .vx_cmd = intent->motion_target.vx,
-        .turn_cmd = intent->motion_target.yaw_hold ? intent->motion_target.yaw_target : intent->motion_target.yaw_rate,
-        .leg_set = intent->posture_target.leg_length,
-        .start_flag = intent->enable.start ? 1U : 0U,
-        .jump_flag = intent->behavior_request.jump_request ? 1U : 0U,
-        .recover_flag = intent->behavior_request.recover_request ? 1U : 0U,
-    };
-
-    return cmd;
-}

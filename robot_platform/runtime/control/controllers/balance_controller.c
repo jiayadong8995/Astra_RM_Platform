@@ -5,24 +5,24 @@
 
 static float LQR_K_R[12] = LQR_K_MATRIX;
 
-static void init_chassis_state(chassis_t *chassis, vmc_leg_t *right_leg, vmc_leg_t *left_leg);
+static void init_chassis_state(platform_balance_runtime_t *chassis, vmc_leg_t *right_leg, vmc_leg_t *left_leg);
 static void init_chassis_pids(PidTypeDef *roll, PidTypeDef *tp, PidTypeDef *turn, PidTypeDef *leg_r, PidTypeDef *leg_l);
 static void run_balance_control(platform_balance_controller_t *state);
 static void update_leg_feedback(vmc_leg_t *vmc_r, vmc_leg_t *vmc_l, const platform_device_feedback_t *feedback);
-static void update_wheel_feedback(chassis_t *chassis, const platform_device_feedback_t *feedback);
-static void update_attitude_feedback(chassis_t *chassis, const vmc_leg_t *vmc_r, const vmc_leg_t *vmc_l, const INS_t *ins);
+static void update_wheel_feedback(platform_balance_runtime_t *chassis, const platform_device_feedback_t *feedback);
+static void update_attitude_feedback(platform_balance_runtime_t *chassis, const vmc_leg_t *vmc_r, const vmc_leg_t *vmc_l, const platform_ins_runtime_t *ins);
 static void limit_int(int16_t *in, int16_t min, int16_t max);
-static void saturate_wheel_outputs(chassis_t *chassis);
+static void saturate_wheel_outputs(platform_balance_runtime_t *chassis);
 static void saturate_leg_outputs(vmc_leg_t *vmcr, vmc_leg_t *vmcl);
-static void compute_turn_and_leg_compensation(chassis_t *chassis,
-                                              const INS_t *ins,
+static void compute_turn_and_leg_compensation(platform_balance_runtime_t *chassis,
+                                              const platform_ins_runtime_t *ins,
                                               const PidTypeDef *turn_pid,
                                               const PidTypeDef *roll_pid,
                                               PidTypeDef *tp_pid);
-static void compute_lqr_outputs(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, const float *LQR_KR, const float *LQR_KL);
-static void mix_wheel_torque(chassis_t *chassis);
-static void apply_jump_logic(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, PidTypeDef *legr, PidTypeDef *legl);
-static void apply_ground_detection(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, INS_t *ins);
+static void compute_lqr_outputs(platform_balance_runtime_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, const float *LQR_KR, const float *LQR_KL);
+static void mix_wheel_torque(platform_balance_runtime_t *chassis);
+static void apply_jump_logic(platform_balance_runtime_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, PidTypeDef *legr, PidTypeDef *legl);
+static void apply_ground_detection(platform_balance_runtime_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, platform_ins_runtime_t *ins);
 static void update_robot_state_contract(platform_balance_controller_t *state);
 static void update_actuator_command_contract(platform_balance_controller_t *state);
 
@@ -46,12 +46,15 @@ void platform_balance_controller_apply_inputs(platform_balance_controller_t *sta
     state->ins.MotionAccel_b[2] = inputs->ins.accel_b[2];
     state->ins.ins_flag = inputs->ins.ready;
 
-    state->chassis.v_set = inputs->cmd.vx_cmd;
-    state->chassis.turn_set = inputs->cmd.turn_cmd;
-    state->chassis.leg_set = inputs->cmd.leg_set;
-    state->chassis.start_flag = inputs->cmd.start_flag;
-    state->chassis.jump_flag = inputs->cmd.jump_flag;
-    state->chassis.recover_flag = inputs->cmd.recover_flag;
+    state->chassis.v_set = inputs->intent.motion_target.vx;
+    state->chassis.x_set = inputs->intent.motion_target.x;
+    state->chassis.turn_set = inputs->intent.motion_target.yaw_hold
+                            ? inputs->intent.motion_target.yaw_target
+                            : inputs->intent.motion_target.yaw_rate;
+    state->chassis.leg_set = inputs->intent.posture_target.leg_length;
+    state->chassis.start_flag = inputs->intent.enable.start ? 1U : 0U;
+    state->chassis.jump_flag = inputs->intent.behavior_request.jump_request ? 1U : 0U;
+    state->chassis.recover_flag = inputs->intent.behavior_request.recover_request ? 1U : 0U;
     state->chassis.v_filter = inputs->observe.v_filter;
     state->chassis.x_filter = inputs->observe.x_filter;
 }
@@ -79,7 +82,7 @@ void platform_balance_controller_build_outputs(const platform_balance_controller
     outputs->actuator_command = state->actuator_command;
 }
 
-static void init_chassis_state(chassis_t *chassis, vmc_leg_t *right_leg, vmc_leg_t *left_leg)
+static void init_chassis_state(platform_balance_runtime_t *chassis, vmc_leg_t *right_leg, vmc_leg_t *left_leg)
 {
     for (int i = 0; i < 2; i++)
     {
@@ -137,7 +140,7 @@ static void update_leg_feedback(vmc_leg_t *vmc_r, vmc_leg_t *vmc_l, const platfo
     vmc_l->phi4 = pi / 2.0f + feedback->actuator_feedback.joints[3].position + JOINT3_OFFSET;
 }
 
-static void update_wheel_feedback(chassis_t *chassis, const platform_device_feedback_t *feedback)
+static void update_wheel_feedback(platform_balance_runtime_t *chassis, const platform_device_feedback_t *feedback)
 {
     chassis->wheel_motor[0].chassis_x = feedback->actuator_feedback.wheels[0].position;
     chassis->wheel_motor[1].chassis_x = feedback->actuator_feedback.wheels[1].position;
@@ -147,7 +150,7 @@ static void update_wheel_feedback(chassis_t *chassis, const platform_device_feed
     chassis->wheel_motor[1].w_speed = feedback->actuator_feedback.wheels[1].velocity / WHEEL_RADIUS;
 }
 
-static void update_attitude_feedback(chassis_t *chassis, const vmc_leg_t *vmc_r, const vmc_leg_t *vmc_l, const INS_t *ins)
+static void update_attitude_feedback(platform_balance_runtime_t *chassis, const vmc_leg_t *vmc_r, const vmc_leg_t *vmc_l, const platform_ins_runtime_t *ins)
 {
     chassis->myPithGyroL = -ins->Gyro[0];
     chassis->myPithL = -ins->Pitch;
@@ -244,8 +247,8 @@ static void update_actuator_command_contract(platform_balance_controller_t *stat
     state->actuator_command.motors.right_wheel.valid = (state->chassis.start_flag != 0U);
 }
 
-static void compute_turn_and_leg_compensation(chassis_t *chassis,
-                                              const INS_t *ins,
+static void compute_turn_and_leg_compensation(platform_balance_runtime_t *chassis,
+                                              const platform_ins_runtime_t *ins,
                                               const PidTypeDef *turn_pid,
                                               const PidTypeDef *roll_pid,
                                               PidTypeDef *tp_pid)
@@ -255,7 +258,7 @@ static void compute_turn_and_leg_compensation(chassis_t *chassis,
     chassis->leg_tp = PID_Calc(tp_pid, chassis->theta_err, 0.0f);
 }
 
-static void compute_lqr_outputs(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, const float *LQR_KR, const float *LQR_KL)
+static void compute_lqr_outputs(platform_balance_runtime_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, const float *LQR_KR, const float *LQR_KL)
 {
     chassis->wheel_motor[1].torque_set = (LQR_KR[0] * (vmcr->theta) + LQR_KR[1] * (vmcr->d_theta)
                                        + LQR_KR[2] * (chassis->x_filter - chassis->x_set) + LQR_KR[3] * (chassis->v_filter - 0)
@@ -272,7 +275,7 @@ static void compute_lqr_outputs(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *
              + LQR_KL[10] * (chassis->myPithL) + LQR_KL[11] * (chassis->myPithGyroL));
 }
 
-static void mix_wheel_torque(chassis_t *chassis)
+static void mix_wheel_torque(platform_balance_runtime_t *chassis)
 {
     for (int i = 0; i < 2; i++)
     {
@@ -281,7 +284,7 @@ static void mix_wheel_torque(chassis_t *chassis)
     }
 }
 
-static void apply_jump_logic(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, PidTypeDef *legr, PidTypeDef *legl)
+static void apply_jump_logic(platform_balance_runtime_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, PidTypeDef *legr, PidTypeDef *legl)
 {
     if (chassis->start_flag != 1)
     {
@@ -326,7 +329,7 @@ static void apply_jump_logic(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmc
     }
 }
 
-static void apply_ground_detection(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, INS_t *ins)
+static void apply_ground_detection(platform_balance_runtime_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, platform_ins_runtime_t *ins)
 {
     uint8_t right_flag = ground_detectionR(vmcr, ins);
     uint8_t left_flag = ground_detectionL(vmcl, ins);
@@ -361,7 +364,7 @@ static void limit_int(int16_t *in, int16_t min, int16_t max)
     else if (*in > max) { *in = max; }
 }
 
-static void saturate_wheel_outputs(chassis_t *chassis)
+static void saturate_wheel_outputs(platform_balance_runtime_t *chassis)
 {
     for (int i = 0; i < 2; i++)
     {

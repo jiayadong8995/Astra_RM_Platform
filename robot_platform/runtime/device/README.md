@@ -14,6 +14,12 @@
 - `device_backend_hw.c`
 - `device_backend_sitl.c`
 
+它们内部按设备域拆成：
+
+- `bind_*_imu`
+- `bind_*_remote`
+- `bind_*_motor`
+
 它的实现原则还有一条：
 
 - 设备接口可以统一，但 concrete adapter 必须按 backend 分离

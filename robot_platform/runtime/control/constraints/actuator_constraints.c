@@ -14,7 +14,7 @@ void platform_constrain_leg_outputs(vmc_leg_t *right_leg, vmc_leg_t *left_leg)
     mySaturate(&left_leg->torque_set[0], -JOINT_TORQUE_MAX, JOINT_TORQUE_MAX);
 }
 
-void platform_constrain_wheel_outputs(chassis_t *chassis)
+void platform_constrain_wheel_outputs(platform_balance_runtime_t *chassis)
 {
     for (int i = 0; i < 2; i++)
     {

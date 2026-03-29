@@ -2,13 +2,13 @@
 #define PLATFORM_CONTROL_STATE_INS_STATE_ESTIMATOR_H
 
 #include "../../app/balance_chassis/app_config/robot_def.h"
-#include "../internal/runtime_state.h"
+#include "../internal/ins_runtime.h"
 #include "../contracts/robot_state.h"
 #include "mahony_filter.h"
 
 typedef struct
 {
-    INS_t ins;
+    platform_ins_runtime_t ins;
     struct MAHONY_FILTER_t mahony;
     Axis3f gyro;
     Axis3f accel;

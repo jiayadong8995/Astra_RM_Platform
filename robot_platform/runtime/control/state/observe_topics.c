@@ -6,7 +6,7 @@ void platform_observe_bus_init(platform_observe_bus_t *bus)
 {
     bus->observe_pub = PubRegister("chassis_observe", sizeof(Chassis_Observe_t));
     bus->ins_sub = SubRegister("ins_data", sizeof(INS_Data_t));
-    bus->cmd_sub = SubRegister("chassis_cmd", sizeof(Chassis_Cmd_t));
+    bus->cmd_sub = SubRegister("robot_intent", sizeof(platform_robot_intent_t));
     bus->feedback_sub = SubRegister("device_feedback", sizeof(platform_device_feedback_t));
 }
 
@@ -20,10 +20,10 @@ void platform_observe_bus_wait_ready(platform_observe_bus_t *bus, INS_Data_t *in
 }
 
 void platform_observe_bus_pull_inputs(platform_observe_bus_t *bus,
-                                      Chassis_Cmd_t *cmd_msg,
+                                      platform_robot_intent_t *intent,
                                       platform_device_feedback_t *feedback_msg)
 {
-    SubGetMessage(bus->cmd_sub, cmd_msg);
+    SubGetMessage(bus->cmd_sub, intent);
     SubGetMessage(bus->feedback_sub, feedback_msg);
 }
 

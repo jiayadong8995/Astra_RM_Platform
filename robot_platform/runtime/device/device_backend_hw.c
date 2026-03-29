@@ -9,6 +9,10 @@
 #include "spi.h"
 #include "actuator/motor/motor_actuator_device.h"
 
+static void bind_hw_imu(platform_device_layer_t *layer);
+static void bind_hw_remote(platform_device_layer_t *layer);
+static void bind_hw_motor(platform_device_layer_t *layer);
+
 static const platform_bmi088_device_config_t g_platform_bmi088_hw = {
   .spi_handle = &hspi2,
   .sample_state = &BMI088,
@@ -35,7 +39,22 @@ static const platform_motor_actuator_device_config_t g_platform_motor_hw = {
 
 void platform_device_backend_bind_default(platform_device_layer_t *layer)
 {
+  bind_hw_imu(layer);
+  bind_hw_remote(layer);
+  bind_hw_motor(layer);
+}
+
+static void bind_hw_imu(platform_device_layer_t *layer)
+{
   platform_bmi088_device_bind(&layer->imu, &g_platform_bmi088_hw);
+}
+
+static void bind_hw_remote(platform_device_layer_t *layer)
+{
   platform_dbus_remote_device_bind(&layer->remote, &g_platform_remote_hw);
+}
+
+static void bind_hw_motor(platform_device_layer_t *layer)
+{
   platform_motor_actuator_device_bind(&layer->motor, &g_platform_motor_hw);
 }
