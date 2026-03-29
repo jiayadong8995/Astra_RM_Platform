@@ -322,20 +322,18 @@ project config
 
 ### 9.2 正式输出 topic
 
-- `chassis_state`
-- `leg_left`
-- `leg_right`
+- `robot_state`
+- `actuator_command`
 
 说明：
 
-- `chassis_state` 是当前对外状态摘要
-- `leg_left / leg_right` 是当前对外电机控制输出边界
-- 在当前阶段，`sim` 应优先接这三类输出，而不是读取 `chassis_move`、`left/right` 一类内部全局状态
+- `robot_state` 是当前对外状态摘要
+- `actuator_command` 是当前控制主链的正式执行输出边界
+- 在当前阶段，`sim` 应优先接这两类输出，而不是读取 `chassis_move`、`left/right` 一类内部全局状态
 
 ### 9.3 过渡 topic
 
 - `chassis_observe`
-- `actuator_cmd`
 - `device_feedback`
 - `actuator_feedback`
 
@@ -343,7 +341,6 @@ project config
 
 - `chassis_observe` 当前仍属于控制链内部中间量
 - 它用于把 `observe_task` 的估计结果显式送入控制链
-- `actuator_cmd` 是当前 app 到执行层的内部末端命令 topic，暂不作为 sim/report 的正式输出边界
 - `device_feedback` 是当前执行层回流到控制层的正式设备反馈 topic
 - `actuator_feedback` 只保留兼容用途，不再作为控制主链的正式输入
 - 现阶段不应把这些内部执行 topic 当成长期稳定的外部报告边界固化到 replay/report 协议中，除非后续明确升级为正式观测接口

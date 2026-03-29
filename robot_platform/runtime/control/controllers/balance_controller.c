@@ -23,6 +23,8 @@ static void compute_lqr_outputs(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *
 static void mix_wheel_torque(chassis_t *chassis);
 static void apply_jump_logic(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, PidTypeDef *legr, PidTypeDef *legl);
 static void apply_ground_detection(chassis_t *chassis, vmc_leg_t *vmcr, vmc_leg_t *vmcl, INS_t *ins);
+static void update_robot_state_contract(platform_balance_controller_t *state);
+static void update_actuator_command_contract(platform_balance_controller_t *state);
 
 void platform_balance_controller_init(platform_balance_controller_t *state)
 {
@@ -66,117 +68,15 @@ void platform_balance_controller_step(platform_balance_controller_t *state, cons
     }
 
     run_balance_control(state);
+    update_robot_state_contract(state);
+    update_actuator_command_contract(state);
 }
 
 void platform_balance_controller_build_outputs(const platform_balance_controller_t *state,
                                                platform_balance_controller_output_t *outputs)
 {
-    outputs->robot_state.body.roll = state->ins.Roll;
-    outputs->robot_state.body.pitch = state->ins.Pitch;
-    outputs->robot_state.body.yaw = state->ins.Yaw;
-    outputs->robot_state.body.gyro[0] = state->ins.Gyro[0];
-    outputs->robot_state.body.gyro[1] = state->ins.Gyro[1];
-    outputs->robot_state.body.gyro[2] = state->ins.Gyro[2];
-    outputs->robot_state.body.accel[0] = state->ins.MotionAccel_b[0];
-    outputs->robot_state.body.accel[1] = state->ins.MotionAccel_b[1];
-    outputs->robot_state.body.accel[2] = state->ins.MotionAccel_b[2];
-    outputs->robot_state.body.orientation_valid = (state->ins.ins_flag != 0U);
-
-    outputs->robot_state.chassis.x = state->chassis.x_filter;
-    outputs->robot_state.chassis.v = state->chassis.v_filter;
-    outputs->robot_state.chassis.vx = state->chassis.v_filter;
-    outputs->robot_state.chassis.vy = 0.0f;
-    outputs->robot_state.chassis.yaw_total = state->chassis.total_yaw;
-    outputs->robot_state.chassis.turn_rate = state->chassis.turn_T;
-    outputs->robot_state.chassis.state_valid = (state->ins.ins_flag != 0U);
-
-    outputs->robot_state.legs.right.length = state->right_leg.L0;
-    outputs->robot_state.legs.right.leg_angle = state->right_leg.theta;
-    outputs->robot_state.legs.right.joint_pos[0] = state->right_leg.phi1;
-    outputs->robot_state.legs.right.joint_pos[1] = state->right_leg.phi4;
-    outputs->robot_state.legs.right.joint_vel[0] = 0.0f;
-    outputs->robot_state.legs.right.joint_vel[1] = 0.0f;
-    outputs->robot_state.legs.right.joint_torque_est[0] = state->right_leg.torque_set[0];
-    outputs->robot_state.legs.right.joint_torque_est[1] = state->right_leg.torque_set[1];
-
-    outputs->robot_state.legs.left.length = state->left_leg.L0;
-    outputs->robot_state.legs.left.leg_angle = state->left_leg.theta;
-    outputs->robot_state.legs.left.joint_pos[0] = state->left_leg.phi1;
-    outputs->robot_state.legs.left.joint_pos[1] = state->left_leg.phi4;
-    outputs->robot_state.legs.left.joint_vel[0] = 0.0f;
-    outputs->robot_state.legs.left.joint_vel[1] = 0.0f;
-    outputs->robot_state.legs.left.joint_torque_est[0] = state->left_leg.torque_set[0];
-    outputs->robot_state.legs.left.joint_torque_est[1] = state->left_leg.torque_set[1];
-
-    outputs->robot_state.wheels.left.speed = state->chassis.wheel_motor[0].speed;
-    outputs->robot_state.wheels.left.position = state->chassis.wheel_motor[0].chassis_x;
-    outputs->robot_state.wheels.left.torque_est = state->chassis.wheel_motor[0].torque;
-    outputs->robot_state.wheels.left.online = true;
-    outputs->robot_state.wheels.right.speed = state->chassis.wheel_motor[1].speed;
-    outputs->robot_state.wheels.right.position = state->chassis.wheel_motor[1].chassis_x;
-    outputs->robot_state.wheels.right.torque_est = state->chassis.wheel_motor[1].torque;
-    outputs->robot_state.wheels.right.online = true;
-
-    outputs->robot_state.contact.grounded = (state->chassis.text_jump_true != 0U);
-    outputs->robot_state.contact.left_support = (state->left_leg.FN > FN_GROUND_THRESHOLD);
-    outputs->robot_state.contact.right_support = (state->right_leg.FN > FN_GROUND_THRESHOLD);
-    outputs->robot_state.contact.land_confidence = outputs->robot_state.contact.grounded ? 1.0f : 0.0f;
-
-    outputs->robot_state.health.imu_ok = (state->ins.ins_flag != 0U);
-    outputs->robot_state.health.remote_ok = true;
-    outputs->robot_state.health.actuator_ok = true;
-    outputs->robot_state.health.state_valid = outputs->robot_state.body.orientation_valid;
-    outputs->robot_state.health.degraded_mode = (state->chassis.recover_flag != 0U);
-
-    outputs->state.v_filter = state->chassis.v_filter;
-    outputs->state.x_filter = state->chassis.x_filter;
-    outputs->state.x_set = state->chassis.x_set;
-    outputs->state.total_yaw = state->chassis.total_yaw;
-    outputs->state.roll = state->chassis.roll;
-    outputs->state.turn_set = state->chassis.turn_set;
-
-    outputs->right_leg.joint_torque[0] = state->right_leg.torque_set[0];
-    outputs->right_leg.joint_torque[1] = state->right_leg.torque_set[1];
-    outputs->right_leg.wheel_torque = state->chassis.wheel_motor[1].torque_set;
-    outputs->right_leg.wheel_current = state->chassis.wheel_motor[1].give_current;
-    outputs->right_leg.leg_length = state->right_leg.L0;
-
-    outputs->left_leg.joint_torque[0] = state->left_leg.torque_set[0];
-    outputs->left_leg.joint_torque[1] = state->left_leg.torque_set[1];
-    outputs->left_leg.wheel_torque = state->chassis.wheel_motor[0].torque_set;
-    outputs->left_leg.wheel_current = state->chassis.wheel_motor[0].give_current;
-    outputs->left_leg.leg_length = state->left_leg.L0;
-
-    outputs->actuator_cmd.joint_torque[0] = state->right_leg.torque_set[0];
-    outputs->actuator_cmd.joint_torque[1] = state->right_leg.torque_set[1];
-    outputs->actuator_cmd.joint_torque[2] = state->left_leg.torque_set[0];
-    outputs->actuator_cmd.joint_torque[3] = state->left_leg.torque_set[1];
-    outputs->actuator_cmd.wheel_current[0] = state->chassis.wheel_motor[0].give_current;
-    outputs->actuator_cmd.wheel_current[1] = state->chassis.wheel_motor[1].give_current;
-    outputs->actuator_cmd.start_flag = state->chassis.start_flag;
-
-    outputs->actuator_command.start = (state->chassis.start_flag != 0U);
-    outputs->actuator_command.control_enable = (state->chassis.start_flag != 0U);
-    outputs->actuator_command.actuator_enable = (state->chassis.start_flag != 0U);
-
-    outputs->actuator_command.motors.left_leg_joint[0].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
-    outputs->actuator_command.motors.left_leg_joint[0].torque_target = state->left_leg.torque_set[0];
-    outputs->actuator_command.motors.left_leg_joint[0].valid = (state->chassis.start_flag != 0U);
-    outputs->actuator_command.motors.left_leg_joint[1].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
-    outputs->actuator_command.motors.left_leg_joint[1].torque_target = state->left_leg.torque_set[1];
-    outputs->actuator_command.motors.left_leg_joint[1].valid = (state->chassis.start_flag != 0U);
-    outputs->actuator_command.motors.right_leg_joint[0].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
-    outputs->actuator_command.motors.right_leg_joint[0].torque_target = state->right_leg.torque_set[0];
-    outputs->actuator_command.motors.right_leg_joint[0].valid = (state->chassis.start_flag != 0U);
-    outputs->actuator_command.motors.right_leg_joint[1].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
-    outputs->actuator_command.motors.right_leg_joint[1].torque_target = state->right_leg.torque_set[1];
-    outputs->actuator_command.motors.right_leg_joint[1].valid = (state->chassis.start_flag != 0U);
-    outputs->actuator_command.motors.left_wheel.control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
-    outputs->actuator_command.motors.left_wheel.current_target = (float)state->chassis.wheel_motor[0].give_current;
-    outputs->actuator_command.motors.left_wheel.valid = (state->chassis.start_flag != 0U);
-    outputs->actuator_command.motors.right_wheel.control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
-    outputs->actuator_command.motors.right_wheel.current_target = (float)state->chassis.wheel_motor[1].give_current;
-    outputs->actuator_command.motors.right_wheel.valid = (state->chassis.start_flag != 0U);
+    outputs->robot_state = state->robot_state;
+    outputs->actuator_command = state->actuator_command;
 }
 
 static void init_chassis_state(chassis_t *chassis, vmc_leg_t *right_leg, vmc_leg_t *left_leg)
@@ -256,6 +156,92 @@ static void update_attitude_feedback(chassis_t *chassis, const vmc_leg_t *vmc_r,
     chassis->total_yaw = ins->YawTotalAngle;
     chassis->roll = ins->Roll;
     chassis->theta_err = 0.0f - (vmc_r->theta + vmc_l->theta);
+}
+
+static void update_robot_state_contract(platform_balance_controller_t *state)
+{
+    state->robot_state.body.roll = state->ins.Roll;
+    state->robot_state.body.pitch = state->ins.Pitch;
+    state->robot_state.body.yaw = state->ins.Yaw;
+    state->robot_state.body.gyro[0] = state->ins.Gyro[0];
+    state->robot_state.body.gyro[1] = state->ins.Gyro[1];
+    state->robot_state.body.gyro[2] = state->ins.Gyro[2];
+    state->robot_state.body.accel[0] = state->ins.MotionAccel_b[0];
+    state->robot_state.body.accel[1] = state->ins.MotionAccel_b[1];
+    state->robot_state.body.accel[2] = state->ins.MotionAccel_b[2];
+    state->robot_state.body.orientation_valid = (state->ins.ins_flag != 0U);
+
+    state->robot_state.chassis.x = state->chassis.x_filter;
+    state->robot_state.chassis.v = state->chassis.v_filter;
+    state->robot_state.chassis.vx = state->chassis.v_filter;
+    state->robot_state.chassis.vy = 0.0f;
+    state->robot_state.chassis.yaw_total = state->chassis.total_yaw;
+    state->robot_state.chassis.turn_rate = state->chassis.turn_T;
+    state->robot_state.chassis.state_valid = (state->ins.ins_flag != 0U);
+
+    state->robot_state.legs.right.length = state->right_leg.L0;
+    state->robot_state.legs.right.leg_angle = state->right_leg.theta;
+    state->robot_state.legs.right.joint_pos[0] = state->right_leg.phi1;
+    state->robot_state.legs.right.joint_pos[1] = state->right_leg.phi4;
+    state->robot_state.legs.right.joint_vel[0] = 0.0f;
+    state->robot_state.legs.right.joint_vel[1] = 0.0f;
+    state->robot_state.legs.right.joint_torque_est[0] = state->right_leg.torque_set[0];
+    state->robot_state.legs.right.joint_torque_est[1] = state->right_leg.torque_set[1];
+
+    state->robot_state.legs.left.length = state->left_leg.L0;
+    state->robot_state.legs.left.leg_angle = state->left_leg.theta;
+    state->robot_state.legs.left.joint_pos[0] = state->left_leg.phi1;
+    state->robot_state.legs.left.joint_pos[1] = state->left_leg.phi4;
+    state->robot_state.legs.left.joint_vel[0] = 0.0f;
+    state->robot_state.legs.left.joint_vel[1] = 0.0f;
+    state->robot_state.legs.left.joint_torque_est[0] = state->left_leg.torque_set[0];
+    state->robot_state.legs.left.joint_torque_est[1] = state->left_leg.torque_set[1];
+
+    state->robot_state.wheels.left.speed = state->chassis.wheel_motor[0].speed;
+    state->robot_state.wheels.left.position = state->chassis.wheel_motor[0].chassis_x;
+    state->robot_state.wheels.left.torque_est = state->chassis.wheel_motor[0].torque;
+    state->robot_state.wheels.left.online = true;
+    state->robot_state.wheels.right.speed = state->chassis.wheel_motor[1].speed;
+    state->robot_state.wheels.right.position = state->chassis.wheel_motor[1].chassis_x;
+    state->robot_state.wheels.right.torque_est = state->chassis.wheel_motor[1].torque;
+    state->robot_state.wheels.right.online = true;
+
+    state->robot_state.contact.grounded = (state->chassis.text_jump_true != 0U);
+    state->robot_state.contact.left_support = (state->left_leg.FN > FN_GROUND_THRESHOLD);
+    state->robot_state.contact.right_support = (state->right_leg.FN > FN_GROUND_THRESHOLD);
+    state->robot_state.contact.land_confidence = state->robot_state.contact.grounded ? 1.0f : 0.0f;
+
+    state->robot_state.health.imu_ok = (state->ins.ins_flag != 0U);
+    state->robot_state.health.remote_ok = true;
+    state->robot_state.health.actuator_ok = true;
+    state->robot_state.health.state_valid = state->robot_state.body.orientation_valid;
+    state->robot_state.health.degraded_mode = (state->chassis.recover_flag != 0U);
+}
+
+static void update_actuator_command_contract(platform_balance_controller_t *state)
+{
+    state->actuator_command.start = (state->chassis.start_flag != 0U);
+    state->actuator_command.control_enable = (state->chassis.start_flag != 0U);
+    state->actuator_command.actuator_enable = (state->chassis.start_flag != 0U);
+
+    state->actuator_command.motors.left_leg_joint[0].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+    state->actuator_command.motors.left_leg_joint[0].torque_target = state->left_leg.torque_set[0];
+    state->actuator_command.motors.left_leg_joint[0].valid = (state->chassis.start_flag != 0U);
+    state->actuator_command.motors.left_leg_joint[1].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+    state->actuator_command.motors.left_leg_joint[1].torque_target = state->left_leg.torque_set[1];
+    state->actuator_command.motors.left_leg_joint[1].valid = (state->chassis.start_flag != 0U);
+    state->actuator_command.motors.right_leg_joint[0].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+    state->actuator_command.motors.right_leg_joint[0].torque_target = state->right_leg.torque_set[0];
+    state->actuator_command.motors.right_leg_joint[0].valid = (state->chassis.start_flag != 0U);
+    state->actuator_command.motors.right_leg_joint[1].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+    state->actuator_command.motors.right_leg_joint[1].torque_target = state->right_leg.torque_set[1];
+    state->actuator_command.motors.right_leg_joint[1].valid = (state->chassis.start_flag != 0U);
+    state->actuator_command.motors.left_wheel.control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
+    state->actuator_command.motors.left_wheel.current_target = (float)state->chassis.wheel_motor[0].give_current;
+    state->actuator_command.motors.left_wheel.valid = (state->chassis.start_flag != 0U);
+    state->actuator_command.motors.right_wheel.control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
+    state->actuator_command.motors.right_wheel.current_target = (float)state->chassis.wheel_motor[1].give_current;
+    state->actuator_command.motors.right_wheel.valid = (state->chassis.start_flag != 0U);
 }
 
 static void compute_turn_and_leg_compensation(chassis_t *chassis,

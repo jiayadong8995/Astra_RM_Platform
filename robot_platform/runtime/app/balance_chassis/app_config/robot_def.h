@@ -131,30 +131,7 @@ typedef struct {
 typedef struct {
     float v_filter;
     float x_filter;
-    float x_set;
-    float total_yaw;
-    float roll;
-    float turn_set;
-} Chassis_State_t;
-
-typedef struct {
-    float v_filter;
-    float x_filter;
 } Chassis_Observe_t;
-
-typedef struct {
-    float joint_torque[2];
-    float wheel_torque;
-    int16_t wheel_current;
-    float leg_length;
-} Leg_Output_t;
-
-typedef struct {
-    float joint_torque[4];
-    int16_t wheel_current[2];
-    uint8_t start_flag;
-    uint8_t reserved[3];
-} Actuator_Cmd_t;
 
 typedef struct {
     float joint_pos[4];

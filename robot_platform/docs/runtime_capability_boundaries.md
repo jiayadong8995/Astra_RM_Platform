@@ -42,7 +42,7 @@
 | 板级总线访问 | CAN/UART/SPI/TIM/DMA 请求 | 原始访问能力 | `bsp` | 模式管理、控制求解 |
 | IMU 设备语义 | SPI/I2C 驱动输出 | `imu_sample` | `device` | 姿态解算、业务判断 |
 | 遥控设备语义 | UART/DBUS 驱动输出 | `rc_input` | `device` | 模式决策、控制求解 |
-| 执行器设备语义 | 电机驱动输入输出 | `actuator_feedback` / 可写命令接口 | `device` | 业务模式、状态估计 |
+| 执行器设备语义 | 电机驱动输入输出 | `device_feedback` / 可写命令接口 | `device` | 业务模式、状态估计 |
 | 状态形成 | `DeviceInput` | `RobotState` | `control/state` | 模式管理、BSP 访问 |
 | 观测整理 | 轮/腿/姿态反馈 | `RobotState` 子状态 | `control/state` | 业务模式、底层句柄 |
 | 控制求解 | `RobotState + RobotIntent` | `ActuatorCommand` | `control/controllers` | 底层发送细节 |

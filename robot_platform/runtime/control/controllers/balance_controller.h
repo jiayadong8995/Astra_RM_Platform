@@ -12,6 +12,8 @@ typedef struct
 {
     INS_t ins;
     chassis_t chassis;
+    platform_robot_state_t robot_state;
+    platform_actuator_command_t actuator_command;
     vmc_leg_t right_leg;
     vmc_leg_t left_leg;
     PidTypeDef leg_r_pid;
@@ -33,10 +35,6 @@ typedef struct
 {
     platform_robot_state_t robot_state;
     platform_actuator_command_t actuator_command;
-    Chassis_State_t state;
-    Leg_Output_t right_leg;
-    Leg_Output_t left_leg;
-    Actuator_Cmd_t actuator_cmd;
 } platform_balance_controller_output_t;
 
 void platform_balance_controller_init(platform_balance_controller_t *state);

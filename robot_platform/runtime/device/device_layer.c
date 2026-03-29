@@ -160,6 +160,11 @@ platform_device_result_t platform_device_read_default_remote(platform_rc_input_t
   return platform_device_layer_read_remote(&g_platform_default_layer, input);
 }
 
+platform_device_result_t platform_device_init_defaults(void)
+{
+  return platform_default_layer_ensure_ready();
+}
+
 platform_device_result_t platform_device_read_default_imu(platform_imu_sample_t *sample)
 {
   platform_device_result_t result = platform_default_layer_ensure_ready();
@@ -170,6 +175,30 @@ platform_device_result_t platform_device_read_default_imu(platform_imu_sample_t 
   }
 
   return platform_device_layer_read_imu(&g_platform_default_layer, sample);
+}
+
+platform_device_result_t platform_device_read_default_feedback(platform_device_feedback_t *feedback)
+{
+  platform_device_result_t result = platform_default_layer_ensure_ready();
+
+  if (result != PLATFORM_DEVICE_RESULT_OK)
+  {
+    return result;
+  }
+
+  return platform_device_layer_read_feedback(&g_platform_default_layer, feedback);
+}
+
+platform_device_result_t platform_device_write_default_command(const platform_device_command_t *command)
+{
+  platform_device_result_t result = platform_default_layer_ensure_ready();
+
+  if (result != PLATFORM_DEVICE_RESULT_OK)
+  {
+    return result;
+  }
+
+  return platform_device_layer_write_command(&g_platform_default_layer, command);
 }
 
 static void platform_map_device_command_to_motor_set(const platform_device_command_t *command,

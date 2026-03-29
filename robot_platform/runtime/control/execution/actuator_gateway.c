@@ -3,15 +3,14 @@
 static void platform_map_contract_command(const platform_actuator_command_t *actuator_msg,
                                           platform_device_command_t *device_command);
 
-void platform_actuator_gateway_init(platform_actuator_gateway_t *runtime)
+void platform_actuator_gateway_init(void)
 {
-    (void)platform_device_layer_init_default(&runtime->devices);
+    (void)platform_device_init_defaults();
 }
 
-platform_device_result_t platform_actuator_gateway_capture_feedback(const platform_actuator_gateway_t *runtime,
-                                                                   platform_device_feedback_t *feedback_msg)
+platform_device_result_t platform_actuator_gateway_capture_feedback(platform_device_feedback_t *feedback_msg)
 {
-    return platform_device_layer_read_feedback((platform_device_layer_t *)&runtime->devices, feedback_msg);
+    return platform_device_read_default_feedback(feedback_msg);
 }
 
 void platform_actuator_gateway_build_legacy_feedback(const platform_device_feedback_t *feedback,
@@ -31,15 +30,14 @@ void platform_actuator_gateway_build_legacy_feedback(const platform_device_feedb
     feedback_msg->ready = feedback->actuator_feedback.valid ? 1U : 0U;
 }
 
-void platform_actuator_gateway_dispatch_command(const platform_actuator_gateway_t *runtime,
-                                                const platform_actuator_command_t *actuator_msg,
+void platform_actuator_gateway_dispatch_command(const platform_actuator_command_t *actuator_msg,
                                                 uint32_t systick)
 {
     platform_device_command_t device_command = {0};
 
     (void)systick;
     platform_map_contract_command(actuator_msg, &device_command);
-    (void)platform_device_layer_write_command((platform_device_layer_t *)&runtime->devices, &device_command);
+    (void)platform_device_write_default_command(&device_command);
 }
 
 static void platform_map_contract_command(const platform_actuator_command_t *actuator_msg,

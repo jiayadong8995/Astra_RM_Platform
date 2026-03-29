@@ -282,7 +282,7 @@ Device Input
 raw device input
   - imu_sample
   - rc_input
-  - actuator_feedback
+  - device_feedback
 
         |
         v
