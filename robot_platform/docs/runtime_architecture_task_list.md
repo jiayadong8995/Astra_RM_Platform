@@ -61,3 +61,22 @@
 - 不再把设备细节暴露回 `app`
 - 不再以 legacy task 文件名驱动架构决策
 - 不再为兼容旧对象保留主路径重复结构
+
+## 当前交付节点
+
+这轮运行时架构重构，达到下面五条时视为阶段交付完成：
+
+1. `device` 稳定
+   - 只保留 `device_layer + device_profile + device nodes`
+   - 不再有驱动脏头或板级细节泄漏到设备语义层
+2. `control` 稳定
+   - 对外只围绕 `RobotState / RobotIntent / ActuatorCommand / DeviceFeedback`
+   - `control/internal` 不再残留明显 legacy 命名和旧结构外泄
+3. `app` 稳定
+   - 只保留 bringup、intent/mode、orchestration
+   - 不再承接设备细节和控制运行态
+4. 文档稳定
+   - 仓库只保留当前有效架构口径
+   - 不再存在会误导实现的旧阶段文档
+5. 构建恢复
+   - 在结构收口后，`hw_elf` 和 `sitl` 至少恢复到可构建
