@@ -1,6 +1,6 @@
 #include "balance_controller.h"
 
-#include "../../app/balance_chassis/app_config/robot_def.h"
+#include "../internal/balance_params.h"
 #include "../constraints/actuator_constraints.h"
 
 static float LQR_K_R[12] = LQR_K_MATRIX;

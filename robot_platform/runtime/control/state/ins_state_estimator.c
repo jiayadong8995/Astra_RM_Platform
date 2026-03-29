@@ -25,12 +25,12 @@ void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *s
 
     state->mahony.dt = dt;
 
-    state->ins.sensor.accel[X] = accel[X];
-    state->ins.sensor.accel[Y] = accel[Y];
-    state->ins.sensor.accel[Z] = accel[Z];
-    state->ins.sensor.gyro[X] = gyro[X];
-    state->ins.sensor.gyro[Y] = gyro[Y];
-    state->ins.sensor.gyro[Z] = gyro[Z];
+    state->ins.sensor.accel[PLATFORM_AXIS_X] = accel[PLATFORM_AXIS_X];
+    state->ins.sensor.accel[PLATFORM_AXIS_Y] = accel[PLATFORM_AXIS_Y];
+    state->ins.sensor.accel[PLATFORM_AXIS_Z] = accel[PLATFORM_AXIS_Z];
+    state->ins.sensor.gyro[PLATFORM_AXIS_X] = gyro[PLATFORM_AXIS_X];
+    state->ins.sensor.gyro[PLATFORM_AXIS_Y] = gyro[PLATFORM_AXIS_Y];
+    state->ins.sensor.gyro[PLATFORM_AXIS_Z] = gyro[PLATFORM_AXIS_Z];
 
     state->accel.x = accel[0];
     state->accel.y = accel[1];

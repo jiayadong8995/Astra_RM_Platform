@@ -7,15 +7,16 @@
 
 typedef struct
 {
-    Publisher_t *cmd_pub;
+    Publisher_t *intent_pub;
     Subscriber_t *robot_state_sub;
-} Remote_Runtime_Bus_t;
+} platform_remote_intent_bus_t;
 
-void remote_runtime_bus_init(Remote_Runtime_Bus_t *bus);
+void platform_remote_intent_bus_init(platform_remote_intent_bus_t *bus);
 
-void remote_runtime_bus_pull_inputs(Remote_Runtime_Bus_t *bus,
-                                    platform_robot_state_t *robot_state);
+void platform_remote_intent_bus_pull_inputs(platform_remote_intent_bus_t *bus,
+                                            platform_robot_state_t *robot_state);
 
-void remote_runtime_bus_publish_intent(Remote_Runtime_Bus_t *bus, const platform_robot_intent_t *intent);
+void platform_remote_intent_bus_publish(platform_remote_intent_bus_t *bus,
+                                        const platform_robot_intent_t *intent);
 
 #endif

@@ -1,7 +1,7 @@
-#ifndef BALANCE_CHASSIS_APP_FLOW_REMOTE_RUNTIME_H
-#define BALANCE_CHASSIS_APP_FLOW_REMOTE_RUNTIME_H
+#ifndef BALANCE_CHASSIS_APP_INTENT_REMOTE_INTENT_STATE_H
+#define BALANCE_CHASSIS_APP_INTENT_REMOTE_INTENT_STATE_H
 
-#include "../app_config/robot_def.h"
+#include <stdint.h>
 
 typedef struct
 {
@@ -16,6 +16,6 @@ typedef struct
     uint8_t jump_flag;
     uint8_t recover_flag;
     uint8_t last_recover_flag;
-} Remote_Runtime_t;
+} platform_remote_intent_state_t;
 
 #endif

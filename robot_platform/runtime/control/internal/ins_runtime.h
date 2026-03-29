@@ -3,9 +3,9 @@
 
 #include <stdint.h>
 
-#define X 0
-#define Y 1
-#define Z 2
+#define PLATFORM_AXIS_X 0
+#define PLATFORM_AXIS_Y 1
+#define PLATFORM_AXIS_Z 2
 
 #define PITCH_OFFSET   -0.0024f
 #define ROLL_OFFSET    0.0333f

@@ -292,7 +292,7 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_LEGACY_APP_DIR}/app_bringup/chassis_task.c
     ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
     ${PLATFORM_LEGACY_APP_DIR}/app_bringup/remote_task.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_flow/remote_orchestration.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c

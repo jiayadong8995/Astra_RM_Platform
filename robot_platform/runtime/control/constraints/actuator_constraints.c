@@ -1,6 +1,6 @@
 #include "actuator_constraints.h"
 
-#include "../../app/balance_chassis/app_config/robot_def.h"
+#include "../internal/balance_params.h"
 #include "../../module/lib/control/control_math.h"
 #include "user_lib.h"
 

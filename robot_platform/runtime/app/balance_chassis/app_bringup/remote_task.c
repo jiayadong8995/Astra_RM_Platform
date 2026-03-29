@@ -17,28 +17,28 @@
 #include "remote_task.h"
 #include "cmsis_os.h"
 #include "../app_config/app_params.h"
-#include "../app_flow/remote_orchestration.h"
-#include "../app_flow/remote_runtime.h"
+#include "../app_intent/remote_intent.h"
+#include "../app_intent/remote_intent_state.h"
 #include "../app_io/remote_topics.h"
 #include "../../../device/device_layer.h"
 
 void remote_task(void)
 {	
-    Remote_Runtime_t cmd_state = {0};
-    Remote_Runtime_Bus_t runtime_bus = {0};
+    platform_remote_intent_state_t intent_state = {0};
+    platform_remote_intent_bus_t intent_bus = {0};
     platform_rc_input_t rc_input = {0};
     platform_robot_state_t robot_state = {0};
     platform_robot_intent_t intent = {0};
 
-    remote_runtime_init(&cmd_state);
-    remote_runtime_bus_init(&runtime_bus);
+    platform_remote_intent_state_init(&intent_state);
+    platform_remote_intent_bus_init(&intent_bus);
 	while(1)
 	{	
         (void)platform_device_read_default_remote(&rc_input);
-        remote_runtime_bus_pull_inputs(&runtime_bus, &robot_state);
-        remote_runtime_apply_inputs(&cmd_state, &rc_input, &robot_state);
-        intent = remote_runtime_build_intent(&cmd_state);
-        remote_runtime_bus_publish_intent(&runtime_bus, &intent);
+        platform_remote_intent_bus_pull_inputs(&intent_bus, &robot_state);
+        platform_remote_intent_state_apply_inputs(&intent_state, &rc_input, &robot_state);
+        intent = platform_remote_intent_build(&intent_state);
+        platform_remote_intent_bus_publish(&intent_bus, &intent);
 
 		osDelay(REMOTE_TASK_PERIOD_MS);
 	}

@@ -2,6 +2,7 @@
 #define __VMC_CALC_H
 
 #include "main.h"
+#include "../../../control/internal/balance_params.h"
 #include "../../../control/internal/ins_runtime.h"
 
 #define pi 3.1415926f

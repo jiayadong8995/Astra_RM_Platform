@@ -341,6 +341,17 @@ static platform_device_backend_profile_t platform_default_backend_profile(void)
 
 static const platform_device_profile_t *platform_select_profile(platform_device_backend_profile_t profile)
 {
+#ifdef SITL_BUILD
+  switch (profile)
+  {
+    case PLATFORM_DEVICE_BACKEND_PROFILE_SITL:
+    case PLATFORM_DEVICE_BACKEND_PROFILE_AUTO:
+      return platform_device_profile_sitl();
+    case PLATFORM_DEVICE_BACKEND_PROFILE_HW:
+    default:
+      return 0;
+  }
+#else
   switch (profile)
   {
     case PLATFORM_DEVICE_BACKEND_PROFILE_SITL:
@@ -355,4 +366,5 @@ static const platform_device_profile_t *platform_select_profile(platform_device_
     default:
       return platform_device_profile_hw();
   }
+#endif
 }
