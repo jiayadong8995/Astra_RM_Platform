@@ -32,6 +32,8 @@
   工业机器人 ROS 2 栈参考，重点看 `bringup / controllers / description / hardware`
 - `nav2_bringup`
   ROS 2 应用级 bringup 参考，重点看 `launch / params / urdf / rviz`
+- `StandardRobotpp`
+  RoboMaster 嵌入式电控框架参考，重点看 `application / components / bsp / application/robot_param*.h`
 
 ## 使用原则
 
