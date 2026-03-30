@@ -17,7 +17,7 @@
 | 一开始建立完整 fake 体系 | 先把 fake 层整体抽象好，再开始扩测试面 | |
 
 **User's choice:** 先把 C host test 最小闭环建起来，同时只定义很薄的 fake/stub 接口约定，不做完整 fake 体系。  
-**Notes:** 用户随后进一步锁定 Phase 1 首批覆盖模块为 `message_center`、`device_layer`、`actuator_gateway`。
+**Notes:** 用户最初提到 `message_center`、`device_layer`、`actuator_gateway`，但后续复核时明确指出这不符合 "smallest viable" 原则。修正后的锁定结论是：优先 `message_center` + `actuator_gateway`，`device_layer` 视 harness 成熟度决定是否纳入本 phase。
 
 ---
 
@@ -60,15 +60,27 @@
 
 ---
 
-## 进一步收口
+## 进一步收口（已修正）
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| 模块范围：`message_center`、`device_layer`、`actuator_gateway` | 用最小但高风险的三块建立 Phase 1 host test 起步面 | ✓ |
-| 模块范围更宽 | Phase 1 同时纳入更多控制器或任务层测试 | |
+| 模块范围：`message_center`、`actuator_gateway` 优先，`device_layer` 条件纳入 | 先守住最小闭环，再根据 harness 成熟度决定是否扩大 | ✓ |
+| 模块范围一开始固定为三块 | `message_center`、`device_layer`、`actuator_gateway` 同时作为第一波硬范围 | |
 
-**User's choice:** 模块范围 `1,2,3`，即 `message_center`、`device_layer`、`actuator_gateway`。  
-**Notes:** 用户没有把 `balance_controller` 放进 Phase 1 起步面，说明当前阶段优先做基础设施可信度而不是扩大控制算法覆盖面。
+**User's choice:** 优先 `message_center` + `actuator_gateway`，`device_layer` 视 harness 成熟度决定是否进入本 phase。  
+**Notes:** 用户明确反对把 `device_layer` 在当前阶段写成第一波硬锁定范围，因为它 370 行，不是“薄 seam”。
+
+---
+
+## 最小活路径优先级
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 先证明最小活路径真的通 | 优先证明 `build sitl -> launch sitl -> bridge up -> inject one input -> observe one runtime output -> produce passed smoke report` | ✓ |
+| 先继续围绕分层和 host harness 抽象推进 | 先把基础设施设计做完整，再看最小运行路径 | |
+
+**User's choice:** 先证明 `build sitl -> launch sitl -> bridge up -> inject one input -> observe one runtime output -> produce passed smoke report` 这条最小链路真的通。  
+**Notes:** 用户明确认为“框架到底能不能跑起来”是当前最应该优先确认的事情。
 
 ---
 
