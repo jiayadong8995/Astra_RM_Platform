@@ -8,12 +8,12 @@
 
 本文档基于以下本地参考代码与对应项目结构调研形成：
 
-- `references/PX4-Autopilot`
-- `references/ardupilot`
-- `references/betaflight`
-- `references/ros2_control_demos`
-- `references/iiwa_ros2`
-- `references/nav2_bringup`
+- `references/external/PX4-Autopilot`
+- `references/external/ardupilot`
+- `references/external/betaflight`
+- `references/external/ros2_control_demos`
+- `references/external/iiwa_ros2`
+- `references/external/nav2_bringup`
 
 ## 1. 当前问题
 
@@ -40,7 +40,7 @@
 
 参考目录：
 
-- [references/PX4-Autopilot](/home/xbd/workspace/codes/Astra_RM_Platform/references/PX4-Autopilot)
+- [references/external/PX4-Autopilot](/home/xbd/workspace/codes/Astra_RM_Platform/references/external/PX4-Autopilot)
 
 关键结构：
 
@@ -74,7 +74,7 @@ PX4 的重点不是某个具体 simulator，而是：
 
 参考目录：
 
-- [references/ardupilot](/home/xbd/workspace/codes/Astra_RM_Platform/references/ardupilot)
+- [references/external/ardupilot](/home/xbd/workspace/codes/Astra_RM_Platform/references/external/ardupilot)
 
 关键结构：
 
@@ -123,7 +123,7 @@ ArduPilot 最值得本项目借鉴的不是它的高保真仿真，而是：
 
 参考目录：
 
-- [references/betaflight](/home/xbd/workspace/codes/Astra_RM_Platform/references/betaflight)
+- [references/external/betaflight](/home/xbd/workspace/codes/Astra_RM_Platform/references/external/betaflight)
 
 关键结构：
 
@@ -150,9 +150,9 @@ Betaflight 的启发是：
 
 参考目录：
 
-- [references/ros2_control_demos](/home/xbd/workspace/codes/Astra_RM_Platform/references/ros2_control_demos)
-- [references/iiwa_ros2](/home/xbd/workspace/codes/Astra_RM_Platform/references/iiwa_ros2)
-- [references/nav2_bringup](/home/xbd/workspace/codes/Astra_RM_Platform/references/nav2_bringup)
+- [references/external/ros2_control_demos](/home/xbd/workspace/codes/Astra_RM_Platform/references/external/ros2_control_demos)
+- [references/external/iiwa_ros2](/home/xbd/workspace/codes/Astra_RM_Platform/references/external/iiwa_ros2)
+- [references/external/nav2_bringup](/home/xbd/workspace/codes/Astra_RM_Platform/references/external/nav2_bringup)
 
 这些项目的价值不在于 `sim` 细节，而在于：
 

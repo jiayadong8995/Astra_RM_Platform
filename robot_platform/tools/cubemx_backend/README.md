@@ -21,7 +21,7 @@
 
 ## 当前仓库建议验证输入
 
-- `/home/xbd/worspcae/code/Astra_RM2025_Balance/Chassis/CtrlBoard-H7_IMU.ioc`
+- `/home/xbd/worspcae/code/references/legacy/Astra_RM2025_Balance_legacy/Chassis/CtrlBoard-H7_IMU.ioc`
 
 ## 当前状态
 

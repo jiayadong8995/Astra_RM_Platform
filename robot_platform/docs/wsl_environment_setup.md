@@ -71,7 +71,7 @@ python3 -m robot_platform.tools.platform_cli.main generate
 
 当前行为：
 
-- 读取 `Astra_RM2025_Balance/Chassis/CtrlBoard-H7_IMU.ioc`
+- 读取 `references/legacy/Astra_RM2025_Balance_legacy/Chassis/CtrlBoard-H7_IMU.ioc`
 - 调用 `STM32CubeMX` CLI
 - 输出到 `robot_platform/runtime/generated/stm32h7_ctrl_board_raw`
 

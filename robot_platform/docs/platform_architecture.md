@@ -8,7 +8,7 @@
 
 仓库中其他目录的定位是：
 
-- `Astra_RM2025_Balance/`
+- `references/legacy/Astra_RM2025_Balance_legacy/`
   历史基线与行为参考，不作为当前架构入口
 - `references/`
   外部参考仓库，不作为当前执行文档

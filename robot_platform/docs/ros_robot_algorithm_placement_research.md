@@ -28,16 +28,16 @@
 
 1. `ros2_control_demos`
    - 上游：https://github.com/ros-controls/ros2_control_demos
-   - 本地：`references/ros2_control_demos`
+   - 本地：`references/external/ros2_control_demos`
 2. `iiwa_ros2`
    - 上游：https://github.com/ICube-Robotics/iiwa_ros2
-   - 本地：`references/iiwa_ros2`
+   - 本地：`references/external/iiwa_ros2`
 3. `legged_control`
    - 上游：https://github.com/qiayuanl/legged_control
-   - 本地：`references/legged_control`
+   - 本地：`references/external/legged_control`
 4. `basic_framework`
    - 上游：https://gitee.com/hnuyuelurm/basic_framework
-   - 本地：`references/basic_framework`
+   - 本地：`references/external/basic_framework`
 
 另外参考了 `ros2_control` 官方文档：
 
@@ -59,9 +59,9 @@
 
 例如：
 
-- `references/ros2_control_demos/example_12/bringup`
-- `references/ros2_control_demos/example_12/hardware`
-- `references/ros2_control_demos/example_12/controllers`
+- `references/external/ros2_control_demos/example_12/bringup`
+- `references/external/ros2_control_demos/example_12/hardware`
+- `references/external/ros2_control_demos/example_12/controllers`
 
 说明：
 
@@ -82,11 +82,11 @@
 
 例如：
 
-- `references/iiwa_ros2/iiwa_bringup`
-- `references/iiwa_ros2/iiwa_controllers/impedance_controller/src/impedance_controller.cpp`
-- `references/iiwa_ros2/iiwa_hardware`
+- `references/external/iiwa_ros2/iiwa_bringup`
+- `references/external/iiwa_ros2/iiwa_controllers/impedance_controller/src/impedance_controller.cpp`
+- `references/external/iiwa_ros2/iiwa_hardware`
 
-从 [impedance_controller.cpp](/home/xbd/workspace/codes/Astra_RM_Platform/references/iiwa_ros2/iiwa_controllers/impedance_controller/src/impedance_controller.cpp) 可以直接看出：
+从 [impedance_controller.cpp](/home/xbd/workspace/codes/Astra_RM_Platform/references/external/iiwa_ros2/iiwa_controllers/impedance_controller/src/impedance_controller.cpp) 可以直接看出：
 
 - 控制算法写在 controller plugin 里
 - controller 通过 `hardware_interface` 暴露的 state/command interface 工作
@@ -111,17 +111,17 @@
 
 例如：
 
-- `references/legged_control/legged_controllers/src/LeggedController.cpp`
-- `references/legged_control/legged_estimation/src/StateEstimateBase.cpp`
-- `references/legged_control/legged_hw`
+- `references/external/legged_control/legged_controllers/src/LeggedController.cpp`
+- `references/external/legged_control/legged_estimation/src/StateEstimateBase.cpp`
+- `references/external/legged_control/legged_hw`
 
-从 [LeggedController.cpp](/home/xbd/workspace/codes/Astra_RM_Platform/references/legged_control/legged_controllers/src/LeggedController.cpp) 可以看到：
+从 [LeggedController.cpp](/home/xbd/workspace/codes/Astra_RM_Platform/references/external/legged_control/legged_controllers/src/LeggedController.cpp) 可以看到：
 
 - controller 里组装 MPC、WBC、state estimate
 - 控制器通过 hardware interface 拿 joint/contact/imu handle
 - 主控制算法明确属于 controller 包，不属于 hardware 包
 
-从 [StateEstimateBase.cpp](/home/xbd/workspace/codes/Astra_RM_Platform/references/legged_control/legged_estimation/src/StateEstimateBase.cpp) 可以看到：
+从 [StateEstimateBase.cpp](/home/xbd/workspace/codes/Astra_RM_Platform/references/external/legged_control/legged_estimation/src/StateEstimateBase.cpp) 可以看到：
 
 - 状态估计被单独放在 `legged_estimation`
 - 估计器不混在 hardware，也不混在 bringup
