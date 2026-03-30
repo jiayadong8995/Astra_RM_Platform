@@ -83,35 +83,35 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-01 | Phase TBD | Pending |
-| PIPE-02 | Phase TBD | Pending |
-| PIPE-03 | Phase TBD | Pending |
-| HOST-01 | Phase TBD | Pending |
-| HOST-02 | Phase TBD | Pending |
-| HOST-03 | Phase TBD | Pending |
-| HOST-04 | Phase TBD | Pending |
-| SAFE-01 | Phase TBD | Pending |
-| SAFE-02 | Phase TBD | Pending |
-| SAFE-03 | Phase TBD | Pending |
-| SAFE-04 | Phase TBD | Pending |
-| SAFE-05 | Phase TBD | Pending |
-| SAFE-06 | Phase TBD | Pending |
-| LINK-01 | Phase TBD | Pending |
-| LINK-02 | Phase TBD | Pending |
-| LINK-03 | Phase TBD | Pending |
-| LINK-04 | Phase TBD | Pending |
-| OBS-01 | Phase TBD | Pending |
-| OBS-02 | Phase TBD | Pending |
-| OBS-03 | Phase TBD | Pending |
-| ARCH-01 | Phase TBD | Pending |
-| ARCH-02 | Phase TBD | Pending |
-| ARCH-03 | Phase TBD | Pending |
-| ARCH-04 | Phase TBD | Pending |
+| PIPE-01 | Phase 5 | Pending |
+| PIPE-02 | Phase 1 | Pending |
+| PIPE-03 | Phase 1 | Pending |
+| HOST-01 | Phase 1 | Pending |
+| HOST-02 | Phase 2 | Pending |
+| HOST-03 | Phase 2 | Pending |
+| HOST-04 | Phase 1 | Pending |
+| SAFE-01 | Phase 2 | Pending |
+| SAFE-02 | Phase 2 | Pending |
+| SAFE-03 | Phase 2 | Pending |
+| SAFE-04 | Phase 2 | Pending |
+| SAFE-05 | Phase 2 | Pending |
+| SAFE-06 | Phase 2 | Pending |
+| LINK-01 | Phase 3 | Pending |
+| LINK-02 | Phase 3 | Pending |
+| LINK-03 | Phase 3 | Pending |
+| LINK-04 | Phase 3 | Pending |
+| OBS-01 | Phase 3 | Pending |
+| OBS-02 | Phase 3 | Pending |
+| OBS-03 | Phase 4 | Pending |
+| ARCH-01 | Phase 4 | Pending |
+| ARCH-02 | Phase 1 | Pending |
+| ARCH-03 | Phase 4 | Pending |
+| ARCH-04 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 24 total
-- Mapped to phases: 0
-- Unmapped: 24 ⚠️
+- Mapped to phases: 24
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-30*
