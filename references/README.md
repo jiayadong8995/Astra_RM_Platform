@@ -1,6 +1,6 @@
 # references
 
-这个目录只存放外部开源项目的只读参考代码。
+这个目录存放只读参考代码，包括外部开源项目，以及本仓库自己的历史基线镜像。
 
 用途：
 
@@ -15,9 +15,12 @@
 - 不参与当前仓库的构建
 - 不参与当前仓库的测试
 - 不作为当前项目实现代码的直接依赖
+- 不在这些目录中继续演进当前主线实现
 
 ## 当前参考项目
 
+- `Astra_RM2025_Balance_legacy`
+  本仓库历史基线镜像，重点看 `Chassis / Gimbal` 中原始固件、`.ioc` 和旧分层组织
 - `basic_framework`
   RoboMaster 嵌入式框架参考，重点看 `bsp / modules / application`
 - `PX4-Autopilot`
