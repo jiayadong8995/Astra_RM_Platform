@@ -20,12 +20,12 @@
 
 ### Safety Gates
 
-- [ ] **SAFE-01**: Runtime blocks actuator output when control direction or command mapping is invalid for the active robot profile
-- [ ] **SAFE-02**: Runtime blocks or degrades actuator output when sensor data is stale, invalid, or unavailable
-- [ ] **SAFE-03**: Runtime blocks invalid enable/state-machine transitions that could arm control in an unsafe state
-- [ ] **SAFE-04**: Runtime enforces configured output saturation and fails verification when limits are violated
-- [ ] **SAFE-05**: Runtime detects data-link loss or stale command input and transitions to a defined safe behavior
-- [ ] **SAFE-06**: Verification includes a regression path for wheel-leg coupling instability risks identified for `balance_chassis`
+- [x] **SAFE-01**: Runtime blocks actuator output when control direction or command mapping is invalid for the active robot profile
+- [x] **SAFE-02**: Runtime blocks or degrades actuator output when sensor data is stale, invalid, or unavailable
+- [x] **SAFE-03**: Runtime blocks invalid enable/state-machine transitions that could arm control in an unsafe state
+- [x] **SAFE-04**: Runtime enforces configured output saturation and fails verification when limits are violated
+- [x] **SAFE-05**: Runtime detects data-link loss or stale command input and transitions to a defined safe behavior
+- [x] **SAFE-06**: Verification includes a regression path for wheel-leg coupling instability risks identified for `balance_chassis`
 
 ### Fake-Link Validation
 
@@ -90,12 +90,12 @@
 | HOST-02 | Phase 2 | Complete |
 | HOST-03 | Phase 2 | Complete |
 | HOST-04 | Phase 1 | Complete |
-| SAFE-01 | Phase 2 | Pending |
-| SAFE-02 | Phase 2 | Pending |
-| SAFE-03 | Phase 2 | Pending |
-| SAFE-04 | Phase 2 | Pending |
-| SAFE-05 | Phase 2 | Pending |
-| SAFE-06 | Phase 2 | Pending |
+| SAFE-01 | Phase 2 | Complete |
+| SAFE-02 | Phase 2 | Complete |
+| SAFE-03 | Phase 2 | Complete |
+| SAFE-04 | Phase 2 | Complete |
+| SAFE-05 | Phase 2 | Complete |
+| SAFE-06 | Phase 2 | Complete |
 | LINK-01 | Phase 3 | Pending |
 | LINK-02 | Phase 3 | Pending |
 | LINK-03 | Phase 3 | Pending |
@@ -115,4 +115,4 @@
 
 ---
 *Requirements defined: 2026-03-30*
-*Last updated: 2026-03-31 after plan 01-05 completion*
+*Last updated: 2026-03-31 after phase 02 completion*

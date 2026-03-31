@@ -13,7 +13,7 @@ This roadmap turns the existing embedded platform into a trustworthy v1 validati
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Contracts and Verification Foundation** - Make host-native verification, contract sizing, and stage reporting trustworthy.
-- [ ] **Phase 2: Host Safety Control Verification** - Prove `balance_chassis` control-path and safety behavior with deterministic host-side tests.
+- [x] **Phase 2: Host Safety Control Verification** - Prove `balance_chassis` control-path and safety behavior with deterministic host-side tests.
 - [ ] **Phase 3: Fake-Link Runtime Proof** - Drive the real runtime through fake-link adapters and capture observable validation artifacts.
 - [ ] **Phase 4: Authoritative Platform Composition** - Clarify ownership boundaries and define one blessed `balance_chassis` bring-up path.
 - [ ] **Phase 5: Default Closure Loop** - Make one command path the default trusted loop for build, verification, smoke, and firmware generation.
@@ -30,11 +30,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Firmware generation is refused when checked-in STM32-generated artifacts are stale relative to their source inputs.
   4. Unsafe runtime contract or transport payload sizing is rejected explicitly instead of being silently accepted.
   5. Supported host verification targets surface sanitizer failures when memory-safety or undefined-behavior defects occur.
-**Plans**: 3 plans
+**Plans**: 5 plans
 Plans:
-- [x] 02-01-PLAN.md - Build the deterministic host harness and `verify phase2` entrypoint for the current task/topic path.
-- [ ] 02-02-PLAN.md - Add hard safety oracles for mapping, sensor validity, arming transitions, and saturation.
-- [ ] 02-03-PLAN.md - Close stale-command and wheel-leg danger-signature coverage and finalize the Phase 2 verdict matrix.
+- [x] 01-01-PLAN.md - Build the minimal host harness and checked-in host test entrypoint.
+- [x] 01-02-PLAN.md - Harden `message_center` transport sizing and registration-time safety checks.
+- [x] 01-03-PLAN.md - Add secondary actuator seam coverage once the core proof path is stable.
+- [x] 01-04-PLAN.md - Prove the minimum live SITL path and JSON-first phase verification entrypoint.
+- [x] 01-05-PLAN.md - Add generated-artifact freshness hard gating for hardware-trusting builds.
 
 ### Phase 2: Host Safety Control Verification
 **Goal**: Developers can deterministically exercise the real `balance_chassis` control path on host and prove that known unsafe control behaviors are blocked before simulation or hardware.
@@ -46,7 +48,11 @@ Plans:
   3. Verification proves actuator output is blocked or degraded when sensor data is stale, invalid, unavailable, or command input is lost.
   4. Verification proves invalid arming or state-machine transitions are rejected before closed-loop control can engage.
   5. The host regression suite includes explicit cases for wheel-leg coupling instability risks on the current robot path.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [x] 02-01-PLAN.md - Build the deterministic host harness and `verify phase2` entrypoint for the current task/topic path.
+- [x] 02-02-PLAN.md - Add hard safety oracles for mapping, sensor validity, arming transitions, and saturation.
+- [x] 02-03-PLAN.md - Close stale-command and wheel-leg danger-signature coverage and finalize the Phase 2 verdict matrix.
 
 ### Phase 3: Fake-Link Runtime Proof
 **Goal**: Developers can prove that fake-link and sim inputs drive the real runtime path and produce observable artifacts that separate communication faults from control faults.
@@ -89,7 +95,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Contracts and Verification Foundation | 5/5 | Complete | 2026-03-31 |
-| 2. Host Safety Control Verification | 0/3 | Planned | - |
+| 2. Host Safety Control Verification | 3/3 | Complete | 2026-03-31 |
 | 3. Fake-Link Runtime Proof | 0/TBD | Not started | - |
 | 4. Authoritative Platform Composition | 0/TBD | Not started | - |
 | 5. Default Closure Loop | 0/TBD | Not started | - |
