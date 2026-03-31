@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-contracts-and-verification-foundation-01-PLAN.md
-last_updated: "2026-03-31T03:36:10.436Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-31T06:04:44.020Z"
 last_activity: 2026-03-31
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
-  percent: 20
+  completed_plans: 2
+  percent: 40
 ---
 
 # Project State
@@ -26,29 +26,29 @@ See: `.planning/PROJECT.md` (updated 2026-03-30)
 ## Current Position
 
 Phase: 01 (contracts-and-verification-foundation) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-03-31
 
-Progress: [██░░░░░░░░] 20%
+Progress: [████░░░░░░] 40%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1
-- Average duration: 5min
+- Total plans completed: 2
+- Average duration: 4min
 - Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-contracts-and-verification-foundation | 1 | 5min | 5min |
+| 01-contracts-and-verification-foundation | 2 | 7min | 4min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01 (5min)
+- Last 5 plans: 01-02 (2min), 01-01 (5min)
 - Trend: Stable
 
 ## Accumulated Context
@@ -64,6 +64,8 @@ Recent decisions affecting current work:
 - Phase 4: Preserve reusable platform intent while reducing coupling and defining one blessed bring-up path.
 - [Phase 01-contracts-and-verification-foundation]: Keep the first host verification surface limited to message_center and a single checked-in executable.
 - [Phase 01-contracts-and-verification-foundation]: Default host tests to ASan and UBSan, with leak detection disabled only for the traced CTest process in this environment.
+- [Phase 01-contracts-and-verification-foundation]: Store one declared-size payload buffer per topic in a static byte pool, with subscriber generation tracking instead of fixed local buffers.
+- [Phase 01-contracts-and-verification-foundation]: Widen message_center topic payload sizing from uint8_t to size_t so runtime contracts above 255 bytes remain representable.
 
 ### Pending Todos
 
@@ -76,6 +78,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T03:36:10.434Z
-Stopped at: Completed 01-contracts-and-verification-foundation-01-PLAN.md
+Last session: 2026-03-31T06:04:44.018Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
