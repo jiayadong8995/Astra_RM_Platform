@@ -9,7 +9,7 @@
 
 - [ ] **PIPE-01**: Developer can run one documented command path that performs build, host-side tests, SITL smoke validation, and firmware generation for `balance_chassis`
 - [ ] **PIPE-02**: Build/test/generate failures return machine-readable results that identify which stage failed
-- [ ] **PIPE-03**: The project detects when generated STM32 artifacts are stale relative to the checked-in board source inputs before firmware output is trusted
+- [x] **PIPE-03**: The project detects when generated STM32 artifacts are stale relative to the checked-in board source inputs before firmware output is trusted
 
 ### Host Verification
 
@@ -85,7 +85,7 @@
 |-------------|-------|--------|
 | PIPE-01 | Phase 5 | Pending |
 | PIPE-02 | Phase 1 | Pending |
-| PIPE-03 | Phase 1 | Pending |
+| PIPE-03 | Phase 1 | Complete |
 | HOST-01 | Phase 1 | Complete |
 | HOST-02 | Phase 2 | Pending |
 | HOST-03 | Phase 2 | Pending |
