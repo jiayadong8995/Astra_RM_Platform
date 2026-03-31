@@ -25,7 +25,7 @@ static platform_actuator_command_t build_command_fixture(void)
         .valid = true,
     };
     command.motors.left_leg_joint[1] = (platform_motor_command_t){
-        .control_mode = PLATFORM_MOTOR_CONTROL_VELOCITY,
+        .control_mode = PLATFORM_MOTOR_CONTROL_TORQUE,
         .torque_target = 11.0f,
         .velocity_target = 12.0f,
         .position_target = 13.0f,
@@ -35,7 +35,7 @@ static platform_actuator_command_t build_command_fixture(void)
         .valid = false,
     };
     command.motors.right_leg_joint[0] = (platform_motor_command_t){
-        .control_mode = PLATFORM_MOTOR_CONTROL_POSITION,
+        .control_mode = PLATFORM_MOTOR_CONTROL_TORQUE,
         .torque_target = 21.0f,
         .velocity_target = 22.0f,
         .position_target = 23.0f,
@@ -45,7 +45,7 @@ static platform_actuator_command_t build_command_fixture(void)
         .valid = true,
     };
     command.motors.right_leg_joint[1] = (platform_motor_command_t){
-        .control_mode = PLATFORM_MOTOR_CONTROL_IMPEDANCE,
+        .control_mode = PLATFORM_MOTOR_CONTROL_TORQUE,
         .torque_target = 31.0f,
         .velocity_target = 32.0f,
         .position_target = 33.0f,
@@ -65,7 +65,7 @@ static platform_actuator_command_t build_command_fixture(void)
         .valid = true,
     };
     command.motors.right_wheel = (platform_motor_command_t){
-        .control_mode = PLATFORM_MOTOR_CONTROL_DISABLED,
+        .control_mode = PLATFORM_MOTOR_CONTROL_CURRENT,
         .torque_target = 51.0f,
         .velocity_target = 52.0f,
         .position_target = 53.0f,

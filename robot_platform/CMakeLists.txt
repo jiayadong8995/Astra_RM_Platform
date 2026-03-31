@@ -178,6 +178,7 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
     ${PLATFORM_RUNTIME_DIR}/control/state/observe_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
     ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
@@ -355,6 +356,34 @@ if(PLATFORM_HOST_TESTS)
   endif()
   add_test(NAME test_device_profile_safety_seams COMMAND test_device_profile_safety_seams)
   set_tests_properties(test_device_profile_safety_seams PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
+
+  add_executable(test_safety_mapping
+    ${PLATFORM_HOST_TEST_DIR}/test_safety_mapping.c
+  )
+  target_link_libraries(test_safety_mapping PRIVATE balance_safety_host_runtime)
+  target_compile_features(test_safety_mapping PRIVATE c_std_11)
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_safety_mapping PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_safety_mapping PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_safety_mapping COMMAND test_safety_mapping)
+  set_tests_properties(test_safety_mapping PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
+
+  add_executable(test_safety_sensor_faults
+    ${PLATFORM_HOST_TEST_DIR}/test_safety_sensor_faults.c
+  )
+  target_link_libraries(test_safety_sensor_faults PRIVATE balance_safety_host_runtime)
+  target_compile_features(test_safety_sensor_faults PRIVATE c_std_11)
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_safety_sensor_faults PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_safety_sensor_faults PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_safety_sensor_faults COMMAND test_safety_sensor_faults)
+  set_tests_properties(test_safety_sensor_faults PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
   )
 endif()

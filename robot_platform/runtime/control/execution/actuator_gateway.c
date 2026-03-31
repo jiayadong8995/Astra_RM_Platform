@@ -1,7 +1,10 @@
 #include "actuator_gateway.h"
 
+#define PLATFORM_DEVICE_COMMAND_FAULT_INVALID_MAPPING 0x1U
+
 static void platform_map_contract_command(const platform_actuator_command_t *actuator_msg,
                                           platform_device_command_t *device_command);
+static bool platform_profile_command_mapping_valid(const platform_actuator_command_t *actuator_msg);
 static bool platform_command_dispatch_enabled(const platform_actuator_command_t *actuator_msg);
 
 void platform_actuator_gateway_init(void)
@@ -27,7 +30,13 @@ void platform_actuator_gateway_dispatch_command(const platform_actuator_command_
 static void platform_map_contract_command(const platform_actuator_command_t *actuator_msg,
                                           platform_device_command_t *device_command)
 {
-    const bool dispatch_enabled = platform_command_dispatch_enabled(actuator_msg);
+    const bool mapping_valid = platform_profile_command_mapping_valid(actuator_msg);
+    const bool dispatch_enabled = platform_command_dispatch_enabled(actuator_msg) && mapping_valid;
+
+    if (!mapping_valid)
+    {
+        device_command->backend_flags |= PLATFORM_DEVICE_COMMAND_FAULT_INVALID_MAPPING;
+    }
 
     for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i)
     {
@@ -94,6 +103,36 @@ static void platform_map_contract_command(const platform_actuator_command_t *act
     device_command->wheels[1].kp = actuator_msg->motors.right_wheel.kp;
     device_command->wheels[1].kd = actuator_msg->motors.right_wheel.kd;
     device_command->wheels[1].valid = actuator_msg->motors.right_wheel.valid && dispatch_enabled;
+}
+
+static bool platform_profile_command_mapping_valid(const platform_actuator_command_t *actuator_msg)
+{
+    if (actuator_msg->motors.left_leg_joint[0].control_mode != PLATFORM_MOTOR_CONTROL_TORQUE)
+    {
+        return false;
+    }
+    if (actuator_msg->motors.left_leg_joint[1].control_mode != PLATFORM_MOTOR_CONTROL_TORQUE)
+    {
+        return false;
+    }
+    if (actuator_msg->motors.right_leg_joint[0].control_mode != PLATFORM_MOTOR_CONTROL_TORQUE)
+    {
+        return false;
+    }
+    if (actuator_msg->motors.right_leg_joint[1].control_mode != PLATFORM_MOTOR_CONTROL_TORQUE)
+    {
+        return false;
+    }
+    if (actuator_msg->motors.left_wheel.control_mode != PLATFORM_MOTOR_CONTROL_CURRENT)
+    {
+        return false;
+    }
+    if (actuator_msg->motors.right_wheel.control_mode != PLATFORM_MOTOR_CONTROL_CURRENT)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 static bool platform_command_dispatch_enabled(const platform_actuator_command_t *actuator_msg)

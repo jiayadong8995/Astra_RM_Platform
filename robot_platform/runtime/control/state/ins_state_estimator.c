@@ -29,6 +29,12 @@ void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *s
 {
     float gravity_b[3];
 
+    if (dt <= 0.0f)
+    {
+        state->ins.health.ready = 0U;
+        return;
+    }
+
     state->mahony.dt = dt;
 
     state->ins.sensor.accel[PLATFORM_AXIS_X] = accel[PLATFORM_AXIS_X];
@@ -97,6 +103,7 @@ void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *s
     else
     {
         state->ins_time++;
+        state->ins.health.ready = 0U;
     }
 }
 
