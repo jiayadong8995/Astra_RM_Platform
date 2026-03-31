@@ -21,6 +21,19 @@ static uint8_t app_rc_switch_is_down(uint8_t sw)
     return (sw == APP_RC_SW_DOWN) ? 1U : 0U;
 }
 
+static uint8_t platform_remote_intent_start_allowed(const platform_remote_intent_state_t *state)
+{
+    return (state->start_flag != 0U) && (state->state_valid != 0U);
+}
+
+static uint8_t platform_remote_intent_closed_loop_allowed(const platform_remote_intent_state_t *state)
+{
+    return platform_remote_intent_start_allowed(state)
+        && (state->recover_flag == 0U)
+        && (state->jump_flag == 0U)
+        && (fabsf(state->body_pitch) < PITCH_RECOVER_THRESHOLD);
+}
+
 void platform_remote_intent_state_init(platform_remote_intent_state_t *state)
 {
     state->start_flag = 0;
@@ -29,6 +42,7 @@ void platform_remote_intent_state_init(platform_remote_intent_state_t *state)
     state->v_set = 0.0f;
     state->turn_set = 0.0f;
     state->leg_set = LEG_LENGTH_DEFAULT;
+    state->state_valid = 0U;
 }
 
 void platform_remote_intent_state_apply_inputs(platform_remote_intent_state_t *state,
@@ -36,6 +50,7 @@ void platform_remote_intent_state_apply_inputs(platform_remote_intent_state_t *s
                                                const platform_robot_state_t *robot_state)
 {
     state->body_pitch = robot_state->body.pitch;
+    state->state_valid = robot_state->health.state_valid ? 1U : 0U;
     state->x_filter = robot_state->chassis.x;
     state->total_yaw = robot_state->chassis.yaw_total;
     if (state->turn_set == 0.0f)
@@ -103,6 +118,8 @@ void platform_remote_intent_state_apply_inputs(platform_remote_intent_state_t *s
 
 platform_robot_intent_t platform_remote_intent_build(const platform_remote_intent_state_t *state)
 {
+    const bool start_allowed = (platform_remote_intent_start_allowed(state) != 0U);
+    const bool closed_loop_allowed = (platform_remote_intent_closed_loop_allowed(state) != 0U);
     platform_robot_intent_t intent = {
         .mode = PLATFORM_ROBOT_MODE_IDLE,
         .motion_target = {
@@ -119,19 +136,19 @@ platform_robot_intent_t platform_remote_intent_build(const platform_remote_inten
             .stance_height = state->leg_set,
         },
         .behavior_request = {
-            .jump_request = (state->jump_flag != 0U),
+            .jump_request = (state->jump_flag != 0U) && start_allowed,
             .recover_request = (state->recover_flag != 0U),
-            .stand_request = (state->start_flag != 0U),
-            .emergency_stop = (state->start_flag == 0U),
+            .stand_request = start_allowed,
+            .emergency_stop = !closed_loop_allowed,
         },
         .enable = {
-            .start = (state->start_flag != 0U),
-            .control_enable = (state->start_flag != 0U),
-            .actuator_enable = (state->start_flag != 0U),
+            .start = start_allowed,
+            .control_enable = closed_loop_allowed,
+            .actuator_enable = closed_loop_allowed,
         },
     };
 
-    if (state->start_flag != 0U)
+    if (start_allowed)
     {
         intent.mode = (state->recover_flag != 0U) ? PLATFORM_ROBOT_MODE_RECOVER : PLATFORM_ROBOT_MODE_ACTIVE;
         if (state->jump_flag != 0U)

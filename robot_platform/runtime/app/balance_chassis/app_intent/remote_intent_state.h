@@ -12,6 +12,7 @@ typedef struct
     float total_yaw;
     float leg_set;
     float body_pitch;
+    uint8_t state_valid;
     uint8_t start_flag;
     uint8_t jump_flag;
     uint8_t recover_flag;

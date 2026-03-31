@@ -54,6 +54,8 @@ void platform_balance_controller_apply_inputs(platform_balance_controller_t *sta
                                      : inputs->intent.motion_target.yaw_rate;
     state->chassis.target.leg_length_target = inputs->intent.posture_target.leg_length;
     state->chassis.mode.start_enabled = inputs->intent.enable.start ? 1U : 0U;
+    state->chassis.mode.control_enabled = inputs->intent.enable.control_enable ? 1U : 0U;
+    state->chassis.mode.actuator_enabled = inputs->intent.enable.actuator_enable ? 1U : 0U;
     state->chassis.mode.jump_requested = inputs->intent.behavior_request.jump_request ? 1U : 0U;
     state->chassis.mode.recover_requested = inputs->intent.behavior_request.recover_request ? 1U : 0U;
     state->chassis.observe.velocity = inputs->observe.v_filter;
@@ -226,6 +228,8 @@ static bool platform_balance_controller_outputs_enabled(const platform_balance_c
                                                         const platform_device_feedback_t *feedback)
 {
     return (state->chassis.mode.start_enabled != 0U)
+        && (state->chassis.mode.control_enabled != 0U)
+        && (state->chassis.mode.actuator_enabled != 0U)
         && (state->ins.health.ready != 0U)
         && (feedback != NULL)
         && feedback->actuator_feedback.valid;

@@ -386,6 +386,34 @@ if(PLATFORM_HOST_TESTS)
   set_tests_properties(test_safety_sensor_faults PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
   )
+
+  add_executable(test_safety_arming
+    ${PLATFORM_HOST_TEST_DIR}/test_safety_arming.c
+  )
+  target_link_libraries(test_safety_arming PRIVATE balance_safety_host_runtime)
+  target_compile_features(test_safety_arming PRIVATE c_std_11)
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_safety_arming PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_safety_arming PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_safety_arming COMMAND test_safety_arming)
+  set_tests_properties(test_safety_arming PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
+
+  add_executable(test_safety_saturation
+    ${PLATFORM_HOST_TEST_DIR}/test_safety_saturation.c
+  )
+  target_link_libraries(test_safety_saturation PRIVATE balance_safety_host_runtime)
+  target_compile_features(test_safety_saturation PRIVATE c_std_11)
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_safety_saturation PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_safety_saturation PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_safety_saturation COMMAND test_safety_saturation)
+  set_tests_properties(test_safety_saturation PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
 endif()
 
 if(PLATFORM_TARGET_HW)

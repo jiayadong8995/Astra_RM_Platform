@@ -50,6 +50,8 @@ typedef struct
 typedef struct
 {
     uint8_t start_enabled;
+    uint8_t control_enabled;
+    uint8_t actuator_enabled;
     uint8_t jump_requested;
     float jump_leg_length;
     uint32_t jump_elapsed_ticks;
