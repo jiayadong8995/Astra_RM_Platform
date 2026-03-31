@@ -115,6 +115,50 @@ if(PLATFORM_HOST_TESTS)
   set_tests_properties(test_message_center PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
   )
+
+  add_executable(test_actuator_gateway
+    ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
+    ${PLATFORM_HOST_TEST_DIR}/test_actuator_gateway.c
+    ${PLATFORM_HOST_TEST_DIR}/test_support/device_layer_stubs.c
+  )
+
+  target_include_directories(test_actuator_gateway
+    PRIVATE
+      ${PLATFORM_RUNTIME_DIR}/control/execution
+      ${PLATFORM_RUNTIME_DIR}/device
+      ${PLATFORM_CONTROL_CONTRACT_DIR}
+      ${PLATFORM_HOST_TEST_DIR}
+      ${PLATFORM_HOST_TEST_DIR}/test_support
+  )
+
+  target_compile_features(test_actuator_gateway PRIVATE c_std_11)
+
+  target_compile_options(test_actuator_gateway
+    PRIVATE
+      -Wall
+      -Wextra
+      -Wpedantic
+      -Wno-unused-parameter
+      -O0
+      -g3
+  )
+
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_actuator_gateway
+      PRIVATE
+        -fsanitize=address,undefined
+        -fno-omit-frame-pointer
+    )
+    target_link_options(test_actuator_gateway
+      PRIVATE
+        -fsanitize=address,undefined
+    )
+  endif()
+
+  add_test(NAME test_actuator_gateway COMMAND test_actuator_gateway)
+  set_tests_properties(test_actuator_gateway PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
 endif()
 
 if(PLATFORM_TARGET_HW)
