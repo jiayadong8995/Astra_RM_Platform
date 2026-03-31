@@ -70,6 +70,7 @@ Recent decisions affecting current work:
 - [Phase 02-host-safety-control-verification]: Inject fake sensor and remote cases through device/profile seams, while using message/topic or equivalent runtime-ingress seams for link-loss and stale-command faults.
 - [Phase 02-host-safety-control-verification]: Use `actuator_command` plus key enable bits as the first authoritative observation surface for safety verdicts.
 - [Phase 02-host-safety-control-verification]: Prefer hard safety oracles and a narrow set of explicit wheel-leg danger signatures over broad qualitative control evaluation.
+- [Phase 02-host-safety-control-verification]: Do not preserve `device_layer` or mixed robot/control parameter wrappers by default if they obstruct a clear, testable safety-verification path.
 - [Phase 01-contracts-and-verification-foundation]: Keep the first host verification surface limited to message_center and a single checked-in executable.
 - [Phase 01-contracts-and-verification-foundation]: Default host tests to ASan and UBSan, with leak detection disabled only for the traced CTest process in this environment.
 - [Phase 01-contracts-and-verification-foundation]: Store one declared-size payload buffer per topic in a static byte pool, with subscriber generation tracking instead of fixed local buffers.

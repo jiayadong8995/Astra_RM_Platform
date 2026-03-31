@@ -5,7 +5,7 @@
 
 **Date:** 2026-03-31
 **Phase:** 2-Host Safety Control Verification
-**Areas discussed:** phase definition, authoritative path, injection seams, observation seams, fail oracles, wheel-leg coupling scope
+**Areas discussed:** phase definition, authoritative path, injection seams, observation seams, fail oracles, wheel-leg coupling scope, overdesign pressure on device/state layers
 
 ---
 
@@ -97,6 +97,18 @@
 | `verify phase1` 当前能通过并观察到 `actuator_command` | 说明最小活路径已存在，可作为 Phase 2 起点 |
 | 单独 `sim` 命令当前仍可能出现 `bridge_startup_error` | 说明 standalone sim 还不应被视为 Phase 2 的唯一权威入口 |
 | 主链当前仍通过 `message_center` 在任务间传递 `robot_intent`、`device_feedback`、`actuator_command` | Phase 2 必须验证当前现实主链，而不是假设文档目标架构已达成 |
+
+---
+
+## 过度包装与可重构边界
+
+| Option | Description | Selected |
+|--------|-------------|----------|
+| 把当前这些层视为可重构对象 | 尤其是 `device_layer` 和参数组织，只要能让安全验证路径更清晰，就允许重构 | ✓ |
+| 把这些层当成既有架构边界先保住 | 先围绕现状补测试，不主动碰这些抽象 | |
+
+**User's concern accepted:** 当前 `device_layer` 更像过度包装，不应被视为不能动的边界；`robot_def.h -> balance_params.h` 的关系缺少合理性；`chassis_observer` 尚未彻底解耦；`ins_state_estimator` 应重新审视职责边界。  
+**Notes:** 讨论结论不是要求 Phase 2 先做大范围架构清理，而是明确允许 planner 在安全验证需要时重构这些边界，而不是继续在其上叠加包装。
 
 ## the agent's Discretion
 
