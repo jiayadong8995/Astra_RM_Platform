@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-03-31T06:04:44.020Z"
+stopped_at: Completed 01-04-PLAN.md (blocked checkpoint recorded)
+last_updated: "2026-03-31T07:00:00.000Z"
 last_activity: 2026-03-31
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 5
-  completed_plans: 2
-  percent: 40
+  completed_plans: 3
+  percent: 60
 ---
 
 # Project State
@@ -26,29 +26,29 @@ See: `.planning/PROJECT.md` (updated 2026-03-30)
 ## Current Position
 
 Phase: 01 (contracts-and-verification-foundation) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-03-31
 
-Progress: [████░░░░░░] 40%
+Progress: [██████░░░░] 60%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 2
-- Average duration: 4min
-- Total execution time: 0.1 hours
+- Total plans completed: 3
+- Average duration: 5min
+- Total execution time: 0.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-contracts-and-verification-foundation | 2 | 7min | 4min |
+| 01-contracts-and-verification-foundation | 3 | 16min | 5min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-02 (2min), 01-01 (5min)
+- Last 5 plans: 01-04 (9min), 01-02 (2min), 01-01 (5min)
 - Trend: Stable
 
 ## Accumulated Context
@@ -66,6 +66,8 @@ Recent decisions affecting current work:
 - [Phase 01-contracts-and-verification-foundation]: Default host tests to ASan and UBSan, with leak detection disabled only for the traced CTest process in this environment.
 - [Phase 01-contracts-and-verification-foundation]: Store one declared-size payload buffer per topic in a static byte pool, with subscriber generation tracking instead of fixed local buffers.
 - [Phase 01-contracts-and-verification-foundation]: Widen message_center topic payload sizing from uint8_t to size_t so runtime contracts above 255 bytes remain representable.
+- [Phase 01-contracts-and-verification-foundation]: Treat actuator_command as the single required Phase 1 runtime output proof target instead of declared-only chassis_state/leg outputs.
+- [Phase 01-contracts-and-verification-foundation]: `verify phase1` is now the authoritative JSON-first closure command; UDP-restricted environments must record a blocked smoke stage rather than pretending the live path passed.
 
 ### Pending Todos
 
@@ -73,11 +75,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Current trust gap is concentrated in host-side TDD, fake-link runtime fidelity, and contract-safe transport behavior.
+- Current trust gap is concentrated in the non-sandbox rerun needed to turn the recorded blocked smoke artifact into a passed minimum live proof.
 - v2 hardware bring-up remains intentionally gated on v1 validation closure; simulated evidence is not treated as physical proof.
 
 ## Session Continuity
 
-Last session: 2026-03-31T06:04:44.018Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-03-31T07:00:00.000Z
+Stopped at: Completed 01-04-PLAN.md (blocked checkpoint recorded)
 Resume file: None
