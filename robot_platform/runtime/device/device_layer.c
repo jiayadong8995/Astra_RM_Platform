@@ -11,10 +11,12 @@ static void platform_device_layer_bind_profile(platform_device_layer_t *layer,
 static void platform_device_layer_reset_sequences(platform_device_layer_t *layer);
 static platform_device_backend_profile_t platform_default_backend_profile(void);
 static const platform_device_profile_t *platform_select_profile(platform_device_backend_profile_t profile);
+static bool platform_device_has_test_hooks(void);
 
 static platform_device_layer_t g_platform_default_layer;
 static bool g_platform_default_layer_ready;
 static platform_device_backend_profile_t g_platform_default_profile = PLATFORM_DEVICE_BACKEND_PROFILE_AUTO;
+static platform_device_test_hooks_t g_platform_test_hooks;
 
 static void platform_device_layer_reset_sequences(platform_device_layer_t *layer)
 {
@@ -187,6 +189,11 @@ platform_device_result_t platform_device_layer_read_feedback(platform_device_lay
 
 platform_device_result_t platform_device_read_default_remote(platform_rc_input_t *input)
 {
+  if (g_platform_test_hooks.read_remote != 0)
+  {
+    return g_platform_test_hooks.read_remote(input, g_platform_test_hooks.context);
+  }
+
   platform_device_result_t result = platform_default_layer_ensure_ready();
 
   if (result != PLATFORM_DEVICE_RESULT_OK)
@@ -206,11 +213,26 @@ platform_device_result_t platform_device_configure_default_profile(platform_devi
 
 platform_device_result_t platform_device_init_default_profile(void)
 {
+  if (g_platform_test_hooks.init_default_profile != 0)
+  {
+    return g_platform_test_hooks.init_default_profile(g_platform_test_hooks.context);
+  }
+
+  if (platform_device_has_test_hooks())
+  {
+    return PLATFORM_DEVICE_RESULT_OK;
+  }
+
   return platform_default_layer_ensure_ready();
 }
 
 platform_device_result_t platform_device_read_default_imu(platform_imu_sample_t *sample)
 {
+  if (g_platform_test_hooks.read_imu != 0)
+  {
+    return g_platform_test_hooks.read_imu(sample, g_platform_test_hooks.context);
+  }
+
   platform_device_result_t result = platform_default_layer_ensure_ready();
 
   if (result != PLATFORM_DEVICE_RESULT_OK)
@@ -223,6 +245,11 @@ platform_device_result_t platform_device_read_default_imu(platform_imu_sample_t 
 
 platform_device_result_t platform_device_read_default_feedback(platform_device_feedback_t *feedback)
 {
+  if (g_platform_test_hooks.read_feedback != 0)
+  {
+    return g_platform_test_hooks.read_feedback(feedback, g_platform_test_hooks.context);
+  }
+
   platform_device_result_t result = platform_default_layer_ensure_ready();
 
   if (result != PLATFORM_DEVICE_RESULT_OK)
@@ -235,6 +262,11 @@ platform_device_result_t platform_device_read_default_feedback(platform_device_f
 
 platform_device_result_t platform_device_write_default_command(const platform_device_command_t *command)
 {
+  if (g_platform_test_hooks.write_command != 0)
+  {
+    return g_platform_test_hooks.write_command(command, g_platform_test_hooks.context);
+  }
+
   platform_device_result_t result = platform_default_layer_ensure_ready();
 
   if (result != PLATFORM_DEVICE_RESULT_OK)
@@ -243,6 +275,24 @@ platform_device_result_t platform_device_write_default_command(const platform_de
   }
 
   return platform_device_layer_write_command(&g_platform_default_layer, command);
+}
+
+void platform_device_set_test_hooks(const platform_device_test_hooks_t *hooks)
+{
+  if (hooks == 0)
+  {
+    platform_device_reset_test_hooks();
+    return;
+  }
+
+  g_platform_test_hooks = *hooks;
+  g_platform_default_layer_ready = false;
+}
+
+void platform_device_reset_test_hooks(void)
+{
+  g_platform_test_hooks = (platform_device_test_hooks_t){0};
+  g_platform_default_layer_ready = false;
 }
 
 static void platform_map_device_command_to_motor_set(const platform_device_command_t *command,
@@ -322,6 +372,14 @@ static platform_device_result_t platform_default_layer_ensure_ready(void)
   }
 
   return PLATFORM_DEVICE_RESULT_OK;
+}
+
+static bool platform_device_has_test_hooks(void)
+{
+  return g_platform_test_hooks.read_remote != 0
+         || g_platform_test_hooks.read_imu != 0
+         || g_platform_test_hooks.read_feedback != 0
+         || g_platform_test_hooks.write_command != 0;
 }
 
 static platform_device_backend_profile_t platform_default_backend_profile(void)

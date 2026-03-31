@@ -57,6 +57,7 @@ set(BALANCE_CHASSIS_DEVICE_SOURCES)
 
 if(PLATFORM_HOST_TESTS)
   enable_testing()
+  set(PLATFORM_SITL_BSP_DIR ${PLATFORM_RUNTIME_DIR}/bsp/sitl)
 
   set(PLATFORM_MESSAGE_CENTER_HOST_TEST_SOURCE
     ${PLATFORM_HOST_TEST_DIR}/test_message_center.c
@@ -157,6 +158,203 @@ if(PLATFORM_HOST_TESTS)
 
   add_test(NAME test_actuator_gateway COMMAND test_actuator_gateway)
   set_tests_properties(test_actuator_gateway PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
+
+  set(BALANCE_SAFETY_HOST_BSP_SOURCES
+    ${PLATFORM_SITL_BSP_DIR}/hal_stub.c
+    ${PLATFORM_SITL_BSP_DIR}/bsp_dwt_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/bsp_PWM_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/can_bsp_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/BMI088driver_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
+    ${PLATFORM_DEVICE_REMOTE_DIR}/remote_control.c
+  )
+
+  set(BALANCE_SAFETY_HOST_RUNTIME_SOURCES
+    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/chassis_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/remote_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/observe_topics.c
+    ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
+    ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
+    ${PLATFORM_RUNTIME_DIR}/control/constraints/actuator_constraints.c
+    ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
+    ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
+    ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
+    ${PLATFORM_RUNTIME_DIR}/device/device_profile_sitl.c
+    ${PLATFORM_RUNTIME_DIR}/device/device_layer.c
+    ${PLATFORM_RUNTIME_DIR}/device/imu/bmi088_device_sitl.c
+    ${PLATFORM_RUNTIME_DIR}/device/remote/dbus_remote_device_sitl.c
+    ${PLATFORM_RUNTIME_DIR}/device/actuator/motor/motor_actuator_device_sitl.c
+    ${PLATFORM_MODULE_CONTROL_LIB_DIR}/control_math.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC/VMC_calc.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/kalman/kalman_filter.c
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony/mahony_filter.c
+    ${PLATFORM_RUNTIME_DIR}/module/controller/controller.c
+    ${PLATFORM_RUNTIME_DIR}/module/lib/user_lib.c
+    ${PLATFORM_RUNTIME_DIR}/module/message_center/message_center.c
+    ${PLATFORM_HOST_TEST_DIR}/test_support/host_os_stubs.c
+    ${PLATFORM_HOST_TEST_DIR}/test_support/balance_safety_harness.c
+    ${BALANCE_SAFETY_HOST_BSP_SOURCES}
+  )
+
+  add_library(cmsis_dsp_host STATIC
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/BasicMathFunctions/BasicMathFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/CommonTables/CommonTables.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/ComplexMathFunctions/ComplexMathFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/ControllerFunctions/ControllerFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/FastMathFunctions/FastMathFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/FilteringFunctions/FilteringFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/MatrixFunctions/MatrixFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/StatisticsFunctions/StatisticsFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/SupportFunctions/SupportFunctions.c
+    ${CHASSIS_CMSIS_DIR}/DSP/Source/TransformFunctions/TransformFunctions.c
+  )
+
+  target_include_directories(cmsis_dsp_host
+    PRIVATE
+      ${PLATFORM_HOST_TEST_DIR}/test_support/os
+      ${PLATFORM_SITL_BSP_DIR}
+      ${CHASSIS_HAL_DIR}/Inc
+      ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
+      ${CHASSIS_CMSIS_DIR}/Include
+      ${CHASSIS_CMSIS_DIR}/DSP/Include
+  )
+
+  target_compile_definitions(cmsis_dsp_host
+    PRIVATE
+      USE_HAL_DRIVER
+      STM32H723xx
+      SITL_BUILD
+      ARM_MATH_CM7
+  )
+
+  target_compile_options(cmsis_dsp_host
+    PRIVATE
+      -Wall
+      -Wextra
+      -Wpedantic
+      -Wno-unused-parameter
+      -O0
+      -g3
+  )
+
+  add_library(balance_safety_host_runtime STATIC
+    ${BALANCE_SAFETY_HOST_RUNTIME_SOURCES}
+  )
+
+  target_include_directories(balance_safety_host_runtime
+    PUBLIC
+      ${PLATFORM_HOST_TEST_DIR}/test_support/os
+      ${PLATFORM_SITL_BSP_DIR}
+      ${PLATFORM_BOARD_BSP_DIR}
+      ${PLATFORM_DEVICE_DIR}
+      ${PLATFORM_DEVICE_DIR}/imu
+      ${PLATFORM_DEVICE_DIR}/remote
+      ${PLATFORM_DEVICE_DIR}/actuator
+      ${PLATFORM_DEVICE_DIR}/actuator/motor
+      ${PLATFORM_DEVICE_REMOTE_DIR}
+      ${PLATFORM_DEVICE_MOTOR_DIR}
+      ${PLATFORM_DEVICE_IMU_DIR}
+      ${PLATFORM_LEGACY_APP_DIR}
+      ${PLATFORM_APP_IO_DIR}
+      ${PLATFORM_CONTROL_CONTRACT_DIR}
+      ${CHASSIS_HAL_DIR}/Inc
+      ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
+      ${CHASSIS_CMSIS_DIR}/Include
+      ${CHASSIS_CMSIS_DIR}/DSP/Include
+      ${GENERATED_RAW_DIR}/Inc
+      ${CHASSIS_FREERTOS_DIR}/include
+      ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS
+      ${PLATFORM_FREERTOS_PORT_DIR}
+      ${PLATFORM_RUNTIME_DIR}/control/controllers
+      ${PLATFORM_RUNTIME_DIR}/control/state
+      ${PLATFORM_RUNTIME_DIR}/control/execution
+      ${PLATFORM_RUNTIME_DIR}/control/constraints
+      ${PLATFORM_RUNTIME_DIR}/control/internal
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/kalman
+      ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony
+      ${PLATFORM_RUNTIME_DIR}/module/controller
+      ${PLATFORM_RUNTIME_DIR}/module/lib
+      ${PLATFORM_MODULE_CONTROL_LIB_DIR}
+      ${PLATFORM_RUNTIME_DIR}/module/message_center
+      ${PLATFORM_HOST_TEST_DIR}/test_support
+      ${PLATFORM_HOST_TEST_DIR}
+  )
+
+  target_compile_definitions(balance_safety_host_runtime
+    PUBLIC
+      USE_HAL_DRIVER
+      STM32H723xx
+      SITL_BUILD
+      ARM_MATH_CM7
+  )
+
+  target_compile_features(balance_safety_host_runtime PUBLIC c_std_11)
+
+  target_compile_options(balance_safety_host_runtime
+    PRIVATE
+      -Wall
+      -Wextra
+      -Wpedantic
+      -Wno-unused-parameter
+      -O0
+      -g3
+  )
+
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(balance_safety_host_runtime
+      PRIVATE
+        -fsanitize=address,undefined
+        -fno-omit-frame-pointer
+    )
+    target_link_options(balance_safety_host_runtime
+      PRIVATE
+        -fsanitize=address,undefined
+    )
+  endif()
+
+  target_link_libraries(balance_safety_host_runtime
+    PUBLIC
+      cmsis_dsp_host
+      pthread
+      m
+  )
+
+  add_executable(test_balance_safety_path
+    ${PLATFORM_HOST_TEST_DIR}/test_balance_safety_path.c
+  )
+  target_link_libraries(test_balance_safety_path PRIVATE balance_safety_host_runtime)
+  target_compile_features(test_balance_safety_path PRIVATE c_std_11)
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_balance_safety_path PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_balance_safety_path PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_balance_safety_path COMMAND test_balance_safety_path)
+  set_tests_properties(test_balance_safety_path PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
+
+  add_executable(test_device_profile_safety_seams
+    ${PLATFORM_HOST_TEST_DIR}/test_device_profile_safety_seams.c
+  )
+  target_link_libraries(test_device_profile_safety_seams PRIVATE balance_safety_host_runtime)
+  target_compile_features(test_device_profile_safety_seams PRIVATE c_std_11)
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_device_profile_safety_seams PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_device_profile_safety_seams PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_device_profile_safety_seams COMMAND test_device_profile_safety_seams)
+  set_tests_properties(test_device_profile_safety_seams PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
   )
 endif()

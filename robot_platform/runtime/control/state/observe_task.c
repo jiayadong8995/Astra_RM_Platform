@@ -7,26 +7,53 @@
 #include "ins_state_message.h"
 #include "observe_topics.h"
 
+void observe_task_init(platform_observe_task_runtime_t *runtime)
+{
+    if (runtime == NULL)
+    {
+        return;
+    }
+
+    platform_chassis_observer_init(&runtime->runtime);
+    platform_observe_bus_init(&runtime->runtime_bus);
+}
+
+void observe_task_prepare(platform_observe_task_runtime_t *runtime)
+{
+    if (runtime == NULL)
+    {
+        return;
+    }
+
+    platform_observe_bus_wait_ready(&runtime->runtime_bus, &runtime->ins_msg);
+}
+
+void observe_task_step(platform_observe_task_runtime_t *runtime)
+{
+    if (runtime == NULL)
+    {
+        return;
+    }
+
+    platform_observe_bus_pull_inputs(&runtime->runtime_bus, &runtime->intent, &runtime->feedback_msg);
+    platform_chassis_observer_apply_inputs(&runtime->runtime,
+                                           &runtime->intent,
+                                           &runtime->feedback_msg,
+                                           (float)OBSERVE_TASK_PERIOD_MS / 1000.0f);
+    runtime->observe_msg = platform_chassis_observer_build_output(&runtime->runtime);
+    platform_observe_bus_publish(&runtime->runtime_bus, &runtime->observe_msg);
+}
+
 void Observe_task(void)
 {
-    platform_chassis_observer_t runtime = {0};
-    platform_observe_bus_t runtime_bus = {0};
-    platform_ins_state_message_t ins_msg = {0};
-    platform_robot_intent_t intent = {0};
-    platform_device_feedback_t feedback_msg = {0};
-    platform_chassis_observe_message_t observe_msg = {0};
+    platform_observe_task_runtime_t runtime = {0};
 
-    platform_chassis_observer_init(&runtime);
-    platform_observe_bus_init(&runtime_bus);
-    platform_observe_bus_wait_ready(&runtime_bus, &ins_msg);
+    observe_task_init(&runtime);
+    observe_task_prepare(&runtime);
 
     while(1)
     {
-        platform_observe_bus_pull_inputs(&runtime_bus, &intent, &feedback_msg);
-        platform_chassis_observer_apply_inputs(&runtime, &intent, &feedback_msg, (float)OBSERVE_TASK_PERIOD_MS / 1000.0f);
-        observe_msg = platform_chassis_observer_build_output(&runtime);
-        platform_observe_bus_publish(&runtime_bus, &observe_msg);
-
+        observe_task_step(&runtime);
         osDelay(OBSERVE_TASK_PERIOD_MS);
     }
 }

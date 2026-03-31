@@ -34,5 +34,9 @@ void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus,
 void chassis_runtime_bus_publish_outputs(Chassis_Runtime_Bus_t *bus,
                                          const platform_robot_state_t *robot_state,
                                          const platform_actuator_command_t *actuator_command);
+void chassis_runtime_bus_reset_observation(void);
+uint32_t chassis_runtime_bus_observation_count(void);
+bool chassis_runtime_bus_get_first_observation(platform_actuator_command_t *actuator_command);
+bool chassis_runtime_bus_get_latest_observation(platform_actuator_command_t *actuator_command);
 
 #endif

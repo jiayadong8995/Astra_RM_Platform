@@ -18,6 +18,23 @@ typedef struct platform_device_layer {
   uint32_t command_sequence;
 } platform_device_layer_t;
 
+typedef platform_device_result_t (*platform_device_test_init_hook_t)(void *context);
+typedef platform_device_result_t (*platform_device_test_remote_hook_t)(platform_rc_input_t *input, void *context);
+typedef platform_device_result_t (*platform_device_test_imu_hook_t)(platform_imu_sample_t *sample, void *context);
+typedef platform_device_result_t (*platform_device_test_feedback_hook_t)(platform_device_feedback_t *feedback, void *context);
+typedef platform_device_result_t (*platform_device_test_command_hook_t)(const platform_device_command_t *command,
+                                                                        void *context);
+
+typedef struct
+{
+  platform_device_test_init_hook_t init_default_profile;
+  platform_device_test_remote_hook_t read_remote;
+  platform_device_test_imu_hook_t read_imu;
+  platform_device_test_feedback_hook_t read_feedback;
+  platform_device_test_command_hook_t write_command;
+  void *context;
+} platform_device_test_hooks_t;
+
 platform_device_result_t platform_device_layer_init(platform_device_layer_t *layer);
 platform_device_result_t platform_device_layer_init_profile(platform_device_layer_t *layer,
                                                             platform_device_backend_profile_t profile);
@@ -43,5 +60,7 @@ platform_device_result_t platform_device_read_default_remote(platform_rc_input_t
 platform_device_result_t platform_device_read_default_imu(platform_imu_sample_t *sample);
 platform_device_result_t platform_device_read_default_feedback(platform_device_feedback_t *feedback);
 platform_device_result_t platform_device_write_default_command(const platform_device_command_t *command);
+void platform_device_set_test_hooks(const platform_device_test_hooks_t *hooks);
+void platform_device_reset_test_hooks(void);
 
 #endif
