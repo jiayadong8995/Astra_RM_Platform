@@ -17,28 +17,32 @@
 #ifndef MESSAGE_CENTER_H
 #define MESSAGE_CENTER_H
 
-#include "stdint.h"
+#include <stddef.h>
+#include <stdint.h>
 
 /* ============ Capacity config ============ */
 #define MSG_MAX_TOPIC_NAME  24
 #define MSG_MAX_TOPICS      8
 #define MSG_MAX_SUBSCRIBERS 16
-#define MSG_MAX_DATA_LEN    64  // must >= sizeof(largest topic struct)
+#define MSG_MAX_TOTAL_PAYLOAD_BYTES 2048U
 
 /* ============ Subscriber ============ */
+struct pub;
+
 typedef struct sub {
-    uint8_t  data_buf[MSG_MAX_DATA_LEN]; // latest message buffer
-    uint8_t  data_len;
-    uint8_t  has_new;                    // unread flag
-    uint8_t  used;                       // slot allocated
-    struct sub *next_subs;               // next subscriber on same topic
+    uint8_t used;
+    uint32_t last_read_generation;
+    struct pub *owner_pub;
+    struct sub *next_subs;
 } Subscriber_t;
 
 /* ============ Publisher (i.e. topic node) ============ */
-typedef struct {
-    char     topic_name[MSG_MAX_TOPIC_NAME + 1];
-    uint8_t  data_len;
-    uint8_t  used;
+typedef struct pub {
+    char topic_name[MSG_MAX_TOPIC_NAME + 1];
+    size_t data_len;
+    size_t payload_offset;
+    uint32_t generation;
+    uint8_t used;
     Subscriber_t *first_subs;
 } Publisher_t;
 
@@ -48,7 +52,7 @@ typedef struct {
  * @param  data_len data size in bytes (use sizeof)
  * @return publisher pointer, NULL if topic pool exhausted
  */
-Publisher_t *PubRegister(char *name, uint8_t data_len);
+Publisher_t *PubRegister(char *name, size_t data_len);
 
 /**
  * @brief  Subscribe to a topic
@@ -56,7 +60,7 @@ Publisher_t *PubRegister(char *name, uint8_t data_len);
  * @param  data_len data size (must match publisher)
  * @return subscriber pointer, NULL if subscriber pool exhausted
  */
-Subscriber_t *SubRegister(char *name, uint8_t data_len);
+Subscriber_t *SubRegister(char *name, size_t data_len);
 
 /**
  * @brief  Publish message to all subscribers (memcpy overwrite)
