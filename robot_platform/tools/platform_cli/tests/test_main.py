@@ -109,7 +109,10 @@ class VerifyPhase1Tests(unittest.TestCase):
                 json.dumps(
                     {
                         "runtime_output_observations": [{"topic": "actuator_command", "sample_count": 2}],
-                        "smoke_result": {"passed": True},
+                        "smoke_result": {
+                            "passed": True,
+                            "validation": {"required_count": 1, "observed_count": 1},
+                        },
                     }
                 ),
                 encoding="utf-8",
@@ -135,6 +138,41 @@ class VerifyPhase1Tests(unittest.TestCase):
                 payload["stages"][-1]["observed_outputs"],
                 [{"topic": "actuator_command", "sample_count": 2}],
             )
+
+    def test_fails_when_smoke_report_has_no_observed_runtime_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            smoke_report = repo_root / "build" / "sim_reports" / "sitl_smoke.json"
+            smoke_report.parent.mkdir(parents=True, exist_ok=True)
+            smoke_report.write_text(
+                json.dumps(
+                    {
+                        "runtime_output_observations": [],
+                        "smoke_result": {
+                            "passed": True,
+                            "validation": {"required_count": 1, "observed_count": 0},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            verification_report = repo_root / "build" / "verification_reports" / "phase1.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_message_center_tests", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=0),
+            ):
+                rc = _run_verify_phase1("balance_chassis", verification_report, 1.0)
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(verification_report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "failed")
+            self.assertEqual(payload["failure_stage"], "smoke")
+            self.assertEqual(payload["failure_reason"], "runtime_output_not_observed:0/1")
 
 
 if __name__ == "__main__":

@@ -259,9 +259,16 @@ def _smoke_stage_status(smoke_report: dict[str, object] | None) -> tuple[str, st
             return "blocked", message
 
     smoke_result = smoke_report.get("smoke_result")
-    if isinstance(smoke_result, dict) and not bool(smoke_result.get("passed", False)):
-        detail = smoke_result.get("failure_detail") or smoke_result.get("primary_failure")
-        return "failed", str(detail) if detail is not None else "smoke_failed"
+    if isinstance(smoke_result, dict):
+        validation = smoke_result.get("validation")
+        if isinstance(validation, dict):
+            required = int(validation.get("required_count", 0))
+            observed = int(validation.get("observed_count", 0))
+            if required > 0 and observed < required:
+                return "failed", f"runtime_output_not_observed:{observed}/{required}"
+        if not bool(smoke_result.get("passed", False)):
+            detail = smoke_result.get("failure_detail") or smoke_result.get("primary_failure")
+            return "failed", str(detail) if detail is not None else "smoke_failed"
 
     return "passed", None
 
