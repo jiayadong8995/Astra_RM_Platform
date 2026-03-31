@@ -52,6 +52,7 @@ BALANCE_CHASSIS_PROFILE = SimProjectProfile(
     runtime_transitional_topics=RUNTIME_TRANSITIONAL_TOPICS,
     transport_ports=TransportPorts(
         imu=9001,
+        remote=9004,
         motor_fb=9002,
         motor_cmd=9003,
     ),

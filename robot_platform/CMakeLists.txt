@@ -881,8 +881,18 @@ if((PLATFORM_TARGET_HW OR PLATFORM_TARGET_SIM) AND NOT TARGET balance_chassis_de
   endif()
 
   if(PLATFORM_TARGET_SIM)
+    target_include_directories(balance_chassis_device
+      PUBLIC
+        ${GENERATED_RAW_DIR}/Inc
+        ${CHASSIS_HAL_DIR}/Inc
+        ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
+        ${CHASSIS_CMSIS_DIR}/Include
+        ${CHASSIS_CMSIS_DIR}/DSP/Include
+    )
     target_compile_definitions(balance_chassis_device
       PUBLIC
+        USE_HAL_DRIVER
+        STM32H723xx
         PLATFORM_DEVICE_BACKEND_SITL
         SITL_BUILD
     )

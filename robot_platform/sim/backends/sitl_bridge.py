@@ -4,6 +4,7 @@ import argparse
 import importlib
 import json
 import socket
+import struct
 import sys
 import threading
 import time
@@ -36,6 +37,17 @@ def emit_runtime_output_observation(*, sample_count: int, command_kind: str, mot
     if motor_id is not None:
         payload["motor_id"] = motor_id
     emit_event("runtime_output_observation", payload)
+
+
+def emit_adapter_binding(*, name: str, transport: str, bound: bool, port: int) -> None:
+    emit_event(
+        "adapter_binding",
+        {"name": name, "transport": transport, "bound": bound, "port": port},
+    )
+
+
+def _create_default_remote_packet() -> bytes:
+    return struct.pack("<5h2B3h2BH", 0, 0, 0, 0, 0, 3, 2, 0, 0, 0, 0, 0, 0)
 
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
@@ -71,6 +83,17 @@ def imu_thread(
         sock.sendto(sample.encode(), (SITL_IP, imu_port))
         stats.imu_packets_sent += 1
         time.sleep(0.001)
+
+
+def remote_thread(
+    sock: socket.socket,
+    *,
+    remote_port: int,
+) -> None:
+    packet = _create_default_remote_packet()
+    while True:
+        sock.sendto(packet, (SITL_IP, remote_port))
+        time.sleep(0.02)
 
 
 def motor_thread(
@@ -197,6 +220,7 @@ def main(argv: Sequence[str] | None = None, *, default_project: str | None = Non
     }
     transport_ports = {
         "imu": profile.transport_ports.imu,
+        "remote": profile.transport_ports.remote,
         "motor_fb": profile.transport_ports.motor_fb,
         "motor_cmd": profile.transport_ports.motor_cmd,
     }
@@ -206,6 +230,7 @@ def main(argv: Sequence[str] | None = None, *, default_project: str | None = Non
 
     try:
         imu_sock = create_socket()
+        remote_sock = create_socket()
         motor_cmd_sock = create_socket(bind_port=profile.transport_ports.motor_cmd)
         motor_fb_sock = create_socket()
     except OSError as exc:
@@ -223,10 +248,14 @@ def main(argv: Sequence[str] | None = None, *, default_project: str | None = Non
     print(
         "[Bridge] Transport ports "
         f"imu={profile.transport_ports.imu} "
+        f"remote={profile.transport_ports.remote} "
         f"motor_fb={profile.transport_ports.motor_fb} "
         f"motor_cmd={profile.transport_ports.motor_cmd}"
     )
     print(f"[Bridge] Starting {profile.name} SITL backend...")
+    emit_adapter_binding(name="imu", transport="udp", bound=True, port=profile.transport_ports.imu)
+    emit_adapter_binding(name="remote", transport="udp", bound=True, port=profile.transport_ports.remote)
+    emit_adapter_binding(name="motor", transport="udp", bound=True, port=profile.transport_ports.motor_cmd)
     t_imu = threading.Thread(
         target=imu_thread,
         args=(imu_sock, stats),
@@ -237,6 +266,13 @@ def main(argv: Sequence[str] | None = None, *, default_project: str | None = Non
         daemon=True,
     )
     t_imu.start()
+    t_remote = threading.Thread(
+        target=remote_thread,
+        args=(remote_sock,),
+        kwargs={"remote_port": profile.transport_ports.remote},
+        daemon=True,
+    )
+    t_remote.start()
 
     t_motor = threading.Thread(
         target=motor_thread,
@@ -263,7 +299,7 @@ def main(argv: Sequence[str] | None = None, *, default_project: str | None = Non
     t_runtime_outputs.start()
     emit_event(
         "startup_complete",
-        {"threads": ["imu", "motor", "stats", "runtime_outputs"], "project": profile.name},
+        {"threads": ["imu", "remote", "motor", "stats", "runtime_outputs"], "project": profile.name},
     )
 
     try:
@@ -273,6 +309,7 @@ def main(argv: Sequence[str] | None = None, *, default_project: str | None = Non
         return 0
     finally:
         imu_sock.close()
+        remote_sock.close()
         motor_cmd_sock.close()
         motor_fb_sock.close()
 

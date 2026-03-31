@@ -9,7 +9,9 @@ def build_validation_status(
 ) -> list[ValidationStatus]:
     observed_topics: set[str] = set()
     runtime_output_observations = summary.get("runtime_output_observations")
+    summary["runtime_output_observation_count"] = 0
     if isinstance(runtime_output_observations, list):
+        summary["runtime_output_observation_count"] = len(runtime_output_observations)
         for item in runtime_output_observations:
             if not isinstance(item, dict):
                 continue

@@ -13,6 +13,7 @@ class RuntimeTopicBoundary:
 @dataclass(frozen=True)
 class TransportPorts:
     imu: int
+    remote: int
     motor_fb: int
     motor_cmd: int
 

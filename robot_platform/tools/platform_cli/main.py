@@ -157,6 +157,39 @@ def _parse_verify_phase2_args(args: list[str]) -> tuple[str, Path, str | None]:
     return project, report, case
 
 
+def _parse_verify_phase3_args(args: list[str]) -> tuple[str, Path, str | None]:
+    if not args or args[0] != "phase3":
+        raise ValueError("verify phase3 requires `phase3`")
+
+    project = "balance_chassis"
+    report = Path("build/verification_reports/phase3_balance_chassis.json")
+    case: str | None = None
+    i = 1
+    while i < len(args):
+        arg = args[i]
+        if arg == "--project":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --project")
+            project = args[i + 1]
+            i += 2
+            continue
+        if arg == "--report":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --report")
+            report = Path(args[i + 1])
+            i += 2
+            continue
+        if arg == "--case":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --case")
+            case = args[i + 1]
+            i += 2
+            continue
+        raise ValueError(f"unknown verify option: {arg}")
+
+    return project, report, case
+
+
 def _generate_balance_chassis() -> int:
     repo_root = _repo_root()
     ioc_path = repo_root / "references" / "legacy" / "Astra_RM2025_Balance_legacy" / "Chassis" / "CtrlBoard-H7_IMU.ioc"
@@ -535,12 +568,37 @@ PHASE2_CASES: dict[str, dict[str, object]] = {
     },
 }
 
+PHASE3_CHAIN = "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output"
+
+PHASE3_CASES: dict[str, dict[str, object]] = {
+    "runtime_binding": {
+        "requirements": ["LINK-01"],
+        "description": PHASE3_CHAIN,
+    },
+    "runtime_outputs": {
+        "requirements": ["LINK-02", "OBS-01"],
+        "description": "Observed actuator_command runtime outputs emitted by the authoritative runtime chain.",
+    },
+    "artifact_schema": {
+        "requirements": ["OBS-01"],
+        "description": "Smoke artifact includes adapter binding truth, runtime output observations, and machine-readable verification fields.",
+    },
+}
+
 
 def _phase2_selected_cases(case_name: str | None) -> list[str]:
     if case_name is None:
         return list(PHASE2_CASES)
     if case_name not in PHASE2_CASES:
         raise ValueError(f"unknown phase2 case: {case_name}")
+    return [case_name]
+
+
+def _phase3_selected_cases(case_name: str | None) -> list[str]:
+    if case_name is None:
+        return list(PHASE3_CASES)
+    if case_name not in PHASE3_CASES:
+        raise ValueError(f"unknown phase3 case: {case_name}")
     return [case_name]
 
 
@@ -635,6 +693,131 @@ def _run_verify_phase2(project: str, report_path: Path, case_name: str | None) -
     )
     print(f"verification report: {resolved_report_path}")
     return 0
+
+
+def _phase3_case_statuses(smoke_report: dict[str, object], selected_cases: list[str]) -> list[dict[str, object]]:
+    cases: list[dict[str, object]] = []
+    runtime_binding = smoke_report.get("runtime_binding")
+    adapter_binding_summary = smoke_report.get("adapter_binding_summary")
+    runtime_output_count = int(smoke_report.get("runtime_output_observation_count", 0) or 0)
+    smoke_result = smoke_report.get("smoke_result")
+    smoke_passed = isinstance(smoke_result, dict) and bool(smoke_result.get("passed", False))
+
+    for name in selected_cases:
+        case_payload: dict[str, object] = {
+            "name": name,
+            "requirements": PHASE3_CASES[name]["requirements"],
+            "description": PHASE3_CASES[name]["description"],
+            "status": "failed",
+        }
+        if name == "runtime_binding":
+            passed = (
+                isinstance(runtime_binding, dict)
+                and runtime_binding.get("chain") == PHASE3_CHAIN
+                and bool(runtime_binding.get("passed"))
+            )
+            case_payload["status"] = "passed" if passed else "failed"
+            if not passed:
+                case_payload["reason"] = "authoritative_runtime_chain_not_proven"
+        elif name == "runtime_outputs":
+            passed = runtime_output_count > 0
+            case_payload["status"] = "passed" if passed else "failed"
+            if not passed:
+                case_payload["reason"] = f"runtime_output_observation_count={runtime_output_count}"
+        else:
+            passed = (
+                isinstance(smoke_report.get("adapter_bindings"), list)
+                and isinstance(adapter_binding_summary, dict)
+                and isinstance(smoke_report.get("runtime_output_observations"), list)
+                and "runtime_output_observation_count" in smoke_report
+                and isinstance(runtime_binding, dict)
+                and smoke_passed
+            )
+            case_payload["status"] = "passed" if passed else "failed"
+            if not passed:
+                case_payload["reason"] = "phase3_artifact_schema_incomplete"
+        cases.append(case_payload)
+
+    return cases
+
+
+def _run_verify_phase3(project: str, report_path: Path, case_name: str | None) -> int:
+    repo_root = _repo_root()
+    profile = get_project_profile(project)
+    if profile is None:
+        print(f"missing profile for project: {project}", file=sys.stderr)
+        return 2
+
+    resolved_report_path = report_path if report_path.is_absolute() else repo_root / report_path
+    selected_cases = _phase3_selected_cases(case_name)
+    if _build_sitl(profile.sitl_target) != 0:
+        payload = {
+            "verification_run_version": 1,
+            "phase": "phase3",
+            "project": project,
+            "overall_status": "failed",
+            "failure_stage": "build_sitl",
+            "failure_reason": "build_failed",
+            "cases": [
+                {
+                    "name": name,
+                    "requirements": PHASE3_CASES[name]["requirements"],
+                    "description": PHASE3_CASES[name]["description"],
+                    "status": "failed",
+                    "reason": "build_failed",
+                }
+                for name in selected_cases
+            ],
+            "stages": [],
+        }
+        resolved_report_path.parent.mkdir(parents=True, exist_ok=True)
+        resolved_report_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"verification report: {resolved_report_path}")
+        return 1
+
+    smoke_report_path = repo_root / "build" / "sim_reports" / profile.report_name
+    smoke_started = time.monotonic()
+    smoke_rc = _run_sim(project, "sitl", duration_s=1.0, skip_build=True)
+    smoke_duration_s = round(time.monotonic() - smoke_started, 3)
+    smoke_report = _load_json_report(smoke_report_path) or {}
+    smoke_status, smoke_failure = _smoke_stage_status(smoke_report)
+    cases = _phase3_case_statuses(smoke_report, selected_cases)
+    overall_status = "passed" if all(case["status"] == "passed" for case in cases) else "failed"
+    stages = [
+        {
+            "name": "smoke",
+            "status": smoke_status if smoke_status != "blocked" else "failed",
+            "exit_code": smoke_rc,
+            "duration_s": smoke_duration_s,
+            "smoke_report": str(smoke_report_path),
+            "runtime_output_observation_count": int(smoke_report.get("runtime_output_observation_count", 0) or 0),
+            "adapter_binding_summary": smoke_report.get("adapter_binding_summary"),
+            "runtime_binding": smoke_report.get("runtime_binding"),
+        }
+    ]
+    payload: dict[str, object] = {
+        "verification_run_version": 1,
+        "phase": "phase3",
+        "project": project,
+        "overall_status": overall_status,
+        "cases": cases,
+        "stages": stages,
+    }
+    if overall_status != "passed":
+        payload["failure_stage"] = "smoke"
+        payload["failure_reason"] = smoke_failure or next(
+            (str(case.get("reason")) for case in cases if case["status"] != "passed" and case.get("reason")),
+            "phase3_verification_failed",
+        )
+
+    resolved_report_path.parent.mkdir(parents=True, exist_ok=True)
+    resolved_report_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(
+        f"verification summary: project={project} overall_status={overall_status} "
+        f"case={case_name or 'all'}"
+    )
+    print(f"verification report: {resolved_report_path}")
+    return 0 if overall_status == "passed" else 1
 
 
 def _run_sim(project: str, scenario: str, *, duration_s: float = 3.0, skip_build: bool = False) -> int:
@@ -747,6 +930,9 @@ def main() -> int:
 
     if cmd == "verify":
         try:
+            if args[1:2] == ["phase3"]:
+                project, report_path, case_name = _parse_verify_phase3_args(args[1:])
+                return _run_verify_phase3(project, report_path, case_name)
             if args[1:2] == ["phase2"]:
                 project, report_path, case_name = _parse_verify_phase2_args(args[1:])
                 return _run_verify_phase2(project, report_path, case_name)

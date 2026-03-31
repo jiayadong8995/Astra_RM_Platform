@@ -39,6 +39,24 @@ def _append_runtime_output_observation(
     observations.append(observation)
 
 
+def _append_adapter_binding(
+    bindings: list[dict[str, object]],
+    binding: dict[str, object] | None,
+) -> None:
+    if not isinstance(binding, dict):
+        return
+    name = binding.get("name")
+    transport = binding.get("transport")
+    port = binding.get("port")
+    if not isinstance(name, str) or not name:
+        return
+    if not isinstance(transport, str) or not transport:
+        return
+    if not isinstance(port, int):
+        return
+    bindings.append(binding)
+
+
 def _iter_output_lines(lines: list[str]) -> list[str]:
     normalized: list[str] = []
     for raw_line in lines:
@@ -70,6 +88,7 @@ def _extract_bridge_metadata(lines: list[str]) -> dict[str, object]:
     metadata: dict[str, object] = {}
     stats_samples: list[dict[str, int]] = []
     runtime_output_observations: list[dict[str, object]] = []
+    adapter_bindings: list[dict[str, object]] = []
     boundary_pattern = re.compile(
         r"^\[Bridge\] Runtime boundary "
         r"inputs=(?P<inputs>\(.+?\)) "
@@ -104,6 +123,8 @@ def _extract_bridge_metadata(lines: list[str]) -> dict[str, object]:
                     metadata["bridge_startup_error"] = payload
                 elif event_type == "startup_complete":
                     metadata["bridge_startup_complete"] = payload
+                elif event_type == "adapter_binding":
+                    _append_adapter_binding(adapter_bindings, payload)
                 elif event_type == "stats":
                     _append_stats_sample(stats_samples, _normalize_stats_sample(payload))
                 elif event_type == "runtime_output_observation":
@@ -141,6 +162,8 @@ def _extract_bridge_metadata(lines: list[str]) -> dict[str, object]:
         metadata["bridge_stats_last"] = stats_samples[-1]
     if runtime_output_observations:
         metadata["runtime_output_observations"] = runtime_output_observations
+    if adapter_bindings:
+        metadata["adapter_bindings"] = adapter_bindings
 
     return metadata
 
@@ -191,6 +214,45 @@ def _summarize_runtime_boundary(summary: dict[str, object]) -> None:
         summary["transport_ports_match"] = declared_ports == observed_ports
 
 
+def _summarize_adapter_bindings(summary: dict[str, object], profile: SimProjectProfile) -> None:
+    bindings = summary.get("adapter_bindings")
+    expected_bindings = {
+        "imu": profile.transport_ports.imu,
+        "remote": profile.transport_ports.remote,
+        "motor": profile.transport_ports.motor_cmd,
+    }
+    binding_map: dict[str, dict[str, object]] = {}
+    if isinstance(bindings, list):
+        for item in bindings:
+            if not isinstance(item, dict):
+                continue
+            name = item.get("name")
+            if isinstance(name, str):
+                binding_map[name] = item
+
+    bound_names: list[str] = []
+    missing_names: list[str] = []
+    mismatched_ports: list[str] = []
+    for name, expected_port in expected_bindings.items():
+        binding = binding_map.get(name)
+        if not isinstance(binding, dict) or not bool(binding.get("bound")):
+            missing_names.append(name)
+            continue
+        if int(binding.get("port", -1)) != expected_port:
+            mismatched_ports.append(name)
+            continue
+        bound_names.append(name)
+
+    summary["adapter_binding_summary"] = {
+        "expected_count": len(expected_bindings),
+        "bound_count": len(bound_names),
+        "all_bound": len(bound_names) == len(expected_bindings),
+        "bound_names": bound_names,
+        "missing_names": missing_names,
+        "mismatched_ports": mismatched_ports,
+    }
+
+
 def _sitl_remained_alive(summary: dict[str, object]) -> bool:
     sitl_exit_code = summary.get("sitl_exit_code")
     if sitl_exit_code in (-15, -9):
@@ -220,6 +282,7 @@ def _default_validation_status_builder(
 
 
 def _summarize_validation_targets(summary: dict[str, object], profile: SimProjectProfile) -> None:
+    _summarize_adapter_bindings(summary, profile)
     status_builder = profile.validation_status_builder or _default_validation_status_builder
     validation_status = status_builder(summary, profile)
     summary["validation_targets_status"] = validation_status
@@ -240,6 +303,20 @@ def _summarize_validation_targets(summary: dict[str, object], profile: SimProjec
         "runtime_output_observation_count": len(runtime_output_observations)
         if isinstance(runtime_output_observations, list)
         else 0,
+    }
+    summary["runtime_output_observation_count"] = summary["validation_summary"]["runtime_output_observation_count"]
+    adapter_binding_summary = summary.get("adapter_binding_summary")
+    summary["runtime_binding"] = {
+        "chain": "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output",
+        "adapter_binding_passed": bool(
+            isinstance(adapter_binding_summary, dict) and adapter_binding_summary.get("all_bound")
+        ),
+        "runtime_output_observed": summary["runtime_output_observation_count"] > 0,
+        "passed": bool(
+            isinstance(adapter_binding_summary, dict)
+            and adapter_binding_summary.get("all_bound")
+            and summary["runtime_output_observation_count"] > 0
+        ),
     }
 
 
@@ -372,6 +449,13 @@ def _build_smoke_result(summary: dict[str, object]) -> None:
             "observed_count": int(validation_summary.get("observed_count", 0)),
             "pending_count": int(validation_summary.get("pending_count", 0)),
         }
+        result["runtime_output_observation_count"] = int(validation_summary.get("runtime_output_observation_count", 0))
+    adapter_binding_summary = summary.get("adapter_binding_summary")
+    if isinstance(adapter_binding_summary, dict):
+        result["adapter_binding_summary"] = adapter_binding_summary
+    runtime_binding = summary.get("runtime_binding")
+    if isinstance(runtime_binding, dict):
+        result["runtime_binding"] = runtime_binding
     if isinstance(validation_targets_status, list):
         pending_required = [
             item.get("name")
@@ -427,6 +511,7 @@ def run_profile_session(
         },
         "transport_ports_declared": {
             "imu": profile.transport_ports.imu,
+            "remote": profile.transport_ports.remote,
             "motor_fb": profile.transport_ports.motor_fb,
             "motor_cmd": profile.transport_ports.motor_cmd,
         },

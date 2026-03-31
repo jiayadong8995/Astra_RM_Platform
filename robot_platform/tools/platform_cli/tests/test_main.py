@@ -362,7 +362,10 @@ class VerifyPhase3Tests(unittest.TestCase):
             self.assertEqual(rc, 1)
             payload = json.loads(verification_report.read_text(encoding="utf-8"))
             self.assertEqual(payload["overall_status"], "failed")
-            self.assertEqual(payload["cases"], [{"name": "runtime_outputs", "status": "failed", "reason": "runtime_output_observation_count=0"}])
+            self.assertEqual(len(payload["cases"]), 1)
+            self.assertEqual(payload["cases"][0]["name"], "runtime_outputs")
+            self.assertEqual(payload["cases"][0]["status"], "failed")
+            self.assertEqual(payload["cases"][0]["reason"], "runtime_output_observation_count=0")
 
 
 class GeneratedArtifactFreshnessTests(unittest.TestCase):

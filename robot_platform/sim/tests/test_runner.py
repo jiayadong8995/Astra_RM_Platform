@@ -22,11 +22,12 @@ class RunnerMetadataTests(unittest.TestCase):
             [
                 '[BridgeEvent] {"type":"protocol_version","payload":{"bridge_protocol_version":1}}',
                 '[BridgeEvent] {"type":"runtime_boundary","payload":{"inputs":["ins_data","chassis_cmd"],"outputs":["actuator_command"],"transitional":["chassis_observe"]}}',
-                '[BridgeEvent] {"type":"transport_ports","payload":{"imu":9001,"motor_fb":9002,"motor_cmd":9003}}',
+                '[BridgeEvent] {"type":"transport_ports","payload":{"imu":9001,"remote":9004,"motor_fb":9002,"motor_cmd":9003}}',
+                '[BridgeEvent] {"type":"adapter_binding","payload":{"name":"imu","transport":"udp","bound":true,"port":9001}}',
                 '[BridgeEvent] {"type":"runtime_output_observation","payload":{"topic":"actuator_command","sample_count":1}}',
                 '[BridgeEvent] {"type":"stats","payload":{"imu_sent":1,"mit_seen":0,"wheel_seen":0,"fb_sent":0}}[BridgeEvent] {"type":"startup_complete","payload":{"threads":["imu","motor"],"project":"balance_chassis"}}',
                 "[Bridge] stats imu_sent=1 mit_seen=0 wheel_seen=0 fb_sent=0",
-                "[RuntimeOutput] topic=actuator_command start=1 control_enable=1 actuator_enable=1",
+                "[RuntimeOutput] topic=actuator_command sample_count=2 start=1 control_enable=1 actuator_enable=1",
                 '[BridgeEvent] {"type":"stats","payload":{"imu_sent":5,"mit_seen":2,"wheel_seen":1,"fb_sent":2}}',
                 "[Bridge] stats imu_sent=5 mit_seen=2 wheel_seen=1 fb_sent=2",
             ]
@@ -41,7 +42,8 @@ class RunnerMetadataTests(unittest.TestCase):
                 "transitional": ["chassis_observe"],
             },
         )
-        self.assertEqual(metadata["transport_ports"], {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003})
+        self.assertEqual(metadata["transport_ports"], {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003})
+        self.assertEqual(metadata["adapter_bindings"], [{"name": "imu", "transport": "udp", "bound": True, "port": 9001}])
         self.assertEqual(
             metadata["bridge_startup_complete"],
             {"threads": ["imu", "motor"], "project": "balance_chassis"},
@@ -57,7 +59,13 @@ class RunnerMetadataTests(unittest.TestCase):
             metadata["runtime_output_observations"],
             [
                 {"topic": "actuator_command", "sample_count": 1},
-                {"topic": "actuator_command", "start": "1", "control_enable": "1", "actuator_enable": "1"},
+                {
+                    "topic": "actuator_command",
+                    "sample_count": "2",
+                    "start": "1",
+                    "control_enable": "1",
+                    "actuator_enable": "1",
+                },
             ],
         )
 
@@ -83,6 +91,7 @@ class RunnerSummaryTests(unittest.TestCase):
             BALANCE_CHASSIS_PROFILE.runtime_output_boundary.topics,
             ("actuator_command",),
         )
+        self.assertEqual(BALANCE_CHASSIS_PROFILE.transport_ports.remote, 9004)
         self.assertTrue(BALANCE_CHASSIS_PROFILE.smoke_expectations.require_bridge_stats_observed)
         self.assertEqual(
             tuple(target.name for target in BALANCE_CHASSIS_PROFILE.validation_targets),
@@ -149,10 +158,10 @@ class RunnerSummaryTests(unittest.TestCase):
             "status": "bridge_runtime_error",
             "bridge_protocol_declared": {"bridge_protocol_version": 1},
             "runtime_boundary_declared": {"inputs": [], "outputs": [], "transitional": []},
-            "transport_ports_declared": {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003},
+            "transport_ports_declared": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
             "bridge_protocol": {"bridge_protocol_version": 1},
             "runtime_boundary": {"inputs": [], "outputs": [], "transitional": []},
-            "transport_ports": {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003},
+            "transport_ports": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
             "bridge_startup_complete": {"threads": ["imu"]},
             "bridge_stats_last": {"imu_sent": 10, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
             "sitl_output": ["Starting FreeRTOS POSIX Scheduler..."],
@@ -170,10 +179,10 @@ class RunnerSummaryTests(unittest.TestCase):
             "sitl_exit_code": -15,
             "bridge_protocol_declared": {"bridge_protocol_version": 1},
             "runtime_boundary_declared": {"inputs": [], "outputs": [], "transitional": []},
-            "transport_ports_declared": {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003},
+            "transport_ports_declared": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
             "bridge_protocol": {"bridge_protocol_version": 1},
             "runtime_boundary": {"inputs": [], "outputs": [], "transitional": []},
-            "transport_ports": {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003},
+            "transport_ports": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
             "bridge_startup_complete": {"threads": ["imu"]},
             "bridge_stats_last": {"imu_sent": 10, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
             "sitl_output": ["Starting FreeRTOS POSIX Scheduler..."],
@@ -278,7 +287,7 @@ class RunnerSummaryTests(unittest.TestCase):
             "sitl_exit_code": -15,
             "bridge_protocol_declared": {"bridge_protocol_version": 1},
             "runtime_boundary_declared": {"inputs": [], "outputs": [], "transitional": []},
-            "transport_ports_declared": {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003},
+            "transport_ports_declared": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
             "sitl_output": ["Starting FreeRTOS POSIX Scheduler..."],
         }
 

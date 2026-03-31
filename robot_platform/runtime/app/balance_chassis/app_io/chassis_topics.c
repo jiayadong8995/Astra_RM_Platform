@@ -57,7 +57,8 @@ void chassis_runtime_bus_publish_outputs(Chassis_Runtime_Bus_t *bus,
     {
         g_actuator_command_observed = 1U;
         g_first_actuator_command = *actuator_command;
-        printf("[RuntimeOutput] topic=actuator_command start=%u control_enable=%u actuator_enable=%u\n",
+        printf("[RuntimeOutput] topic=actuator_command sample_count=%lu start=%u control_enable=%u actuator_enable=%u\n",
+               (unsigned long)g_actuator_command_observation_count,
                actuator_command->start ? 1U : 0U,
                actuator_command->control_enable ? 1U : 0U,
                actuator_command->actuator_enable ? 1U : 0U);
