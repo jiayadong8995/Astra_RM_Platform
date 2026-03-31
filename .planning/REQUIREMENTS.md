@@ -14,8 +14,8 @@
 ### Host Verification
 
 - [x] **HOST-01**: Developer can run host-native C tests for safety-critical runtime modules without requiring robot hardware
-- [ ] **HOST-02**: Host-side tests cover message transport, control-path logic, device/profile binding seams, and actuator command mapping on the current `balance_chassis` path
-- [ ] **HOST-03**: Host-side verification can inject fake sensor, remote, and data-link inputs to exercise runtime behavior deterministically
+- [x] **HOST-02**: Host-side tests cover message transport, control-path logic, device/profile binding seams, and actuator command mapping on the current `balance_chassis` path
+- [x] **HOST-03**: Host-side verification can inject fake sensor, remote, and data-link inputs to exercise runtime behavior deterministically
 - [x] **HOST-04**: Host-side verification reports sanitizer failures for memory-safety or undefined-behavior defects in supported test targets
 
 ### Safety Gates
@@ -87,8 +87,8 @@
 | PIPE-02 | Phase 1 | Pending |
 | PIPE-03 | Phase 1 | Complete |
 | HOST-01 | Phase 1 | Complete |
-| HOST-02 | Phase 2 | Pending |
-| HOST-03 | Phase 2 | Pending |
+| HOST-02 | Phase 2 | Complete |
+| HOST-03 | Phase 2 | Complete |
 | HOST-04 | Phase 1 | Complete |
 | SAFE-01 | Phase 2 | Pending |
 | SAFE-02 | Phase 2 | Pending |

@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. Supported host verification targets surface sanitizer failures when memory-safety or undefined-behavior defects occur.
 **Plans**: 3 plans
 Plans:
-- [ ] 02-01-PLAN.md - Build the deterministic host harness and `verify phase2` entrypoint for the current task/topic path.
+- [x] 02-01-PLAN.md - Build the deterministic host harness and `verify phase2` entrypoint for the current task/topic path.
 - [ ] 02-02-PLAN.md - Add hard safety oracles for mapping, sensor validity, arming transitions, and saturation.
 - [ ] 02-03-PLAN.md - Close stale-command and wheel-leg danger-signature coverage and finalize the Phase 2 verdict matrix.
 
