@@ -2,12 +2,103 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import shutil
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+
+FRESHNESS_MANIFEST = "freshness_manifest.json"
+
+
+def _sha256_bytes(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _iter_generated_files(out_dir: Path) -> list[Path]:
+    manifest_path = out_dir / FRESHNESS_MANIFEST
+    files = [path for path in out_dir.rglob("*") if path.is_file() and path != manifest_path]
+    files.sort(key=lambda path: path.relative_to(out_dir).as_posix())
+    return files
+
+
+def compute_generated_tree_sha256(out_dir: Path) -> str:
+    entries: list[str] = []
+    for path in _iter_generated_files(out_dir):
+        rel = path.relative_to(out_dir).as_posix()
+        entries.append(f"{rel}:{_sha256_file(path)}")
+    return _sha256_bytes("\n".join(entries).encode("utf-8"))
+
+
+def build_freshness_manifest(ioc_path: Path, out_dir: Path) -> dict[str, object]:
+    resolved_ioc = ioc_path.resolve()
+    resolved_out_dir = out_dir.resolve()
+    generated_files = _iter_generated_files(resolved_out_dir)
+    return {
+        "manifest_version": 1,
+        "source": {
+            "path": str(resolved_ioc),
+            "sha256": _sha256_file(resolved_ioc),
+        },
+        "generated": {
+            "path": str(resolved_out_dir),
+            "tree_sha256": compute_generated_tree_sha256(resolved_out_dir),
+            "file_count": len(generated_files),
+        },
+    }
+
+
+def write_freshness_manifest(ioc_path: Path, out_dir: Path) -> Path:
+    manifest_path = out_dir.resolve() / FRESHNESS_MANIFEST
+    payload = build_freshness_manifest(ioc_path, out_dir)
+    manifest_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return manifest_path
+
+
+def load_freshness_manifest(out_dir: Path) -> dict[str, object] | None:
+    manifest_path = out_dir.resolve() / FRESHNESS_MANIFEST
+    if not manifest_path.exists():
+        return None
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def generated_artifacts_are_fresh(ioc_path: Path, out_dir: Path) -> tuple[bool, str, dict[str, object] | None]:
+    manifest = load_freshness_manifest(out_dir)
+    if manifest is None:
+        return False, "missing_metadata", None
+
+    expected = build_freshness_manifest(ioc_path, out_dir)
+    source = manifest.get("source")
+    generated = manifest.get("generated")
+    if not isinstance(source, dict) or not isinstance(generated, dict):
+        return False, "missing_metadata", manifest
+
+    if source.get("path") != expected["source"]["path"]:
+        return False, "stale_generated_artifacts", manifest
+    if source.get("sha256") != expected["source"]["sha256"]:
+        return False, "stale_generated_artifacts", manifest
+    if generated.get("path") != expected["generated"]["path"]:
+        return False, "stale_generated_artifacts", manifest
+    if generated.get("tree_sha256") != expected["generated"]["tree_sha256"]:
+        return False, "stale_generated_artifacts", manifest
+
+    return True, "fresh", manifest
 
 
 def find_cubemx() -> str | None:
@@ -129,6 +220,8 @@ def run_codegen(ioc_path: Path, out_dir: Path) -> int:
     print(f"Script file: {script_path}")
 
     result = subprocess.run([cubemx, "-q", str(script_path)], env=env, check=False)
+    if result.returncode == 0:
+        write_freshness_manifest(ioc_path, out_dir)
     return result.returncode
 
 

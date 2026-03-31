@@ -8,7 +8,11 @@ from pathlib import Path
 
 from robot_platform.sim.projects import get_project_names, get_project_profile, get_project_smoke_runner
 from robot_platform.sim.runner import run_sitl_session
-from robot_platform.tools.cubemx_backend.main import run_codegen
+from robot_platform.tools.cubemx_backend.main import (
+    FRESHNESS_MANIFEST,
+    generated_artifacts_are_fresh,
+    run_codegen,
+)
 
 
 HELP = {
@@ -125,6 +129,34 @@ def _generate_balance_chassis() -> int:
     ioc_path = repo_root / "references" / "legacy" / "Astra_RM2025_Balance_legacy" / "Chassis" / "CtrlBoard-H7_IMU.ioc"
     out_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
     return run_codegen(ioc_path, out_dir)
+
+
+def _generated_artifact_paths() -> tuple[Path, Path]:
+    repo_root = _repo_root()
+    ioc_path = repo_root / "references" / "legacy" / "Astra_RM2025_Balance_legacy" / "Chassis" / "CtrlBoard-H7_IMU.ioc"
+    generated_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
+    return ioc_path, generated_dir
+
+
+def _print_freshness_refusal(reason: str, source_ioc: Path, generated_dir: Path) -> None:
+    payload = {
+        "stage": "generated_artifact_freshness",
+        "status": "failed",
+        "reason": reason,
+        "source_ioc": str(source_ioc.resolve()),
+        "generated_dir": str(generated_dir.resolve()),
+        "manifest_path": str((generated_dir.resolve() / FRESHNESS_MANIFEST)),
+    }
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def _require_generated_artifact_freshness() -> int:
+    source_ioc, generated_dir = _generated_artifact_paths()
+    is_fresh, reason, _manifest = generated_artifacts_are_fresh(source_ioc, generated_dir)
+    if is_fresh:
+        return 0
+    _print_freshness_refusal(reason, source_ioc, generated_dir)
+    return 1
 
 
 def _build_hw_seed(target: str) -> int:
@@ -463,6 +495,9 @@ def main() -> int:
             return 2
         if mode == "sitl":
             return _build_sitl(supported[mode])
+        freshness_rc = _require_generated_artifact_freshness()
+        if freshness_rc != 0:
+            return freshness_rc
         return _build_hw_seed(supported[mode])
 
     if cmd == "sim":

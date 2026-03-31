@@ -204,7 +204,11 @@ class GeneratedArtifactFreshnessTests(unittest.TestCase):
 
             with (
                 mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
-                mock.patch("robot_platform.tools.platform_cli.main.run_codegen", return_value=0),
+                mock.patch("robot_platform.tools.cubemx_backend.main.find_cubemx", return_value="/tmp/fake-cubemx"),
+                mock.patch(
+                    "robot_platform.tools.cubemx_backend.main.subprocess.run",
+                    return_value=mock.Mock(returncode=0),
+                ),
             ):
                 rc = _generate_balance_chassis()
 
