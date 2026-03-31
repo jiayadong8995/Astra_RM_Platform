@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-03-PLAN.md
+stopped_at: Completed 01-05-PLAN.md
 last_updated: "2026-03-31T06:37:20.871Z"
 last_activity: 2026-03-31
 progress:
@@ -27,7 +27,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-30)
 
 Phase: 01 (contracts-and-verification-foundation) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Completed 01-05; phase tracking still awaits separate closure for remaining parallel work
 Last activity: 2026-03-31
 
 Progress: [████████░░] 80%
@@ -48,10 +48,11 @@ Progress: [████████░░] 80%
 
 **Recent Trend:**
 
-- Last 5 plans: 01-04 (9min), 01-03 (15min), 01-02 (2min), 01-01 (5min)
+- Last 5 plans: 01-05 (2min), 01-04 (9min), 01-03 (15min), 01-02 (2min), 01-01 (5min)
 - Trend: Stable
 
 | Phase 01-contracts-and-verification-foundation P03 | 15min | 2 tasks | 5 files |
+| Phase 01-contracts-and-verification-foundation P05 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,7 @@ Recent decisions affecting current work:
 - [Phase 01-contracts-and-verification-foundation]: Treat actuator_command as the single required Phase 1 runtime output proof target instead of declared-only chassis_state/leg outputs.
 - [Phase 01-contracts-and-verification-foundation]: `verify phase1` is now the authoritative JSON-first closure command and only passes when the required runtime output is truly observed.
 - [Phase 01-contracts-and-verification-foundation]: SITL proof stubs may be deterministic and ready-by-default when they are necessary to prove the minimum live path inside the fixed 1-second smoke window.
+- [Phase 01-contracts-and-verification-foundation]: Freshness metadata is recorded immediately after successful CubeMX generation as a deterministic manifest of IOC and generated tree hashes.
 - [Phase 01-contracts-and-verification-foundation]: Only hardware-trusting build modes are gated by freshness refusal so the 01-04 minimum live proof path remains the shortest evidence path.
 - [Phase 01-contracts-and-verification-foundation]: Keep actuator_gateway host coverage on public APIs plus the three platform_device_* seams only.
 - [Phase 01-contracts-and-verification-foundation]: Treat actuator dispatch validity as control_enable && actuator_enable across all mapped motors.
@@ -87,5 +89,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-31T06:37:20.869Z
-Stopped at: Completed 01-03-PLAN.md
+Stopped at: Completed 01-05-PLAN.md
 Resume file: None
