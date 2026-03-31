@@ -167,8 +167,8 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_SITL_BSP_DIR}/bsp_PWM_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/can_bsp_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/BMI088driver_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/remote_control_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
-    ${PLATFORM_DEVICE_REMOTE_DIR}/remote_control.c
   )
 
   set(BALANCE_SAFETY_HOST_RUNTIME_SOURCES
@@ -682,8 +682,8 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_SITL_BSP_DIR}/bsp_PWM_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/can_bsp_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/BMI088driver_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/remote_control_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
-    ${PLATFORM_DEVICE_REMOTE_DIR}/remote_control.c
   )
 
   set(BALANCE_CHASSIS_APP_SOURCES
