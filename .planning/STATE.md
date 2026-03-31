@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-03-30T11:42:54.370Z"
-last_activity: 2026-03-30 - Initial roadmap created for v1 host-side TDD, fake-link validation, and build/test/generate closure.
+status: executing
+stopped_at: Completed 01-contracts-and-verification-foundation-01-PLAN.md
+last_updated: "2026-03-31T03:36:10.436Z"
+last_activity: 2026-03-31
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 5
+  completed_plans: 1
+  percent: 20
 ---
 
 # Project State
@@ -21,34 +21,34 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-03-30)
 
 **Core value:** Make wheeled-legged Robotmaster control software safe to evolve by catching dangerous control and data-link errors before the robot ever gets a chance to go unstable on hardware.
-**Current focus:** Phase 1 - Contracts and Verification Foundation
+**Current focus:** Phase 01 — contracts-and-verification-foundation
 
 ## Current Position
 
-Phase: 1 of 5 (Contracts and Verification Foundation)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-30 - Initial roadmap created for v1 host-side TDD, fake-link validation, and build/test/generate closure.
+Phase: 01 (contracts-and-verification-foundation) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-03-31
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██░░░░░░░░] 20%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
-- Average duration: -
-- Total execution time: 0.0 hours
+- Total plans completed: 1
+- Average duration: 5min
+- Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-contracts-and-verification-foundation | 1 | 5min | 5min |
 
 **Recent Trend:**
 
-- Last 5 plans: -
+- Last 5 plans: 01-01 (5min)
 - Trend: Stable
 
 ## Accumulated Context
@@ -62,6 +62,8 @@ Recent decisions affecting current work:
 - Phase 2: Treat host-side safety verification as the first real proof point for `balance_chassis` control behavior.
 - Phase 3: Require fake-link validation to observe real runtime outputs and distinguish comms faults from control faults.
 - Phase 4: Preserve reusable platform intent while reducing coupling and defining one blessed bring-up path.
+- [Phase 01-contracts-and-verification-foundation]: Keep the first host verification surface limited to message_center and a single checked-in executable.
+- [Phase 01-contracts-and-verification-foundation]: Default host tests to ASan and UBSan, with leak detection disabled only for the traced CTest process in this environment.
 
 ### Pending Todos
 
@@ -74,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-30T11:42:54.367Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-contracts-and-verification-foundation/01-CONTEXT.md
+Last session: 2026-03-31T03:36:10.434Z
+Stopped at: Completed 01-contracts-and-verification-foundation-01-PLAN.md
+Resume file: None
