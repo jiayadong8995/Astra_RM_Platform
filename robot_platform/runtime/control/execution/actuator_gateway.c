@@ -2,6 +2,7 @@
 
 static void platform_map_contract_command(const platform_actuator_command_t *actuator_msg,
                                           platform_device_command_t *device_command);
+static bool platform_command_dispatch_enabled(const platform_actuator_command_t *actuator_msg);
 
 void platform_actuator_gateway_init(void)
 {
@@ -26,12 +27,14 @@ void platform_actuator_gateway_dispatch_command(const platform_actuator_command_
 static void platform_map_contract_command(const platform_actuator_command_t *actuator_msg,
                                           platform_device_command_t *device_command)
 {
+    const bool dispatch_enabled = platform_command_dispatch_enabled(actuator_msg);
+
     for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i)
     {
         device_command->joints[i].device_id = i;
         device_command->joints[i].kind = PLATFORM_MOTOR_KIND_JOINT;
         device_command->joints[i].control_mode = actuator_msg->motors.left_leg_joint[0].control_mode;
-        device_command->joints[i].valid = actuator_msg->control_enable && actuator_msg->actuator_enable;
+        device_command->joints[i].valid = dispatch_enabled;
     }
 
     device_command->joints[0].control_mode = actuator_msg->motors.left_leg_joint[0].control_mode;
@@ -41,7 +44,7 @@ static void platform_map_contract_command(const platform_actuator_command_t *act
     device_command->joints[0].current_target = actuator_msg->motors.left_leg_joint[0].current_target;
     device_command->joints[0].kp = actuator_msg->motors.left_leg_joint[0].kp;
     device_command->joints[0].kd = actuator_msg->motors.left_leg_joint[0].kd;
-    device_command->joints[0].valid = actuator_msg->motors.left_leg_joint[0].valid && actuator_msg->actuator_enable;
+    device_command->joints[0].valid = actuator_msg->motors.left_leg_joint[0].valid && dispatch_enabled;
 
     device_command->joints[1].control_mode = actuator_msg->motors.left_leg_joint[1].control_mode;
     device_command->joints[1].torque_target = actuator_msg->motors.left_leg_joint[1].torque_target;
@@ -50,7 +53,7 @@ static void platform_map_contract_command(const platform_actuator_command_t *act
     device_command->joints[1].current_target = actuator_msg->motors.left_leg_joint[1].current_target;
     device_command->joints[1].kp = actuator_msg->motors.left_leg_joint[1].kp;
     device_command->joints[1].kd = actuator_msg->motors.left_leg_joint[1].kd;
-    device_command->joints[1].valid = actuator_msg->motors.left_leg_joint[1].valid && actuator_msg->actuator_enable;
+    device_command->joints[1].valid = actuator_msg->motors.left_leg_joint[1].valid && dispatch_enabled;
 
     device_command->joints[2].control_mode = actuator_msg->motors.right_leg_joint[0].control_mode;
     device_command->joints[2].torque_target = actuator_msg->motors.right_leg_joint[0].torque_target;
@@ -59,7 +62,7 @@ static void platform_map_contract_command(const platform_actuator_command_t *act
     device_command->joints[2].current_target = actuator_msg->motors.right_leg_joint[0].current_target;
     device_command->joints[2].kp = actuator_msg->motors.right_leg_joint[0].kp;
     device_command->joints[2].kd = actuator_msg->motors.right_leg_joint[0].kd;
-    device_command->joints[2].valid = actuator_msg->motors.right_leg_joint[0].valid && actuator_msg->actuator_enable;
+    device_command->joints[2].valid = actuator_msg->motors.right_leg_joint[0].valid && dispatch_enabled;
 
     device_command->joints[3].control_mode = actuator_msg->motors.right_leg_joint[1].control_mode;
     device_command->joints[3].torque_target = actuator_msg->motors.right_leg_joint[1].torque_target;
@@ -68,7 +71,7 @@ static void platform_map_contract_command(const platform_actuator_command_t *act
     device_command->joints[3].current_target = actuator_msg->motors.right_leg_joint[1].current_target;
     device_command->joints[3].kp = actuator_msg->motors.right_leg_joint[1].kp;
     device_command->joints[3].kd = actuator_msg->motors.right_leg_joint[1].kd;
-    device_command->joints[3].valid = actuator_msg->motors.right_leg_joint[1].valid && actuator_msg->actuator_enable;
+    device_command->joints[3].valid = actuator_msg->motors.right_leg_joint[1].valid && dispatch_enabled;
 
     device_command->wheels[0].device_id = 0;
     device_command->wheels[0].kind = PLATFORM_MOTOR_KIND_WHEEL;
@@ -79,7 +82,7 @@ static void platform_map_contract_command(const platform_actuator_command_t *act
     device_command->wheels[0].current_target = actuator_msg->motors.left_wheel.current_target;
     device_command->wheels[0].kp = actuator_msg->motors.left_wheel.kp;
     device_command->wheels[0].kd = actuator_msg->motors.left_wheel.kd;
-    device_command->wheels[0].valid = actuator_msg->motors.left_wheel.valid && actuator_msg->actuator_enable;
+    device_command->wheels[0].valid = actuator_msg->motors.left_wheel.valid && dispatch_enabled;
 
     device_command->wheels[1].device_id = 1;
     device_command->wheels[1].kind = PLATFORM_MOTOR_KIND_WHEEL;
@@ -90,5 +93,10 @@ static void platform_map_contract_command(const platform_actuator_command_t *act
     device_command->wheels[1].current_target = actuator_msg->motors.right_wheel.current_target;
     device_command->wheels[1].kp = actuator_msg->motors.right_wheel.kp;
     device_command->wheels[1].kd = actuator_msg->motors.right_wheel.kd;
-    device_command->wheels[1].valid = actuator_msg->motors.right_wheel.valid && actuator_msg->actuator_enable;
+    device_command->wheels[1].valid = actuator_msg->motors.right_wheel.valid && dispatch_enabled;
+}
+
+static bool platform_command_dispatch_enabled(const platform_actuator_command_t *actuator_msg)
+{
+    return actuator_msg->control_enable && actuator_msg->actuator_enable;
 }
