@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-04-PLAN.md (blocked checkpoint recorded)
-last_updated: "2026-03-31T07:00:00.000Z"
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-03-31T08:30:00.000Z"
 last_activity: 2026-03-31
 progress:
   total_phases: 5
@@ -67,7 +67,8 @@ Recent decisions affecting current work:
 - [Phase 01-contracts-and-verification-foundation]: Store one declared-size payload buffer per topic in a static byte pool, with subscriber generation tracking instead of fixed local buffers.
 - [Phase 01-contracts-and-verification-foundation]: Widen message_center topic payload sizing from uint8_t to size_t so runtime contracts above 255 bytes remain representable.
 - [Phase 01-contracts-and-verification-foundation]: Treat actuator_command as the single required Phase 1 runtime output proof target instead of declared-only chassis_state/leg outputs.
-- [Phase 01-contracts-and-verification-foundation]: `verify phase1` is now the authoritative JSON-first closure command; UDP-restricted environments must record a blocked smoke stage rather than pretending the live path passed.
+- [Phase 01-contracts-and-verification-foundation]: `verify phase1` is now the authoritative JSON-first closure command and only passes when the required runtime output is truly observed.
+- [Phase 01-contracts-and-verification-foundation]: SITL proof stubs may be deterministic and ready-by-default when they are necessary to prove the minimum live path inside the fixed 1-second smoke window.
 
 ### Pending Todos
 
@@ -75,11 +76,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- Current trust gap is concentrated in the non-sandbox rerun needed to turn the recorded blocked smoke artifact into a passed minimum live proof.
+- Current trust gap has moved past the minimum live proof and into the remaining Wave 4 hardening work.
 - v2 hardware bring-up remains intentionally gated on v1 validation closure; simulated evidence is not treated as physical proof.
 
 ## Session Continuity
 
-Last session: 2026-03-31T07:00:00.000Z
-Stopped at: Completed 01-04-PLAN.md (blocked checkpoint recorded)
+Last session: 2026-03-31T08:30:00.000Z
+Stopped at: Completed 01-04-PLAN.md
 Resume file: None
