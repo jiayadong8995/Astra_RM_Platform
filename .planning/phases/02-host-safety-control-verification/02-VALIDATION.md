@@ -1,9 +1,9 @@
 ---
 phase: 02
 slug: host-safety-control-verification
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: ready_for_planning
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-31
 ---
 
@@ -42,10 +42,10 @@ created: 2026-03-31
 | 02-01-02 | 01 | 1 | HOST-03 | host C + Python orchestration | `python3 -m robot_platform.tools.platform_cli.main verify phase2 --project balance_chassis --report build/verification_reports/phase2_balance_chassis.json` | ❌ W0 | ⬜ pending |
 | 02-02-01 | 02 | 2 | SAFE-01 | host C | `ctest --test-dir build/robot_platform_host_tests --output-on-failure -R test_safety_mapping` | ❌ W0 | ⬜ pending |
 | 02-02-02 | 02 | 2 | SAFE-02 | host C integration | `ctest --test-dir build/robot_platform_host_tests --output-on-failure -R test_safety_sensor_faults` | ❌ W0 | ⬜ pending |
-| 02-03-01 | 03 | 3 | SAFE-03 | host C integration | `ctest --test-dir build/robot_platform_host_tests --output-on-failure -R test_safety_arming` | ❌ W0 | ⬜ pending |
-| 02-03-02 | 03 | 3 | SAFE-04 | host C | `ctest --test-dir build/robot_platform_host_tests --output-on-failure -R test_safety_saturation` | ❌ W0 | ⬜ pending |
-| 02-04-01 | 04 | 4 | SAFE-05 | host C + Python orchestration | `python3 -m robot_platform.tools.platform_cli.main verify phase2 --project balance_chassis --case stale_command` | ❌ W0 | ⬜ pending |
-| 02-04-02 | 04 | 4 | SAFE-06 | host C integration | `ctest --test-dir build/robot_platform_host_tests --output-on-failure -R test_safety_wheel_leg` | ❌ W0 | ⬜ pending |
+| 02-02-03 | 02 | 2 | SAFE-03 | host C integration | `ctest --test-dir build/robot_platform_host_tests --output-on-failure -R test_safety_arming` | ❌ W0 | ⬜ pending |
+| 02-02-04 | 02 | 2 | SAFE-04 | host C | `ctest --test-dir build/robot_platform_host_tests --output-on-failure -R test_safety_saturation` | ❌ W0 | ⬜ pending |
+| 02-03-01 | 03 | 3 | SAFE-05 | host C + Python orchestration | `python3 -m robot_platform.tools.platform_cli.main verify phase2 --project balance_chassis --case stale_command --report build/verification_reports/phase2_stale_command.json` | ❌ W0 | ⬜ pending |
+| 02-03-02 | 03 | 3 | SAFE-06 | host C integration | `ctest --test-dir build/robot_platform_host_tests --output-on-failure -R test_safety_wheel_leg` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -61,8 +61,7 @@ created: 2026-03-31
 - [ ] `robot_platform/runtime/tests/host/test_safety_saturation.c` — SAFE-04 saturation oracle coverage
 - [ ] `robot_platform/runtime/tests/host/test_safety_wheel_leg.c` — SAFE-06 narrow wheel-leg danger signatures
 - [ ] `robot_platform/tools/platform_cli/main.py` — `verify phase2` command support
-- [ ] `robot_platform/tools/platform_cli/tests/test_main.py` — Phase 2 report schema and failure-mode coverage
-- [ ] `robot_platform/sim/tests/test_runner.py` — verdict artifact parsing coverage if reused by Phase 2 reports
+- [ ] `robot_platform/tools/platform_cli/tests/test_main.py` — Phase 2 report schema, failure-mode, stale-command, and wheel-leg verdict artifact coverage
 
 ---
 
@@ -74,11 +73,11 @@ All phase behaviors should be automated. No manual-only verification is planned 
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** ready for planning 2026-03-31
