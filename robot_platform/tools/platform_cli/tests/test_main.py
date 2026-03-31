@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import json
+import io
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
-from robot_platform.tools.platform_cli.main import _parse_sim_args, _parse_verify_phase1_args, _run_verify_phase1
+from robot_platform.tools.platform_cli.main import (
+    _generate_balance_chassis,
+    _parse_sim_args,
+    _parse_verify_phase1_args,
+    main,
+    _run_verify_phase1,
+)
 
 
 class ParseSimArgsTests(unittest.TestCase):
@@ -173,6 +180,111 @@ class VerifyPhase1Tests(unittest.TestCase):
             self.assertEqual(payload["overall_status"], "failed")
             self.assertEqual(payload["failure_stage"], "smoke")
             self.assertEqual(payload["failure_reason"], "runtime_output_not_observed:0/1")
+
+
+class GeneratedArtifactFreshnessTests(unittest.TestCase):
+    def test_generate_records_deterministic_freshness_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            source_ioc = (
+                repo_root
+                / "references"
+                / "legacy"
+                / "Astra_RM2025_Balance_legacy"
+                / "Chassis"
+                / "CtrlBoard-H7_IMU.ioc"
+            )
+            source_ioc.parent.mkdir(parents=True, exist_ok=True)
+            source_ioc.write_text("ioc-version=1\n", encoding="utf-8")
+
+            generated_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
+            generated_dir.mkdir(parents=True, exist_ok=True)
+            (generated_dir / "Src").mkdir()
+            (generated_dir / "Src" / "main.c").write_text("int main(void) { return 0; }\n", encoding="utf-8")
+
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.run_codegen", return_value=0),
+            ):
+                rc = _generate_balance_chassis()
+
+            self.assertEqual(rc, 0)
+            manifest_path = generated_dir / "freshness_manifest.json"
+            self.assertTrue(manifest_path.exists(), "expected freshness manifest to be written after generate")
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["source"]["path"], str(source_ioc))
+            self.assertEqual(payload["generated"]["path"], str(generated_dir))
+            self.assertIn("sha256", payload["source"])
+            self.assertIn("tree_sha256", payload["generated"])
+
+    def test_build_hw_elf_refuses_when_freshness_metadata_is_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            source_ioc = (
+                repo_root
+                / "references"
+                / "legacy"
+                / "Astra_RM2025_Balance_legacy"
+                / "Chassis"
+                / "CtrlBoard-H7_IMU.ioc"
+            )
+            source_ioc.parent.mkdir(parents=True, exist_ok=True)
+            source_ioc.write_text("ioc-version=1\n", encoding="utf-8")
+            generated_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
+            generated_dir.mkdir(parents=True, exist_ok=True)
+
+            rc, stdout = self._run_main_with_stdout(repo_root, ["platform_cli", "build", "hw_elf"])
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(stdout.getvalue())
+            self.assertEqual(payload["stage"], "generated_artifact_freshness")
+            self.assertEqual(payload["reason"], "missing_metadata")
+            self.assertEqual(payload["source_ioc"], str(source_ioc))
+
+    def test_build_hw_seed_refuses_when_generated_artifacts_are_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            source_ioc = (
+                repo_root
+                / "references"
+                / "legacy"
+                / "Astra_RM2025_Balance_legacy"
+                / "Chassis"
+                / "CtrlBoard-H7_IMU.ioc"
+            )
+            source_ioc.parent.mkdir(parents=True, exist_ok=True)
+            source_ioc.write_text("ioc-version=2\n", encoding="utf-8")
+            generated_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
+            generated_dir.mkdir(parents=True, exist_ok=True)
+            (generated_dir / "freshness_manifest.json").write_text(
+                json.dumps(
+                    {
+                        "source": {"path": str(source_ioc), "sha256": "outdated-source-sha"},
+                        "generated": {"path": str(generated_dir), "tree_sha256": "outdated-tree-sha"},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (generated_dir / "Src").mkdir()
+            (generated_dir / "Src" / "main.c").write_text("int main(void) { return 1; }\n", encoding="utf-8")
+
+            rc, stdout = self._run_main_with_stdout(repo_root, ["platform_cli", "build", "hw_seed"])
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(stdout.getvalue())
+            self.assertEqual(payload["stage"], "generated_artifact_freshness")
+            self.assertEqual(payload["reason"], "stale_generated_artifacts")
+            self.assertEqual(payload["source_ioc"], str(source_ioc))
+
+    def _run_main_with_stdout(self, repo_root: Path, argv: list[str]) -> tuple[int, io.StringIO]:
+        stdout = io.StringIO()
+        with (
+            mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+            mock.patch("robot_platform.tools.platform_cli.main.sys.argv", argv),
+            mock.patch("robot_platform.tools.platform_cli.main.sys.stdout", stdout),
+            mock.patch("robot_platform.tools.platform_cli.main._build_hw_seed", return_value=0),
+        ):
+            return main(), stdout
 
 
 if __name__ == "__main__":
