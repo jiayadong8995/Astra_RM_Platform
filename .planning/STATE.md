@@ -65,6 +65,11 @@ Recent decisions affecting current work:
 - Phase 2: Treat host-side safety verification as the first real proof point for `balance_chassis` control behavior.
 - Phase 3: Require fake-link validation to observe real runtime outputs and distinguish comms faults from control faults.
 - Phase 4: Preserve reusable platform intent while reducing coupling and defining one blessed bring-up path.
+- [Phase 02-host-safety-control-verification]: Treat Phase 2 as the work to make the current `balance_chassis` main control path injectible, observable, and fail-fast under host-side safety verification.
+- [Phase 02-host-safety-control-verification]: Validate the current task/topic main path as implemented today rather than planning against an idealized direct-interface-only path.
+- [Phase 02-host-safety-control-verification]: Inject fake sensor and remote cases through device/profile seams, while using message/topic or equivalent runtime-ingress seams for link-loss and stale-command faults.
+- [Phase 02-host-safety-control-verification]: Use `actuator_command` plus key enable bits as the first authoritative observation surface for safety verdicts.
+- [Phase 02-host-safety-control-verification]: Prefer hard safety oracles and a narrow set of explicit wheel-leg danger signatures over broad qualitative control evaluation.
 - [Phase 01-contracts-and-verification-foundation]: Keep the first host verification surface limited to message_center and a single checked-in executable.
 - [Phase 01-contracts-and-verification-foundation]: Default host tests to ASan and UBSan, with leak detection disabled only for the traced CTest process in this environment.
 - [Phase 01-contracts-and-verification-foundation]: Store one declared-size payload buffer per topic in a static byte pool, with subscriber generation tracking instead of fixed local buffers.
@@ -89,5 +94,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-31T06:43:43Z
-Stopped at: Phase 01 verified and closed; ready to plan Phase 02
+Stopped at: Phase 02 context gathered; ready to plan host-side safety verification around the current main control path
 Resume file: None
