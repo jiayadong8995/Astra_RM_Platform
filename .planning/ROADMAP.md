@@ -12,7 +12,7 @@ This roadmap turns the existing embedded platform into a trustworthy v1 validati
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Contracts and Verification Foundation** - Make host-native verification, contract sizing, and stage reporting trustworthy.
+- [x] **Phase 1: Contracts and Verification Foundation** - Make host-native verification, contract sizing, and stage reporting trustworthy.
 - [ ] **Phase 2: Host Safety Control Verification** - Prove `balance_chassis` control-path and safety behavior with deterministic host-side tests.
 - [ ] **Phase 3: Fake-Link Runtime Proof** - Drive the real runtime through fake-link adapters and capture observable validation artifacts.
 - [ ] **Phase 4: Authoritative Platform Composition** - Clarify ownership boundaries and define one blessed `balance_chassis` bring-up path.
@@ -84,7 +84,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Contracts and Verification Foundation | 5/5 | In Progress | - |
+| 1. Contracts and Verification Foundation | 5/5 | Complete | 2026-03-31 |
 | 2. Host Safety Control Verification | 0/TBD | Not started | - |
 | 3. Fake-Link Runtime Proof | 0/TBD | Not started | - |
 | 4. Authoritative Platform Composition | 0/TBD | Not started | - |
