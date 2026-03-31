@@ -12,9 +12,11 @@ from robot_platform.tools.platform_cli.main import (
     _parse_sim_args,
     _parse_verify_phase1_args,
     _parse_verify_phase2_args,
+    _parse_verify_phase3_args,
     main,
     _run_verify_phase1,
     _run_verify_phase2,
+    _run_verify_phase3,
 )
 
 
@@ -91,6 +93,26 @@ class ParseVerifyPhase2ArgsTests(unittest.TestCase):
     def test_rejects_unknown_verify_option(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown verify option"):
             _parse_verify_phase2_args(["phase2", "--unknown"])
+
+
+class ParseVerifyPhase3ArgsTests(unittest.TestCase):
+    def test_defaults(self) -> None:
+        project, report, case_name = _parse_verify_phase3_args(["phase3"])
+        self.assertEqual(project, "balance_chassis")
+        self.assertEqual(report, Path("build/verification_reports/phase3_balance_chassis.json"))
+        self.assertIsNone(case_name)
+
+    def test_explicit_case(self) -> None:
+        project, report, case_name = _parse_verify_phase3_args(
+            ["phase3", "--project", "balance_chassis", "--report", "tmp/report.json", "--case", "runtime_binding"]
+        )
+        self.assertEqual(project, "balance_chassis")
+        self.assertEqual(report, Path("tmp/report.json"))
+        self.assertEqual(case_name, "runtime_binding")
+
+    def test_rejects_unknown_verify_option(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unknown verify option"):
+            _parse_verify_phase3_args(["phase3", "--unknown"])
 
 
 class VerifyPhase1Tests(unittest.TestCase):
@@ -256,6 +278,91 @@ class VerifyPhase2Tests(unittest.TestCase):
             self.assertEqual(payload["overall_status"], "passed")
             self.assertEqual([stage["name"] for stage in payload["stages"]], ["host_tests", "cli_tests"])
             self.assertEqual(len(payload["cases"]), 6)
+
+
+class VerifyPhase3Tests(unittest.TestCase):
+    def test_writes_phase3_case_matrix_with_machine_readable_status(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            smoke_report = repo_root / "build" / "sim_reports" / "sitl_smoke.json"
+            smoke_report.parent.mkdir(parents=True, exist_ok=True)
+            smoke_report.write_text(
+                json.dumps(
+                    {
+                        "adapter_bindings": [
+                            {"name": "imu", "transport": "udp", "bound": True, "port": 9001},
+                            {"name": "remote", "transport": "udp", "bound": True, "port": 9004},
+                            {"name": "motor", "transport": "udp", "bound": True, "port": 9003},
+                        ],
+                        "adapter_binding_summary": {"bound_count": 3, "expected_count": 3, "all_bound": True},
+                        "runtime_output_observations": [{"topic": "actuator_command", "sample_count": 2}],
+                        "runtime_output_observation_count": 1,
+                        "runtime_binding": {
+                            "passed": True,
+                            "chain": "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output",
+                        },
+                        "smoke_result": {"passed": True},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            verification_report = repo_root / "build" / "verification_reports" / "phase3.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=0),
+            ):
+                rc = _run_verify_phase3("balance_chassis", verification_report, None)
+
+            self.assertEqual(rc, 0)
+            payload = json.loads(verification_report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "passed")
+            self.assertEqual(payload["stages"][0]["name"], "smoke")
+            self.assertEqual(
+                [case["name"] for case in payload["cases"]],
+                ["runtime_binding", "runtime_outputs", "artifact_schema"],
+            )
+            self.assertEqual(
+                payload["cases"][0]["description"],
+                "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output",
+            )
+
+    def test_runtime_outputs_case_fails_without_observed_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            smoke_report = repo_root / "build" / "sim_reports" / "sitl_smoke.json"
+            smoke_report.parent.mkdir(parents=True, exist_ok=True)
+            smoke_report.write_text(
+                json.dumps(
+                    {
+                        "adapter_bindings": [],
+                        "adapter_binding_summary": {"bound_count": 0, "expected_count": 3, "all_bound": False},
+                        "runtime_output_observations": [],
+                        "runtime_output_observation_count": 0,
+                        "runtime_binding": {"passed": False},
+                        "smoke_result": {"passed": False},
+                    }
+                ),
+                encoding="utf-8",
+            )
+            verification_report = repo_root / "build" / "verification_reports" / "phase3_runtime_outputs.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=0),
+            ):
+                rc = _run_verify_phase3("balance_chassis", verification_report, "runtime_outputs")
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(verification_report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "failed")
+            self.assertEqual(payload["cases"], [{"name": "runtime_outputs", "status": "failed", "reason": "runtime_output_observation_count=0"}])
 
 
 class GeneratedArtifactFreshnessTests(unittest.TestCase):

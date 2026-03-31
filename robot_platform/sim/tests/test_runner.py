@@ -253,6 +253,25 @@ class RunnerSummaryTests(unittest.TestCase):
             ],
         )
 
+    def test_smoke_result_exposes_phase3_artifact_fields(self) -> None:
+        summary: dict[str, object] = {
+            "adapter_bindings": [
+                {"name": "imu", "transport": "udp", "bound": True, "port": 9001},
+                {"name": "remote", "transport": "udp", "bound": True, "port": 9004},
+                {"name": "motor", "transport": "udp", "bound": True, "port": 9003},
+            ],
+            "runtime_output_observations": [
+                {"topic": "actuator_command", "sample_count": 4},
+                {"topic": "actuator_command", "sample_count": 2},
+            ],
+        }
+
+        _summarize_validation_targets(summary, BALANCE_CHASSIS_PROFILE)
+
+        self.assertIn("adapter_bindings", summary)
+        self.assertIn("adapter_binding_summary", summary)
+        self.assertEqual(summary["runtime_output_observation_count"], 2)
+
     def test_bridge_failure_requires_sitl_to_remain_alive(self) -> None:
         summary = {
             "status": "bridge_exited_early",
