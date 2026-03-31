@@ -1,6 +1,10 @@
 #include "chassis_topics.h"
 
+#include <stdio.h>
+
 #include "cmsis_os.h"
+
+static uint8_t g_actuator_command_observed;
 
 void chassis_runtime_bus_init(Chassis_Runtime_Bus_t *bus)
 {
@@ -44,4 +48,13 @@ void chassis_runtime_bus_publish_outputs(Chassis_Runtime_Bus_t *bus,
 {
     PubPushMessage(bus->robot_state_pub, (void *)robot_state);
     PubPushMessage(bus->actuator_command_pub, (void *)actuator_command);
+    if (g_actuator_command_observed == 0U)
+    {
+        g_actuator_command_observed = 1U;
+        printf("[RuntimeOutput] topic=actuator_command start=%u control_enable=%u actuator_enable=%u\n",
+               actuator_command->start ? 1U : 0U,
+               actuator_command->control_enable ? 1U : 0U,
+               actuator_command->actuator_enable ? 1U : 0U);
+        fflush(stdout);
+    }
 }

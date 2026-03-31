@@ -24,8 +24,9 @@ class RunnerMetadataTests(unittest.TestCase):
                 '[BridgeEvent] {"type":"runtime_boundary","payload":{"inputs":["ins_data","chassis_cmd"],"outputs":["actuator_command"],"transitional":["chassis_observe"]}}',
                 '[BridgeEvent] {"type":"transport_ports","payload":{"imu":9001,"motor_fb":9002,"motor_cmd":9003}}',
                 '[BridgeEvent] {"type":"runtime_output_observation","payload":{"topic":"actuator_command","sample_count":1}}',
-                '[BridgeEvent] {"type":"stats","payload":{"imu_sent":1,"mit_seen":0,"wheel_seen":0,"fb_sent":0}}',
+                '[BridgeEvent] {"type":"stats","payload":{"imu_sent":1,"mit_seen":0,"wheel_seen":0,"fb_sent":0}}[BridgeEvent] {"type":"startup_complete","payload":{"threads":["imu","motor"],"project":"balance_chassis"}}',
                 "[Bridge] stats imu_sent=1 mit_seen=0 wheel_seen=0 fb_sent=0",
+                "[RuntimeOutput] topic=actuator_command start=1 control_enable=1 actuator_enable=1",
                 '[BridgeEvent] {"type":"stats","payload":{"imu_sent":5,"mit_seen":2,"wheel_seen":1,"fb_sent":2}}',
                 "[Bridge] stats imu_sent=5 mit_seen=2 wheel_seen=1 fb_sent=2",
             ]
@@ -42,6 +43,10 @@ class RunnerMetadataTests(unittest.TestCase):
         )
         self.assertEqual(metadata["transport_ports"], {"imu": 9001, "motor_fb": 9002, "motor_cmd": 9003})
         self.assertEqual(
+            metadata["bridge_startup_complete"],
+            {"threads": ["imu", "motor"], "project": "balance_chassis"},
+        )
+        self.assertEqual(
             metadata["bridge_stats_samples"],
             [
                 {"imu_sent": 1, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
@@ -50,7 +55,10 @@ class RunnerMetadataTests(unittest.TestCase):
         )
         self.assertEqual(
             metadata["runtime_output_observations"],
-            [{"topic": "actuator_command", "sample_count": 1}],
+            [
+                {"topic": "actuator_command", "sample_count": 1},
+                {"topic": "actuator_command", "start": "1", "control_enable": "1", "actuator_enable": "1"},
+            ],
         )
 
     def test_detect_runtime_error_catches_bridge_and_sitl_tracebacks(self) -> None:

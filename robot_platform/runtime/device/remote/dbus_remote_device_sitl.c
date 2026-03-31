@@ -39,9 +39,11 @@ static platform_device_result_t platform_dbus_remote_read_input(platform_remote_
   input->mouse_left = 0U;
   input->mouse_right = 0U;
   input->keyboard_mask = 0U;
+  input->switches[0] = 3U;
+  input->switches[1] = 2U;
   input->source = 1U;
-  input->sample_time_us = 0U;
-  input->valid = false;
-  device->stamp.valid = false;
-  return PLATFORM_DEVICE_RESULT_UNAVAILABLE;
+  input->sample_time_us = 1000U;
+  input->valid = true;
+  device->stamp.valid = true;
+  return PLATFORM_DEVICE_RESULT_OK;
 }

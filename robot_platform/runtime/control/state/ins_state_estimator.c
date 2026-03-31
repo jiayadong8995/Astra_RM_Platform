@@ -2,6 +2,12 @@
 
 #include <math.h>
 
+#if defined(SITL_BUILD)
+#define PLATFORM_INS_READY_WARMUP_TICKS 20.0f
+#else
+#define PLATFORM_INS_READY_WARMUP_TICKS 3000.0f
+#endif
+
 static void body_frame_to_earth_frame(const float *vec_bf, float *vec_ef, const float *q);
 static void earth_frame_to_body_frame(const float *vec_ef, float *vec_bf, const float *q);
 
@@ -70,7 +76,7 @@ void platform_ins_state_estimator_apply_sample(platform_ins_state_estimator_t *s
         state->ins.sensor.world_accel[2] = 0.0f;
     }
 
-    if (state->ins_time > 3000.0f)
+    if (state->ins_time > PLATFORM_INS_READY_WARMUP_TICKS)
     {
         state->ins.health.ready = 1U;
         state->ins.attitude.pitch = state->mahony.roll - PITCH_OFFSET;

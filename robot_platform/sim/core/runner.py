@@ -39,6 +39,19 @@ def _append_runtime_output_observation(
     observations.append(observation)
 
 
+def _iter_output_lines(lines: list[str]) -> list[str]:
+    normalized: list[str] = []
+    for raw_line in lines:
+        if not isinstance(raw_line, str):
+            continue
+        split_lines = raw_line.splitlines()
+        if split_lines:
+            normalized.extend(split_lines)
+        else:
+            normalized.append(raw_line)
+    return normalized
+
+
 def _parse_key_value_line(line: str, prefix: str) -> dict[str, object] | None:
     if not line.startswith(prefix):
         return None
@@ -64,32 +77,43 @@ def _extract_bridge_metadata(lines: list[str]) -> dict[str, object]:
         r"transitional=(?P<transitional>\(.+?\))$"
     )
 
-    for line in lines:
-        if line.startswith("[BridgeEvent] "):
-            try:
-                event = json.loads(line[len("[BridgeEvent] "):])
-            except json.JSONDecodeError:
-                continue
+    for line in _iter_output_lines(lines):
+        if "[BridgeEvent] " in line:
+            event_payloads = line.split("[BridgeEvent] ")
+            for event_payload in event_payloads:
+                event_payload = event_payload.strip()
+                if not event_payload:
+                    continue
+                try:
+                    event = json.loads(event_payload)
+                except json.JSONDecodeError:
+                    continue
 
-            event_type = event.get("type")
-            payload = event.get("payload")
-            if not isinstance(payload, dict):
-                continue
+                event_type = event.get("type")
+                payload = event.get("payload")
+                if not isinstance(payload, dict):
+                    continue
 
-            if event_type == "runtime_boundary":
-                metadata["runtime_boundary"] = payload
-            elif event_type == "transport_ports":
-                metadata["transport_ports"] = payload
-            elif event_type == "protocol_version":
-                metadata["bridge_protocol"] = payload
-            elif event_type == "startup_error":
-                metadata["bridge_startup_error"] = payload
-            elif event_type == "startup_complete":
-                metadata["bridge_startup_complete"] = payload
-            elif event_type == "stats":
-                _append_stats_sample(stats_samples, _normalize_stats_sample(payload))
-            elif event_type == "runtime_output_observation":
-                _append_runtime_output_observation(runtime_output_observations, payload)
+                if event_type == "runtime_boundary":
+                    metadata["runtime_boundary"] = payload
+                elif event_type == "transport_ports":
+                    metadata["transport_ports"] = payload
+                elif event_type == "protocol_version":
+                    metadata["bridge_protocol"] = payload
+                elif event_type == "startup_error":
+                    metadata["bridge_startup_error"] = payload
+                elif event_type == "startup_complete":
+                    metadata["bridge_startup_complete"] = payload
+                elif event_type == "stats":
+                    _append_stats_sample(stats_samples, _normalize_stats_sample(payload))
+                elif event_type == "runtime_output_observation":
+                    _append_runtime_output_observation(runtime_output_observations, payload)
+            continue
+
+        if line.startswith("[RuntimeOutput] "):
+            observation = _parse_key_value_line(line, "[RuntimeOutput] ")
+            if observation is not None:
+                _append_runtime_output_observation(runtime_output_observations, observation)
             continue
 
         boundary_match = boundary_pattern.match(line)
@@ -487,7 +511,12 @@ def run_profile_session(
             bridge_output, _ = bridge_proc.communicate()
             summary["bridge_output"] = bridge_output.splitlines()
             summary["bridge_exit_code"] = bridge_proc.returncode
-            summary.update(_extract_bridge_metadata(summary["bridge_output"]))
+        metadata_lines = []
+        if isinstance(summary.get("bridge_output"), list):
+            metadata_lines.extend(summary["bridge_output"])
+        if isinstance(summary.get("sitl_output"), list):
+            metadata_lines.extend(summary["sitl_output"])
+        summary.update(_extract_bridge_metadata(metadata_lines))
         if summary.get("status") == "ok" and _detect_runtime_error(summary):
             summary["status"] = "bridge_runtime_error"
             rc = 1
