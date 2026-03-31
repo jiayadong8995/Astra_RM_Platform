@@ -21,9 +21,9 @@ class RunnerMetadataTests(unittest.TestCase):
         metadata = _extract_bridge_metadata(
             [
                 '[BridgeEvent] {"type":"protocol_version","payload":{"bridge_protocol_version":1}}',
-                '[BridgeEvent] {"type":"runtime_boundary","payload":{"inputs":["ins_data","chassis_cmd"],"outputs":["chassis_state","leg_left","leg_right"],"transitional":["chassis_observe"]}}',
+                '[BridgeEvent] {"type":"runtime_boundary","payload":{"inputs":["ins_data","chassis_cmd"],"outputs":["actuator_command"],"transitional":["chassis_observe"]}}',
                 '[BridgeEvent] {"type":"transport_ports","payload":{"imu":9001,"motor_fb":9002,"motor_cmd":9003}}',
-                '[BridgeEvent] {"type":"runtime_output_observation","payload":{"topic":"chassis_state","sample_count":1}}',
+                '[BridgeEvent] {"type":"runtime_output_observation","payload":{"topic":"actuator_command","sample_count":1}}',
                 '[BridgeEvent] {"type":"stats","payload":{"imu_sent":1,"mit_seen":0,"wheel_seen":0,"fb_sent":0}}',
                 "[Bridge] stats imu_sent=1 mit_seen=0 wheel_seen=0 fb_sent=0",
                 '[BridgeEvent] {"type":"stats","payload":{"imu_sent":5,"mit_seen":2,"wheel_seen":1,"fb_sent":2}}',
@@ -36,7 +36,7 @@ class RunnerMetadataTests(unittest.TestCase):
             metadata["runtime_boundary"],
             {
                 "inputs": ["ins_data", "chassis_cmd"],
-                "outputs": ["chassis_state", "leg_left", "leg_right"],
+                "outputs": ["actuator_command"],
                 "transitional": ["chassis_observe"],
             },
         )
@@ -50,7 +50,7 @@ class RunnerMetadataTests(unittest.TestCase):
         )
         self.assertEqual(
             metadata["runtime_output_observations"],
-            [{"topic": "chassis_state", "sample_count": 1}],
+            [{"topic": "actuator_command", "sample_count": 1}],
         )
 
     def test_detect_runtime_error_catches_bridge_and_sitl_tracebacks(self) -> None:
@@ -73,12 +73,12 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertEqual(BALANCE_CHASSIS_PROFILE.runtime_input_boundary.topics, ("ins_data", "chassis_cmd"))
         self.assertEqual(
             BALANCE_CHASSIS_PROFILE.runtime_output_boundary.topics,
-            ("chassis_state", "leg_left", "leg_right"),
+            ("actuator_command",),
         )
         self.assertTrue(BALANCE_CHASSIS_PROFILE.smoke_expectations.require_bridge_stats_observed)
         self.assertEqual(
             tuple(target.name for target in BALANCE_CHASSIS_PROFILE.validation_targets),
-            ("chassis_state_summary", "leg_output_pair"),
+            ("actuator_command_stream",),
         )
 
     def test_summarize_bridge_stats_computes_delta_and_rate(self) -> None:
@@ -111,14 +111,13 @@ class RunnerSummaryTests(unittest.TestCase):
             "bridge_startup_error": {"message": "[Errno 1] Operation not permitted"},
             "bridge_stats_last": {"imu_sent": 0, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
             "validation_summary": {
-                "declared_count": 2,
-                "required_count": 2,
+                "declared_count": 1,
+                "required_count": 1,
                 "observed_count": 0,
-                "pending_count": 2,
+                "pending_count": 1,
             },
             "validation_targets_status": [
-                {"name": "chassis_state_summary", "required_for_smoke": True, "status": "declared_only"},
-                {"name": "leg_output_pair", "required_for_smoke": True, "status": "declared_only"},
+                {"name": "actuator_command_stream", "required_for_smoke": True, "status": "declared_only"},
             ],
             "smoke_health": {"passed": False, "failures": ["session_status_ok"]},
         }
@@ -130,11 +129,11 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertTrue(summary["smoke_result"]["sitl_remained_alive"])
         self.assertEqual(
             summary["smoke_result"]["validation"],
-            {"declared_count": 2, "required_count": 2, "observed_count": 0, "pending_count": 2},
+            {"declared_count": 1, "required_count": 1, "observed_count": 0, "pending_count": 1},
         )
         self.assertEqual(
             summary["smoke_result"]["pending_validation_targets"],
-            ["chassis_state_summary", "leg_output_pair"],
+            ["actuator_command_stream"],
         )
 
     def test_smoke_health_recomputes_failure_after_runtime_error_status(self) -> None:
@@ -188,10 +187,10 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertEqual(
             summary["validation_summary"],
             {
-                "declared_count": 2,
-                "required_count": 2,
+                "declared_count": 1,
+                "required_count": 1,
                 "observed_count": 0,
-                "pending_count": 2,
+                "pending_count": 1,
                 "runtime_output_observation_count": 0,
             },
         )
@@ -199,20 +198,10 @@ class RunnerSummaryTests(unittest.TestCase):
             summary["validation_targets_status"],
             [
                 {
-                    "name": "chassis_state_summary",
+                    "name": "actuator_command_stream",
                     "kind": "runtime_output",
-                    "source_topics": ["chassis_state"],
-                    "description": "Primary chassis runtime state summary exposed to sim/report consumers.",
-                    "required_for_smoke": True,
-                    "status": "declared_only",
-                    "observed": False,
-                    "observed_source_topics": [],
-                },
-                {
-                    "name": "leg_output_pair",
-                    "kind": "runtime_output",
-                    "source_topics": ["leg_left", "leg_right"],
-                    "description": "Left/right leg outputs that capture the main control result for the current robot profile.",
+                    "source_topics": ["actuator_command"],
+                    "description": "Observed actuator-command traffic emitted by the current balance_chassis runtime path.",
                     "required_for_smoke": True,
                     "status": "declared_only",
                     "observed": False,
@@ -224,9 +213,7 @@ class RunnerSummaryTests(unittest.TestCase):
     def test_validation_targets_consume_runtime_output_observations(self) -> None:
         summary: dict[str, object] = {
             "runtime_output_observations": [
-                {"topic": "chassis_state", "sample_count": 4},
-                {"topic": "leg_left", "sample_count": 4},
-                {"topic": "leg_right", "sample_count": 4},
+                {"topic": "actuator_command", "sample_count": 4},
             ]
         }
 
@@ -235,35 +222,25 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertEqual(
             summary["validation_summary"],
             {
-                "declared_count": 2,
-                "required_count": 2,
-                "observed_count": 2,
+                "declared_count": 1,
+                "required_count": 1,
+                "observed_count": 1,
                 "pending_count": 0,
-                "runtime_output_observation_count": 3,
+                "runtime_output_observation_count": 1,
             },
         )
         self.assertEqual(
             summary["validation_targets_status"],
             [
                 {
-                    "name": "chassis_state_summary",
+                    "name": "actuator_command_stream",
                     "kind": "runtime_output",
-                    "source_topics": ["chassis_state"],
-                    "description": "Primary chassis runtime state summary exposed to sim/report consumers.",
+                    "source_topics": ["actuator_command"],
+                    "description": "Observed actuator-command traffic emitted by the current balance_chassis runtime path.",
                     "required_for_smoke": True,
                     "status": "observed",
                     "observed": True,
-                    "observed_source_topics": ["chassis_state"],
-                },
-                {
-                    "name": "leg_output_pair",
-                    "kind": "runtime_output",
-                    "source_topics": ["leg_left", "leg_right"],
-                    "description": "Left/right leg outputs that capture the main control result for the current robot profile.",
-                    "required_for_smoke": True,
-                    "status": "observed",
-                    "observed": True,
-                    "observed_source_topics": ["leg_left", "leg_right"],
+                    "observed_source_topics": ["actuator_command"],
                 },
             ],
         )

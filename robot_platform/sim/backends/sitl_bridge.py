@@ -27,6 +27,17 @@ def emit_event(event_type: str, payload: dict[str, object]) -> None:
     print(f"[BridgeEvent] {json.dumps({'type': event_type, 'payload': payload}, ensure_ascii=False)}")
 
 
+def emit_runtime_output_observation(*, sample_count: int, command_kind: str, motor_id: int | None = None) -> None:
+    payload: dict[str, object] = {
+        "topic": "actuator_command",
+        "sample_count": sample_count,
+        "command_kind": command_kind,
+    }
+    if motor_id is not None:
+        payload["motor_id"] = motor_id
+    emit_event("runtime_output_observation", payload)
+
+
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog="sitl_bridge", add_help=False)
     parser.add_argument("--project", required=True)
@@ -73,6 +84,7 @@ def motor_thread(
     create_motor_feedback,
 ) -> None:
     motor_states = {1: [0.0, 0.0], 2: [0.0, 0.0], 3: [0.0, 0.0], 4: [0.0, 0.0]}
+    actuator_command_count = 0
 
     print(f"[Bridge] Listening for motor commands on UDP {motor_cmd_port}...")
     while True:
@@ -84,6 +96,12 @@ def motor_thread(
         if cmd_type == 1 and len(data) >= 28:
             cmd = MitMotorCommand.decode(data)
             stats.mit_commands_seen += 1
+            actuator_command_count += 1
+            emit_runtime_output_observation(
+                sample_count=actuator_command_count,
+                command_kind="mit",
+                motor_id=cmd.motor_id,
+            )
 
             if cmd.motor_id not in motor_states:
                 continue
@@ -107,6 +125,11 @@ def motor_thread(
         elif cmd_type == 2 and len(data) >= 12:
             WheelCurrentCommand.decode(data)
             stats.wheel_commands_seen += 1
+            actuator_command_count += 1
+            emit_runtime_output_observation(
+                sample_count=actuator_command_count,
+                command_kind="wheel",
+            )
 
 
 def stats_thread(stats: BridgeStats) -> None:

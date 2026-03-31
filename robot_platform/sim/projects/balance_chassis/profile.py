@@ -21,11 +21,7 @@ RUNTIME_INPUT_BOUNDARY = RuntimeTopicBoundary(
 
 RUNTIME_OUTPUT_BOUNDARY = RuntimeTopicBoundary(
     role="official_output",
-    topics=(
-        "chassis_state",
-        "leg_left",
-        "leg_right",
-    ),
+    topics=("actuator_command",),
 )
 
 RUNTIME_TRANSITIONAL_TOPICS = RuntimeTopicBoundary(
@@ -35,17 +31,10 @@ RUNTIME_TRANSITIONAL_TOPICS = RuntimeTopicBoundary(
 
 VALIDATION_TARGETS = (
     ValidationTarget(
-        name="chassis_state_summary",
+        name="actuator_command_stream",
         kind="runtime_output",
-        source_topics=("chassis_state",),
-        description="Primary chassis runtime state summary exposed to sim/report consumers.",
-        required_for_smoke=True,
-    ),
-    ValidationTarget(
-        name="leg_output_pair",
-        kind="runtime_output",
-        source_topics=("leg_left", "leg_right"),
-        description="Left/right leg outputs that capture the main control result for the current robot profile.",
+        source_topics=("actuator_command",),
+        description="Observed actuator-command traffic emitted by the current balance_chassis runtime path.",
         required_for_smoke=True,
     ),
 )
