@@ -359,6 +359,20 @@ if(PLATFORM_HOST_TESTS)
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
   )
 
+  add_executable(test_device_profile_sitl_runtime_bindings
+    ${PLATFORM_HOST_TEST_DIR}/test_device_profile_sitl_runtime_bindings.c
+  )
+  target_link_libraries(test_device_profile_sitl_runtime_bindings PRIVATE balance_safety_host_runtime)
+  target_compile_features(test_device_profile_sitl_runtime_bindings PRIVATE c_std_11)
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_device_profile_sitl_runtime_bindings PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_device_profile_sitl_runtime_bindings PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_device_profile_sitl_runtime_bindings COMMAND test_device_profile_sitl_runtime_bindings)
+  set_tests_properties(test_device_profile_sitl_runtime_bindings PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
+
   add_executable(test_safety_mapping
     ${PLATFORM_HOST_TEST_DIR}/test_safety_mapping.c
   )
