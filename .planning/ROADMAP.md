@@ -67,7 +67,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 03-01-PLAN.md - Rebind SITL IMU and remote ingress to runtime-backed fake-link adapters instead of stub-only devices.
-- [ ] 03-02-PLAN.md - Add `verify phase3` and persist runtime-output plus adapter-binding evidence in authoritative JSON artifacts.
+- [x] 03-02-PLAN.md - Add `verify phase3` and persist runtime-output plus adapter-binding evidence in authoritative JSON artifacts.
 - [ ] 03-03-PLAN.md - Classify communication/control/observation failures, fail contract drift explicitly, and expose diagnostics.
 
 ### Phase 4: Authoritative Platform Composition

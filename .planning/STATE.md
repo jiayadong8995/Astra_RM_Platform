@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-fake-link-runtime-proof-01-PLAN.md
-last_updated: "2026-03-31T17:14:34.857Z"
+stopped_at: Completed 03-fake-link-runtime-proof-02-PLAN.md
+last_updated: "2026-03-31T17:29:14.269Z"
 last_activity: 2026-03-31
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
   percent: 40
 ---
 
@@ -26,7 +26,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-30)
 ## Current Position
 
 Phase: 03 (fake-link-runtime-proof) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-03-31
 
@@ -58,6 +58,7 @@ Progress: [████░░░░░░] 40%
 | Phase 02-host-safety-control-verification P02 | 25min | 2 tasks | 14 files |
 | Phase 02-host-safety-control-verification P03 | 13min | 2 tasks | 13 files |
 | Phase 03-fake-link-runtime-proof P01 | 5min | 2 tasks | 7 files |
+| Phase 03-fake-link-runtime-proof P02 | 624 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,9 @@ Recent decisions affecting current work:
 - [Phase 02-host-safety-control-verification]: Wheel-leg danger coverage stays narrow and machine-judgeable instead of trying to prove broad closed-loop stability on host.
 - [Phase 03-fake-link-runtime-proof]: Mirror the hardware profile pattern in SITL by binding static config objects instead of null-config stub wrappers.
 - [Phase 03-fake-link-runtime-proof]: Keep the Phase 3 proof narrow: verify runtime-backed IMU and remote bindings explicitly, while leaving motor control flow unchanged apart from lazy socket setup needed for host init.
+- [Phase 03-fake-link-runtime-proof]: Keep Phase 3 proof JSON-first by deriving verify phase3 results from the authoritative smoke artifact instead of creating a parallel report path.
+- [Phase 03-fake-link-runtime-proof]: Record remote UDP transport and adapter binding truth alongside runtime output observations so the artifact can prove the full fake-link chain surface.
+- [Phase 03-fake-link-runtime-proof]: Treat missing SITL device include/define wiring as a blocking build issue and auto-fix it inside this plan so phase3 verification can build end to end.
 
 ### Pending Todos
 
@@ -105,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T17:14:34.853Z
-Stopped at: Completed 03-fake-link-runtime-proof-01-PLAN.md
+Last session: 2026-03-31T17:29:14.265Z
+Stopped at: Completed 03-fake-link-runtime-proof-02-PLAN.md
 Resume file: None
