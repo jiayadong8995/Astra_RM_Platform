@@ -323,12 +323,140 @@ class VerifyPhase3Tests(unittest.TestCase):
             self.assertEqual(payload["stages"][0]["name"], "smoke")
             self.assertEqual(
                 [case["name"] for case in payload["cases"]],
-                ["runtime_binding", "runtime_outputs", "artifact_schema"],
+                ["runtime_binding", "runtime_outputs", "artifact_schema", "classification", "contract_drift", "diagnostics"],
             )
             self.assertEqual(
                 payload["cases"][0]["description"],
                 "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output",
             )
+            self.assertEqual(payload["cases"][3]["status"], "passed")
+            self.assertEqual(payload["cases"][4]["status"], "passed")
+            self.assertEqual(payload["cases"][5]["status"], "passed")
+
+    def test_classification_case_requires_separate_safety_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            smoke_report = repo_root / "build" / "sim_reports" / "sitl_smoke.json"
+            smoke_report.parent.mkdir(parents=True, exist_ok=True)
+            smoke_report.write_text(
+                json.dumps(
+                    {
+                        "runtime_binding": {
+                            "passed": True,
+                            "chain": "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output",
+                        },
+                        "runtime_output_observation_count": 1,
+                        "adapter_binding_summary": {"bound_count": 3, "expected_count": 3, "all_bound": True},
+                        "smoke_result": {
+                            "passed": True,
+                            "failure_layer": "safety_protection",
+                            "safety_protection_diagnostics": {"reasons": ["unsafe_actuator_verdict"]},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            verification_report = repo_root / "build" / "verification_reports" / "phase3_classification.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=0),
+            ):
+                rc = _run_verify_phase3("balance_chassis", verification_report, "classification")
+
+            self.assertEqual(rc, 0)
+            payload = json.loads(verification_report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["cases"][0]["name"], "classification")
+            self.assertEqual(payload["cases"][0]["status"], "passed")
+
+    def test_contract_drift_case_fails_for_protocol_boundary_and_port_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            smoke_report = repo_root / "build" / "sim_reports" / "sitl_smoke.json"
+            smoke_report.parent.mkdir(parents=True, exist_ok=True)
+            smoke_report.write_text(
+                json.dumps(
+                    {
+                        "runtime_binding": {
+                            "passed": False,
+                            "chain": "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output",
+                        },
+                        "runtime_output_observation_count": 1,
+                        "adapter_binding_summary": {"bound_count": 3, "expected_count": 3, "all_bound": True},
+                        "smoke_result": {
+                            "passed": False,
+                            "failure_layer": "communication",
+                            "communication_diagnostics": {
+                                "reasons": ["protocol_mismatch", "runtime_boundary_mismatch", "transport_ports_mismatch"]
+                            },
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            verification_report = repo_root / "build" / "verification_reports" / "phase3_contract_drift.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=0),
+            ):
+                rc = _run_verify_phase3("balance_chassis", verification_report, "contract_drift")
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(verification_report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "failed")
+            self.assertEqual(payload["cases"][0]["name"], "contract_drift")
+            self.assertEqual(payload["cases"][0]["reason"], "protocol_mismatch,runtime_boundary_mismatch,transport_ports_mismatch")
+
+    def test_diagnostics_case_requires_diagnostics_payloads(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            smoke_report = repo_root / "build" / "sim_reports" / "sitl_smoke.json"
+            smoke_report.parent.mkdir(parents=True, exist_ok=True)
+            smoke_report.write_text(
+                json.dumps(
+                    {
+                        "adapter_bindings": [{"name": "imu", "transport": "udp", "bound": True, "port": 9001}],
+                        "adapter_binding_summary": {"bound_count": 1, "expected_count": 3, "all_bound": False},
+                        "runtime_output_observations": [],
+                        "runtime_output_observation_count": 0,
+                        "runtime_binding": {
+                            "passed": False,
+                            "chain": "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output",
+                        },
+                        "smoke_result": {
+                            "passed": False,
+                            "failure_layer": "observation",
+                            "communication_diagnostics": {"bridge_counters": {"imu_sent": 10}},
+                            "observation_diagnostics": {"reasons": ["missing_runtime_observations"], "missing_runtime_output_count": 1},
+                            "control_diagnostics": {"reasons": []},
+                            "safety_protection_diagnostics": {"reasons": ["unsafe_actuator_verdict"]},
+                        },
+                    }
+                ),
+                encoding="utf-8",
+            )
+            verification_report = repo_root / "build" / "verification_reports" / "phase3_diagnostics.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=0),
+            ):
+                rc = _run_verify_phase3("balance_chassis", verification_report, "diagnostics")
+
+            self.assertEqual(rc, 0)
+            payload = json.loads(verification_report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["cases"][0]["name"], "diagnostics")
+            self.assertEqual(payload["cases"][0]["status"], "passed")
 
     def test_runtime_outputs_case_fails_without_observed_outputs(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

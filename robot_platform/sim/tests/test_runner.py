@@ -281,6 +281,131 @@ class RunnerSummaryTests(unittest.TestCase):
         self.assertIn("adapter_binding_summary", summary)
         self.assertEqual(summary["runtime_output_observation_count"], 2)
 
+    def test_smoke_result_classifies_contract_drift_as_communication(self) -> None:
+        summary = {
+            "status": "ok",
+            "sitl_exit_code": -15,
+            "bridge_protocol_declared": {"bridge_protocol_version": 1},
+            "bridge_protocol": {"bridge_protocol_version": 2},
+            "runtime_boundary_declared": {"inputs": ["ins_data"], "outputs": ["actuator_command"], "transitional": []},
+            "runtime_boundary": {"inputs": ["ins_data", "chassis_cmd"], "outputs": ["actuator_command"], "transitional": []},
+            "transport_ports_declared": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
+            "transport_ports": {"imu": 9001, "remote": 9014, "motor_fb": 9002, "motor_cmd": 9003},
+            "adapter_bindings": [
+                {"name": "imu", "transport": "udp", "bound": True, "port": 9001},
+                {"name": "remote", "transport": "udp", "bound": True, "port": 9004},
+                {"name": "motor", "transport": "udp", "bound": True, "port": 9003},
+            ],
+            "bridge_stats_samples": [{"imu_sent": 1, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0}],
+            "runtime_output_observations": [{"topic": "actuator_command", "sample_count": 1}],
+            "sitl_output": ["Starting FreeRTOS POSIX Scheduler..."],
+        }
+
+        _summarize_runtime_boundary(summary)
+        _summarize_validation_targets(summary, BALANCE_CHASSIS_PROFILE)
+        _build_smoke_result(summary)
+
+        self.assertEqual(summary["smoke_result"]["failure_layer"], "communication")
+        self.assertEqual(
+            summary["smoke_result"]["communication_diagnostics"]["reasons"],
+            ["protocol_mismatch", "runtime_boundary_mismatch", "transport_ports_mismatch"],
+        )
+
+    def test_smoke_result_distinguishes_observation_and_control_failures(self) -> None:
+        observation_summary = {
+            "status": "ok",
+            "sitl_exit_code": -15,
+            "bridge_protocol_declared": {"bridge_protocol_version": 1},
+            "bridge_protocol": {"bridge_protocol_version": 1},
+            "runtime_boundary_declared": {"inputs": ["ins_data", "chassis_cmd"], "outputs": ["actuator_command"], "transitional": ["chassis_observe"]},
+            "runtime_boundary": {"inputs": ["ins_data", "chassis_cmd"], "outputs": ["actuator_command"], "transitional": ["chassis_observe"]},
+            "transport_ports_declared": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
+            "transport_ports": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
+            "adapter_bindings": [
+                {"name": "imu", "transport": "udp", "bound": True, "port": 9001},
+                {"name": "remote", "transport": "udp", "bound": True, "port": 9004},
+                {"name": "motor", "transport": "udp", "bound": True, "port": 9003},
+            ],
+            "bridge_stats_samples": [
+                {"imu_sent": 1, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
+                {"imu_sent": 10, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
+            ],
+            "runtime_output_observations": [],
+            "sitl_output": ["Starting FreeRTOS POSIX Scheduler..."],
+        }
+
+        _summarize_runtime_boundary(observation_summary)
+        _summarize_validation_targets(observation_summary, BALANCE_CHASSIS_PROFILE)
+        _build_smoke_result(observation_summary)
+
+        self.assertEqual(observation_summary["smoke_result"]["failure_layer"], "observation")
+        self.assertEqual(
+            observation_summary["smoke_result"]["observation_diagnostics"]["runtime_chain"],
+            "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output",
+        )
+
+        control_summary = {
+            **observation_summary,
+            "runtime_output_observations": [{"topic": "actuator_command", "sample_count": 3}],
+            "validation_targets_status": [
+                {"name": "actuator_command_stream", "required_for_smoke": True, "status": "observed", "observed": True}
+            ],
+            "validation_summary": {
+                "declared_count": 1,
+                "required_count": 1,
+                "observed_count": 1,
+                "pending_count": 0,
+                "runtime_output_observation_count": 1,
+            },
+            "runtime_output_observation_count": 1,
+            "validation_status_summary": {"control_failure_reasons": ["validation_target_failed"]},
+        }
+
+        _build_smoke_result(control_summary)
+
+        self.assertEqual(control_summary["smoke_result"]["failure_layer"], "control")
+        self.assertEqual(
+            control_summary["smoke_result"]["control_diagnostics"]["reasons"],
+            ["validation_target_failed"],
+        )
+
+    def test_smoke_result_preserves_safety_protection_provenance(self) -> None:
+        summary = {
+            "status": "ok",
+            "sitl_exit_code": -15,
+            "bridge_protocol_declared": {"bridge_protocol_version": 1},
+            "bridge_protocol": {"bridge_protocol_version": 1},
+            "runtime_boundary_declared": {"inputs": ["ins_data", "chassis_cmd"], "outputs": ["actuator_command"], "transitional": ["chassis_observe"]},
+            "runtime_boundary": {"inputs": ["ins_data", "chassis_cmd"], "outputs": ["actuator_command"], "transitional": ["chassis_observe"]},
+            "transport_ports_declared": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
+            "transport_ports": {"imu": 9001, "remote": 9004, "motor_fb": 9002, "motor_cmd": 9003},
+            "adapter_bindings": [
+                {"name": "imu", "transport": "udp", "bound": True, "port": 9001},
+                {"name": "remote", "transport": "udp", "bound": True, "port": 9004},
+                {"name": "motor", "transport": "udp", "bound": True, "port": 9003},
+            ],
+            "bridge_stats_samples": [
+                {"imu_sent": 1, "mit_seen": 0, "wheel_seen": 0, "fb_sent": 0},
+                {"imu_sent": 10, "mit_seen": 4, "wheel_seen": 2, "fb_sent": 4},
+            ],
+            "runtime_output_observations": [{"topic": "actuator_command", "sample_count": 4}],
+            "validation_status_summary": {"safety_protection_reasons": ["unsafe_actuator_verdict"]},
+            "sitl_output": ["Starting FreeRTOS POSIX Scheduler..."],
+        }
+
+        _summarize_runtime_boundary(summary)
+        _summarize_validation_targets(summary, BALANCE_CHASSIS_PROFILE)
+        _build_smoke_result(summary)
+
+        self.assertEqual(summary["smoke_result"]["failure_layer"], "safety_protection")
+        self.assertEqual(
+            summary["smoke_result"]["safety_protection_diagnostics"]["reasons"],
+            ["unsafe_actuator_verdict"],
+        )
+        self.assertIn("communication_diagnostics", summary["smoke_result"])
+        self.assertIn("observation_diagnostics", summary["smoke_result"])
+        self.assertIn("control_diagnostics", summary["smoke_result"])
+
     def test_bridge_failure_requires_sitl_to_remain_alive(self) -> None:
         summary = {
             "status": "bridge_exited_early",
