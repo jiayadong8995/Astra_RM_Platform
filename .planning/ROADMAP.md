@@ -30,7 +30,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Firmware generation is refused when checked-in STM32-generated artifacts are stale relative to their source inputs.
   4. Unsafe runtime contract or transport payload sizing is rejected explicitly instead of being silently accepted.
   5. Supported host verification targets surface sanitizer failures when memory-safety or undefined-behavior defects occur.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 02-01-PLAN.md - Build the deterministic host harness and `verify phase2` entrypoint for the current task/topic path.
+- [ ] 02-02-PLAN.md - Add hard safety oracles for mapping, sensor validity, arming transitions, and saturation.
+- [ ] 02-03-PLAN.md - Close stale-command and wheel-leg danger-signature coverage and finalize the Phase 2 verdict matrix.
 
 ### Phase 2: Host Safety Control Verification
 **Goal**: Developers can deterministically exercise the real `balance_chassis` control path on host and prove that known unsafe control behaviors are blocked before simulation or hardware.
@@ -85,7 +89,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Contracts and Verification Foundation | 5/5 | Complete | 2026-03-31 |
-| 2. Host Safety Control Verification | 0/TBD | Not started | - |
+| 2. Host Safety Control Verification | 0/3 | Planned | - |
 | 3. Fake-Link Runtime Proof | 0/TBD | Not started | - |
 | 4. Authoritative Platform Composition | 0/TBD | Not started | - |
 | 5. Default Closure Loop | 0/TBD | Not started | - |
