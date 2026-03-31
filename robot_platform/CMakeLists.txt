@@ -2,9 +2,15 @@ cmake_minimum_required(VERSION 3.22)
 
 project(robot_platform C ASM)
 
+# Export compilation database so editor tooling can resolve includes,
+# macros, and per-file flags for jump-to-definition.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 option(PLATFORM_TARGET_HW "Build hardware target" ON)
 option(PLATFORM_TARGET_REPLAY "Build replay target" OFF)
 option(PLATFORM_TARGET_SIM "Build simulation target" OFF)
+option(PLATFORM_HOST_TESTS "Build Linux host-side C tests" OFF)
+option(PLATFORM_HOST_TEST_SANITIZERS "Enable sanitizers for Linux host-side C tests" ON)
 option(PLATFORM_SIM_ASAN "Enable AddressSanitizer for SITL target" OFF)
 
 set(PLATFORM_ROOT ${CMAKE_CURRENT_LIST_DIR})
@@ -18,6 +24,8 @@ message(STATUS "PLATFORM_ROOT=${PLATFORM_ROOT}")
 message(STATUS "PLATFORM_TARGET_HW=${PLATFORM_TARGET_HW}")
 message(STATUS "PLATFORM_TARGET_REPLAY=${PLATFORM_TARGET_REPLAY}")
 message(STATUS "PLATFORM_TARGET_SIM=${PLATFORM_TARGET_SIM}")
+message(STATUS "PLATFORM_HOST_TESTS=${PLATFORM_HOST_TESTS}")
+message(STATUS "PLATFORM_HOST_TEST_SANITIZERS=${PLATFORM_HOST_TEST_SANITIZERS}")
 message(STATUS "PLATFORM_SIM_ASAN=${PLATFORM_SIM_ASAN}")
 
 add_custom_target(platform_info
@@ -43,8 +51,68 @@ set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
 set(PLATFORM_APP_IO_DIR ${PLATFORM_LEGACY_APP_DIR}/app_io)
 set(PLATFORM_CONTROL_CONTRACT_DIR ${PLATFORM_RUNTIME_DIR}/control/contracts)
 set(PLATFORM_MODULE_CONTROL_LIB_DIR ${PLATFORM_RUNTIME_DIR}/module/lib/control)
+set(PLATFORM_HOST_TEST_DIR ${PLATFORM_RUNTIME_DIR}/tests/host)
 
 set(BALANCE_CHASSIS_DEVICE_SOURCES)
+
+if(PLATFORM_HOST_TESTS)
+  enable_testing()
+
+  set(PLATFORM_MESSAGE_CENTER_HOST_TEST_SOURCE
+    ${PLATFORM_HOST_TEST_DIR}/test_message_center.c
+  )
+  if(NOT EXISTS ${PLATFORM_MESSAGE_CENTER_HOST_TEST_SOURCE})
+    set(PLATFORM_MESSAGE_CENTER_HOST_TEST_SOURCE
+      ${CMAKE_CURRENT_BINARY_DIR}/generated_host_tests/test_message_center_bootstrap.c
+    )
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated_host_tests)
+    file(WRITE ${PLATFORM_MESSAGE_CENTER_HOST_TEST_SOURCE}
+      "#include <stdint.h>\n"
+      "int main(void)\n"
+      "{\n"
+      "    return 0;\n"
+      "}\n"
+    )
+  endif()
+
+  add_executable(test_message_center
+    ${PLATFORM_RUNTIME_DIR}/module/message_center/message_center.c
+    ${PLATFORM_MESSAGE_CENTER_HOST_TEST_SOURCE}
+  )
+
+  target_include_directories(test_message_center
+    PRIVATE
+      ${PLATFORM_RUNTIME_DIR}/module/message_center
+      ${PLATFORM_CONTROL_CONTRACT_DIR}
+      ${PLATFORM_HOST_TEST_DIR}
+  )
+
+  target_compile_features(test_message_center PRIVATE c_std_11)
+
+  target_compile_options(test_message_center
+    PRIVATE
+      -Wall
+      -Wextra
+      -Wpedantic
+      -Wno-unused-parameter
+      -O0
+      -g3
+  )
+
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_message_center
+      PRIVATE
+        -fsanitize=address,undefined
+        -fno-omit-frame-pointer
+    )
+    target_link_options(test_message_center
+      PRIVATE
+        -fsanitize=address,undefined
+    )
+  endif()
+
+  add_test(NAME test_message_center COMMAND test_message_center)
+endif()
 
 if(PLATFORM_TARGET_HW)
   list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
