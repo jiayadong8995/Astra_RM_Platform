@@ -11,6 +11,10 @@ from pathlib import Path
 from robot_platform.sim.core.profile import SimProjectProfile, ValidationStatus
 from robot_platform.sim.reports.report_writer import write_report
 
+PHASE3_RUNTIME_CHAIN = (
+    "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output"
+)
+
 
 def _normalize_stats_sample(payload: dict[str, object]) -> dict[str, int] | None:
     try:
@@ -307,7 +311,7 @@ def _summarize_validation_targets(summary: dict[str, object], profile: SimProjec
     summary["runtime_output_observation_count"] = summary["validation_summary"]["runtime_output_observation_count"]
     adapter_binding_summary = summary.get("adapter_binding_summary")
     summary["runtime_binding"] = {
-        "chain": "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output",
+        "chain": PHASE3_RUNTIME_CHAIN,
         "adapter_binding_passed": bool(
             isinstance(adapter_binding_summary, dict) and adapter_binding_summary.get("all_bound")
         ),
@@ -402,6 +406,44 @@ def _summarize_smoke_health(summary: dict[str, object], profile: SimProjectProfi
     summary["smoke_health"] = health
 
 
+def _append_reason(reasons: list[str], reason: str) -> None:
+    if reason not in reasons:
+        reasons.append(reason)
+
+
+def _contract_drift_reasons(summary: dict[str, object]) -> list[str]:
+    reasons: list[str] = []
+    if summary.get("bridge_protocol_match") is False:
+        _append_reason(reasons, "protocol_mismatch")
+    if summary.get("runtime_boundary_match") is False:
+        _append_reason(reasons, "runtime_boundary_mismatch")
+    if summary.get("transport_ports_match") is False:
+        _append_reason(reasons, "transport_ports_mismatch")
+    adapter_binding_summary = summary.get("adapter_binding_summary")
+    if isinstance(adapter_binding_summary, dict) and not bool(adapter_binding_summary.get("all_bound", False)):
+        _append_reason(reasons, "adapter_binding_failed")
+    return reasons
+
+
+def _summary_reason_list(summary: dict[str, object], field: str) -> list[str]:
+    validation_status_summary = summary.get("validation_status_summary")
+    if not isinstance(validation_status_summary, dict):
+        return []
+    reasons = validation_status_summary.get(field)
+    if not isinstance(reasons, list):
+        return []
+    return [reason for reason in reasons if isinstance(reason, str) and reason]
+
+
+def _missing_runtime_output_count(summary: dict[str, object]) -> int:
+    validation_summary = summary.get("validation_summary")
+    if not isinstance(validation_summary, dict):
+        return 0
+    required_count = int(validation_summary.get("required_count", 0))
+    observed_count = int(validation_summary.get("observed_count", 0))
+    return max(required_count - observed_count, 0)
+
+
 def _build_smoke_result(summary: dict[str, object]) -> None:
     health = summary.get("smoke_health")
     bridge_stats = summary.get("bridge_stats_last")
@@ -466,6 +508,65 @@ def _build_smoke_result(summary: dict[str, object]) -> None:
         ]
         if pending_required:
             result["pending_validation_targets"] = pending_required
+
+    communication_reasons = _contract_drift_reasons(summary)
+    observation_reasons = _summary_reason_list(summary, "observation_failure_reasons")
+    control_reasons = _summary_reason_list(summary, "control_failure_reasons")
+    safety_reasons = _summary_reason_list(summary, "safety_protection_reasons")
+    runtime_output_observation_count = int(result.get("runtime_output_observation_count", 0) or 0)
+    if runtime_output_observation_count == 0 and not communication_reasons:
+        _append_reason(observation_reasons, "missing_runtime_observations")
+
+    result["communication_diagnostics"] = {
+        "reasons": communication_reasons,
+        "bridge_counters": result.get("bridge_counters", {}),
+        "bridge_activity": result.get("bridge_activity", {}),
+        "adapter_binding_summary": adapter_binding_summary if isinstance(adapter_binding_summary, dict) else {},
+        "protocol_match": summary.get("bridge_protocol_match"),
+        "runtime_boundary_match": summary.get("runtime_boundary_match"),
+        "transport_ports_match": summary.get("transport_ports_match"),
+    }
+    result["observation_diagnostics"] = {
+        "reasons": observation_reasons,
+        "runtime_chain": PHASE3_RUNTIME_CHAIN,
+        "runtime_output_observation_count": runtime_output_observation_count,
+        "missing_runtime_output_count": _missing_runtime_output_count(summary),
+    }
+    result["control_diagnostics"] = {
+        "reasons": control_reasons,
+        "validation": result.get("validation", {}),
+        "pending_validation_targets": result.get("pending_validation_targets", []),
+    }
+    result["safety_protection_diagnostics"] = {
+        "reasons": safety_reasons,
+        "runtime_chain": PHASE3_RUNTIME_CHAIN,
+    }
+
+    failure_layer: str | None = None
+    if communication_reasons:
+        failure_layer = "communication"
+    elif observation_reasons:
+        failure_layer = "observation"
+    elif safety_reasons:
+        failure_layer = "safety_protection"
+    elif control_reasons:
+        failure_layer = "control"
+    elif not bool(result.get("passed")):
+        failure_layer = "control"
+        if not control_reasons:
+            control_reasons.append("smoke_validation_failed")
+
+    if failure_layer is not None:
+        result["failure_layer"] = failure_layer
+        if result.get("failure_detail") is None:
+            layer_reasons = {
+                "communication": communication_reasons,
+                "observation": observation_reasons,
+                "safety_protection": safety_reasons,
+                "control": control_reasons,
+            }[failure_layer]
+            if layer_reasons:
+                result["failure_detail"] = ",".join(layer_reasons)
 
     summary["smoke_result"] = result
 

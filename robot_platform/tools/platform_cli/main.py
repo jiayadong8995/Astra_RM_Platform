@@ -583,6 +583,18 @@ PHASE3_CASES: dict[str, dict[str, object]] = {
         "requirements": ["OBS-01"],
         "description": "Smoke artifact includes adapter binding truth, runtime output observations, and machine-readable verification fields.",
     },
+    "classification": {
+        "requirements": ["LINK-03"],
+        "description": "Phase 3 artifact classifies failures into communication, observation, control, or safety_protection.",
+    },
+    "contract_drift": {
+        "requirements": ["LINK-04"],
+        "description": "Declared protocol, runtime boundary, and transport ports fail explicitly on mismatch.",
+    },
+    "diagnostics": {
+        "requirements": ["OBS-02"],
+        "description": "Diagnostics preserve communication, observation, control, and safety adjudication evidence.",
+    },
 }
 
 
@@ -702,6 +714,11 @@ def _phase3_case_statuses(smoke_report: dict[str, object], selected_cases: list[
     runtime_output_count = int(smoke_report.get("runtime_output_observation_count", 0) or 0)
     smoke_result = smoke_report.get("smoke_result")
     smoke_passed = isinstance(smoke_result, dict) and bool(smoke_result.get("passed", False))
+    failure_layer = smoke_result.get("failure_layer") if isinstance(smoke_result, dict) else None
+    communication_diagnostics = smoke_result.get("communication_diagnostics") if isinstance(smoke_result, dict) else None
+    observation_diagnostics = smoke_result.get("observation_diagnostics") if isinstance(smoke_result, dict) else None
+    control_diagnostics = smoke_result.get("control_diagnostics") if isinstance(smoke_result, dict) else None
+    safety_diagnostics = smoke_result.get("safety_protection_diagnostics") if isinstance(smoke_result, dict) else None
 
     for name in selected_cases:
         case_payload: dict[str, object] = {
@@ -724,7 +741,7 @@ def _phase3_case_statuses(smoke_report: dict[str, object], selected_cases: list[
             case_payload["status"] = "passed" if passed else "failed"
             if not passed:
                 case_payload["reason"] = f"runtime_output_observation_count={runtime_output_count}"
-        else:
+        elif name == "artifact_schema":
             passed = (
                 isinstance(smoke_report.get("adapter_bindings"), list)
                 and isinstance(adapter_binding_summary, dict)
@@ -736,6 +753,36 @@ def _phase3_case_statuses(smoke_report: dict[str, object], selected_cases: list[
             case_payload["status"] = "passed" if passed else "failed"
             if not passed:
                 case_payload["reason"] = "phase3_artifact_schema_incomplete"
+        elif name == "classification":
+            passed = smoke_passed or (
+                isinstance(failure_layer, str)
+                and failure_layer in {"communication", "observation", "control", "safety_protection"}
+            )
+            if passed and failure_layer == "safety_protection":
+                passed = isinstance(safety_diagnostics, dict)
+            case_payload["status"] = "passed" if passed else "failed"
+            if not passed:
+                case_payload["reason"] = "failure_layer_missing_or_invalid"
+        elif name == "contract_drift":
+            reasons = []
+            if isinstance(communication_diagnostics, dict):
+                raw_reasons = communication_diagnostics.get("reasons")
+                if isinstance(raw_reasons, list):
+                    reasons = [str(reason) for reason in raw_reasons if reason]
+            passed = len(reasons) == 0
+            case_payload["status"] = "passed" if passed else "failed"
+            if not passed:
+                case_payload["reason"] = ",".join(reasons)
+        else:
+            passed = smoke_passed or (
+                isinstance(communication_diagnostics, dict)
+                and isinstance(observation_diagnostics, dict)
+                and isinstance(control_diagnostics, dict)
+                and isinstance(safety_diagnostics, dict)
+            )
+            case_payload["status"] = "passed" if passed else "failed"
+            if not passed:
+                case_payload["reason"] = "phase3_diagnostics_incomplete"
         cases.append(case_payload)
 
     return cases
