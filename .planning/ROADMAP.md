@@ -66,7 +66,7 @@ Plans:
   5. Developers can inspect diagnostics for dropped packets, stale inputs, or missing runtime observations in verification artifacts.
 **Plans**: 3 plans
 Plans:
-- [ ] 03-01-PLAN.md - Rebind SITL IMU and remote ingress to runtime-backed fake-link adapters instead of stub-only devices.
+- [x] 03-01-PLAN.md - Rebind SITL IMU and remote ingress to runtime-backed fake-link adapters instead of stub-only devices.
 - [ ] 03-02-PLAN.md - Add `verify phase3` and persist runtime-output plus adapter-binding evidence in authoritative JSON artifacts.
 - [ ] 03-03-PLAN.md - Classify communication/control/observation failures, fail contract drift explicitly, and expose diagnostics.
 

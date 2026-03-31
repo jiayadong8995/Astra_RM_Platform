@@ -29,7 +29,7 @@
 
 ### Fake-Link Validation
 
-- [ ] **LINK-01**: Sim/fake-link adapters drive the real runtime control path rather than stub-only placeholder behavior
+- [x] **LINK-01**: Sim/fake-link adapters drive the real runtime control path rather than stub-only placeholder behavior
 - [ ] **LINK-02**: Validation captures observable runtime outputs for the fake-link path, not only declared expectations
 - [ ] **LINK-03**: Verification can distinguish communication-path failures from control-path failures in its output artifacts
 - [ ] **LINK-04**: Topic, port, or contract mismatches between runtime and sim declarations fail validation explicitly
@@ -96,7 +96,7 @@
 | SAFE-04 | Phase 2 | Complete |
 | SAFE-05 | Phase 2 | Complete |
 | SAFE-06 | Phase 2 | Complete |
-| LINK-01 | Phase 3 | Pending |
+| LINK-01 | Phase 3 | Complete |
 | LINK-02 | Phase 3 | Pending |
 | LINK-03 | Phase 3 | Pending |
 | LINK-04 | Phase 3 | Pending |
