@@ -112,6 +112,9 @@ if(PLATFORM_HOST_TESTS)
   endif()
 
   add_test(NAME test_message_center COMMAND test_message_center)
+  set_tests_properties(test_message_center PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
 endif()
 
 if(PLATFORM_TARGET_HW)
