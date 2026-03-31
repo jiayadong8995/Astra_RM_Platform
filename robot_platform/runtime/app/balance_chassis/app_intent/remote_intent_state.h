@@ -17,6 +17,9 @@ typedef struct
     uint8_t jump_flag;
     uint8_t recover_flag;
     uint8_t last_recover_flag;
+    uint8_t command_fresh;
+    uint8_t repeated_sample_count;
+    uint32_t last_remote_sample_time_us;
 } platform_remote_intent_state_t;
 
 #endif

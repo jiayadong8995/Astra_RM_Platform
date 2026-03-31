@@ -4,6 +4,7 @@
 #include "actuator_gateway.h"
 #include "chassis_topics.h"
 #include "device_layer.h"
+#include "message_center.h"
 #include "test_support/balance_safety_harness.h"
 
 typedef struct
@@ -47,11 +48,20 @@ static void seed_context(platform_test_mapping_context_t *context)
     context->feedback.actuator_feedback.valid = true;
 }
 
+static void seed_robot_state(const platform_robot_state_t *robot_state)
+{
+    Publisher_t *robot_state_pub = PubRegister("robot_state", sizeof(platform_robot_state_t));
+
+    assert(robot_state_pub != NULL);
+    assert(PubPushMessage(robot_state_pub, (void *)robot_state) > 0U);
+}
+
 static platform_actuator_command_t observe_started_command(platform_test_mapping_context_t *context)
 {
     platform_balance_safety_harness_t harness = {0};
     platform_device_test_hooks_t hooks = {0};
     platform_actuator_command_t observed = {0};
+    platform_robot_state_t robot_state = {0};
     uint32_t baseline_writes;
 
     hooks.read_remote = read_remote;
@@ -61,6 +71,8 @@ static platform_actuator_command_t observe_started_command(platform_test_mapping
     platform_device_set_test_hooks(&hooks);
 
     platform_balance_safety_harness_init(&harness);
+    robot_state.health.state_valid = true;
+    seed_robot_state(&robot_state);
     baseline_writes = context->write_count;
     platform_balance_safety_harness_step_once(&harness);
     assert(chassis_runtime_bus_get_latest_observation(&observed));

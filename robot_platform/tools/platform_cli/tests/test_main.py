@@ -11,8 +11,10 @@ from robot_platform.tools.platform_cli.main import (
     _generate_balance_chassis,
     _parse_sim_args,
     _parse_verify_phase1_args,
+    _parse_verify_phase2_args,
     main,
     _run_verify_phase1,
+    _run_verify_phase2,
 )
 
 
@@ -69,6 +71,26 @@ class ParseVerifyPhase1ArgsTests(unittest.TestCase):
     def test_rejects_unknown_verify_option(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown verify option"):
             _parse_verify_phase1_args(["phase1", "--unknown"])
+
+
+class ParseVerifyPhase2ArgsTests(unittest.TestCase):
+    def test_defaults(self) -> None:
+        project, report, case_name = _parse_verify_phase2_args(["phase2"])
+        self.assertEqual(project, "balance_chassis")
+        self.assertEqual(report, Path("build/verification_reports/phase2_balance_chassis.json"))
+        self.assertIsNone(case_name)
+
+    def test_explicit_values(self) -> None:
+        project, report, case_name = _parse_verify_phase2_args(
+            ["phase2", "--project", "balance_chassis", "--report", "tmp/report.json", "--case", "stale_command"]
+        )
+        self.assertEqual(project, "balance_chassis")
+        self.assertEqual(report, Path("tmp/report.json"))
+        self.assertEqual(case_name, "stale_command")
+
+    def test_rejects_unknown_verify_option(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unknown verify option"):
+            _parse_verify_phase2_args(["phase2", "--unknown"])
 
 
 class VerifyPhase1Tests(unittest.TestCase):
@@ -180,6 +202,60 @@ class VerifyPhase1Tests(unittest.TestCase):
             self.assertEqual(payload["overall_status"], "failed")
             self.assertEqual(payload["failure_stage"], "smoke")
             self.assertEqual(payload["failure_reason"], "runtime_output_not_observed:0/1")
+
+
+class VerifyPhase2Tests(unittest.TestCase):
+    def test_writes_case_report_for_stale_command(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            verification_report = repo_root / "build" / "verification_reports" / "phase2_stale_command.json"
+
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_ctest", return_value=0),
+            ):
+                rc = _run_verify_phase2("balance_chassis", verification_report, "stale_command")
+
+            self.assertEqual(rc, 0)
+            payload = json.loads(verification_report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "passed")
+            self.assertEqual(payload["cases"], [{"name": "stale_command", "requirements": ["SAFE-05"], "status": "passed"}])
+            self.assertEqual(payload["stages"][0]["name"], "host_tests")
+
+    def test_writes_failed_report_when_host_case_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            verification_report = repo_root / "build" / "verification_reports" / "phase2_failed.json"
+
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_ctest", return_value=1),
+            ):
+                rc = _run_verify_phase2("balance_chassis", verification_report, "wheel_leg_danger")
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(verification_report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "failed")
+            self.assertEqual(payload["failure_stage"], "host_tests")
+            self.assertEqual(payload["cases"][0]["reason"], "unsafe_wheel_leg_danger_signature")
+
+    def test_full_run_includes_cli_tests_stage(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            verification_report = repo_root / "build" / "verification_reports" / "phase2_full.json"
+
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_ctest", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_phase2_cli_tests", return_value=0),
+            ):
+                rc = _run_verify_phase2("balance_chassis", verification_report, None)
+
+            self.assertEqual(rc, 0)
+            payload = json.loads(verification_report.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "passed")
+            self.assertEqual([stage["name"] for stage in payload["stages"]], ["host_tests", "cli_tests"])
+            self.assertEqual(len(payload["cases"]), 6)
 
 
 class GeneratedArtifactFreshnessTests(unittest.TestCase):

@@ -3,6 +3,7 @@
 
 #include "chassis_topics.h"
 #include "device_layer.h"
+#include "message_center.h"
 #include "test_support/balance_safety_harness.h"
 #include "../../control/state/ins_state_estimator.h"
 
@@ -47,6 +48,14 @@ static void seed_context(platform_test_sensor_context_t *context)
     context->feedback.actuator_feedback.valid = true;
 }
 
+static void seed_robot_state(const platform_robot_state_t *robot_state)
+{
+    Publisher_t *robot_state_pub = PubRegister("robot_state", sizeof(platform_robot_state_t));
+
+    assert(robot_state_pub != NULL);
+    assert(PubPushMessage(robot_state_pub, (void *)robot_state) > 0U);
+}
+
 static void test_pre_ready_and_post_ready_sensor_faults(void)
 {
     platform_balance_safety_harness_t harness = {0};
@@ -54,6 +63,7 @@ static void test_pre_ready_and_post_ready_sensor_faults(void)
     platform_device_test_hooks_t hooks = {0};
     platform_ins_state_message_t ins_msg = {0};
     platform_actuator_command_t observed = {0};
+    platform_robot_state_t robot_state = {0};
 
     seed_context(&context);
     hooks.read_remote = read_remote;
@@ -63,6 +73,8 @@ static void test_pre_ready_and_post_ready_sensor_faults(void)
     platform_device_set_test_hooks(&hooks);
 
     platform_balance_safety_harness_init(&harness);
+    robot_state.health.state_valid = true;
+    seed_robot_state(&robot_state);
     platform_balance_safety_harness_step_once(&harness);
     assert(chassis_runtime_bus_get_latest_observation(&observed));
     assert(observed.control_enable);

@@ -1,6 +1,7 @@
 #include "remote_intent.h"
 
 #include <math.h>
+#include <stdint.h>
 
 #include "../app_config/app_params.h"
 #include "../../../control/internal/balance_params.h"
@@ -10,6 +11,7 @@
 #define APP_RC_SW_UP   1U
 #define APP_RC_SW_MID  3U
 #define APP_RC_SW_DOWN 2U
+#define PLATFORM_REMOTE_INTENT_STALE_REPEAT_LIMIT 2U
 
 static uint8_t app_rc_switch_is_mid(uint8_t sw)
 {
@@ -23,7 +25,7 @@ static uint8_t app_rc_switch_is_down(uint8_t sw)
 
 static uint8_t platform_remote_intent_start_allowed(const platform_remote_intent_state_t *state)
 {
-    return (state->start_flag != 0U) && (state->state_valid != 0U);
+    return (state->start_flag != 0U) && (state->state_valid != 0U) && (state->command_fresh != 0U);
 }
 
 static uint8_t platform_remote_intent_closed_loop_allowed(const platform_remote_intent_state_t *state)
@@ -43,6 +45,9 @@ void platform_remote_intent_state_init(platform_remote_intent_state_t *state)
     state->turn_set = 0.0f;
     state->leg_set = LEG_LENGTH_DEFAULT;
     state->state_valid = 0U;
+    state->command_fresh = 0U;
+    state->repeated_sample_count = 0U;
+    state->last_remote_sample_time_us = 0U;
 }
 
 void platform_remote_intent_state_apply_inputs(platform_remote_intent_state_t *state,
@@ -60,6 +65,37 @@ void platform_remote_intent_state_apply_inputs(platform_remote_intent_state_t *s
 
     state->last_recover_flag = state->recover_flag;
     if (!rc_input->valid)
+    {
+        state->command_fresh = 0U;
+        state->repeated_sample_count = 0U;
+        state->last_remote_sample_time_us = 0U;
+    }
+    else if (rc_input->sample_time_us == 0U)
+    {
+        state->command_fresh = 1U;
+        state->repeated_sample_count = 0U;
+        state->last_remote_sample_time_us = 0U;
+    }
+    else if (rc_input->sample_time_us > state->last_remote_sample_time_us)
+    {
+        state->command_fresh = 1U;
+        state->repeated_sample_count = 0U;
+        state->last_remote_sample_time_us = rc_input->sample_time_us;
+    }
+    else if (rc_input->sample_time_us == state->last_remote_sample_time_us)
+    {
+        if (state->repeated_sample_count < UINT8_MAX)
+        {
+            state->repeated_sample_count++;
+        }
+        state->command_fresh = (state->repeated_sample_count < PLATFORM_REMOTE_INTENT_STALE_REPEAT_LIMIT) ? 1U : 0U;
+    }
+    else
+    {
+        state->command_fresh = 0U;
+    }
+
+    if (!rc_input->valid || state->command_fresh == 0U)
     {
         state->start_flag = 0;
         state->recover_flag = 0;

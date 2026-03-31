@@ -414,6 +414,20 @@ if(PLATFORM_HOST_TESTS)
   set_tests_properties(test_safety_saturation PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
   )
+
+  add_executable(test_safety_wheel_leg
+    ${PLATFORM_HOST_TEST_DIR}/test_safety_wheel_leg.c
+  )
+  target_link_libraries(test_safety_wheel_leg PRIVATE balance_safety_host_runtime)
+  target_compile_features(test_safety_wheel_leg PRIVATE c_std_11)
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_safety_wheel_leg PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_safety_wheel_leg PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_safety_wheel_leg COMMAND test_safety_wheel_leg)
+  set_tests_properties(test_safety_wheel_leg PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
 endif()
 
 if(PLATFORM_TARGET_HW)

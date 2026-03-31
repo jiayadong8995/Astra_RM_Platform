@@ -23,6 +23,7 @@ static void apply_ground_detection(platform_balance_runtime_t *chassis, vmc_leg_
 static void update_robot_state_contract(platform_balance_controller_t *state);
 static bool platform_balance_controller_outputs_enabled(const platform_balance_controller_t *state,
                                                         const platform_device_feedback_t *feedback);
+static bool platform_balance_controller_has_wheel_leg_danger_signature(const platform_balance_controller_t *state);
 static void zero_actuator_command_payload(platform_actuator_command_t *actuator_command);
 static void update_actuator_command_contract(platform_balance_controller_t *state,
                                             const platform_device_feedback_t *feedback);
@@ -235,6 +236,16 @@ static bool platform_balance_controller_outputs_enabled(const platform_balance_c
         && feedback->actuator_feedback.valid;
 }
 
+static bool platform_balance_controller_has_wheel_leg_danger_signature(const platform_balance_controller_t *state)
+{
+    const bool unsafe_attitude = fabsf(state->ins.attitude.pitch) >= PITCH_RECOVER_THRESHOLD
+        && fabsf(state->ins.sensor.gyro[0]) >= 100.0f;
+    const bool leg_path_active = (state->chassis.mode.control_enabled != 0U)
+        && (state->chassis.mode.actuator_enabled != 0U);
+
+    return unsafe_attitude && leg_path_active;
+}
+
 static void zero_actuator_command_payload(platform_actuator_command_t *actuator_command)
 {
     actuator_command->motors.left_leg_joint[0].torque_target = 0.0f;
@@ -278,11 +289,9 @@ static void zero_actuator_command_payload(platform_actuator_command_t *actuator_
 static void update_actuator_command_contract(platform_balance_controller_t *state,
                                             const platform_device_feedback_t *feedback)
 {
-    const bool outputs_enabled = platform_balance_controller_outputs_enabled(state, feedback);
+    bool outputs_enabled = platform_balance_controller_outputs_enabled(state, feedback);
 
     state->actuator_command.start = (state->chassis.mode.start_enabled != 0U);
-    state->actuator_command.control_enable = outputs_enabled;
-    state->actuator_command.actuator_enable = outputs_enabled;
 
     state->actuator_command.motors.left_leg_joint[0].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
     state->actuator_command.motors.left_leg_joint[0].torque_target = state->left_leg.torque_set[0];
@@ -298,9 +307,21 @@ static void update_actuator_command_contract(platform_balance_controller_t *stat
     state->actuator_command.motors.right_leg_joint[1].valid = outputs_enabled;
     state->actuator_command.motors.left_wheel.control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
     state->actuator_command.motors.left_wheel.current_target = (float)state->chassis.wheel_motor[0].give_current;
-    state->actuator_command.motors.left_wheel.valid = outputs_enabled;
     state->actuator_command.motors.right_wheel.control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
     state->actuator_command.motors.right_wheel.current_target = (float)state->chassis.wheel_motor[1].give_current;
+
+    if (outputs_enabled && platform_balance_controller_has_wheel_leg_danger_signature(state))
+    {
+        outputs_enabled = false;
+    }
+
+    state->actuator_command.control_enable = outputs_enabled;
+    state->actuator_command.actuator_enable = outputs_enabled;
+    state->actuator_command.motors.left_leg_joint[0].valid = outputs_enabled;
+    state->actuator_command.motors.left_leg_joint[1].valid = outputs_enabled;
+    state->actuator_command.motors.right_leg_joint[0].valid = outputs_enabled;
+    state->actuator_command.motors.right_leg_joint[1].valid = outputs_enabled;
+    state->actuator_command.motors.left_wheel.valid = outputs_enabled;
     state->actuator_command.motors.right_wheel.valid = outputs_enabled;
 
     if (!outputs_enabled)

@@ -124,6 +124,39 @@ def _parse_verify_phase1_args(args: list[str]) -> tuple[str, Path, float]:
     return project, report, smoke_duration
 
 
+def _parse_verify_phase2_args(args: list[str]) -> tuple[str, Path, str | None]:
+    if not args or args[0] != "phase2":
+        raise ValueError("verify phase2 requires `phase2`")
+
+    project = "balance_chassis"
+    report = Path("build/verification_reports/phase2_balance_chassis.json")
+    case: str | None = None
+    i = 1
+    while i < len(args):
+        arg = args[i]
+        if arg == "--project":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --project")
+            project = args[i + 1]
+            i += 2
+            continue
+        if arg == "--report":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --report")
+            report = Path(args[i + 1])
+            i += 2
+            continue
+        if arg == "--case":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --case")
+            case = args[i + 1]
+            i += 2
+            continue
+        raise ValueError(f"unknown verify option: {arg}")
+
+    return project, report, case
+
+
 def _generate_balance_chassis() -> int:
     repo_root = _repo_root()
     ioc_path = repo_root / "references" / "legacy" / "Astra_RM2025_Balance_legacy" / "Chassis" / "CtrlBoard-H7_IMU.ioc"
@@ -268,6 +301,65 @@ def _run_host_message_center_tests() -> int:
     return _run(test_cmd, cwd=repo_root)
 
 
+def _run_host_ctest(targets: list[str], regex: str) -> int:
+    repo_root = _repo_root()
+    source_dir = repo_root / "robot_platform"
+    build_dir = repo_root / "build" / "robot_platform_host_tests"
+    toolchain_file = source_dir / "cmake" / "toolchains" / "linux-gcc.cmake"
+    configure_cmd = [
+        "cmake",
+        "-S",
+        str(source_dir),
+        "-B",
+        str(build_dir),
+        "-G",
+        "Unix Makefiles",
+        f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",
+        "-DPLATFORM_TARGET_HW=OFF",
+        "-DPLATFORM_TARGET_SIM=OFF",
+        "-DPLATFORM_HOST_TESTS=ON",
+        "-DPLATFORM_HOST_TEST_SANITIZERS=ON",
+    ]
+    build_cmd = [
+        "cmake",
+        "--build",
+        str(build_dir),
+        "--target",
+        *targets,
+        "-j4",
+    ]
+    test_cmd = [
+        "ctest",
+        "--test-dir",
+        str(build_dir),
+        "--output-on-failure",
+        "-R",
+        regex,
+    ]
+
+    rc = _run(configure_cmd, cwd=repo_root)
+    if rc != 0:
+        return rc
+    rc = _run(build_cmd, cwd=repo_root)
+    if rc != 0:
+        return rc
+    return _run(test_cmd, cwd=repo_root)
+
+
+def _run_phase2_cli_tests() -> int:
+    repo_root = _repo_root()
+    return _run(
+        [
+            sys.executable,
+            "-m",
+            "unittest",
+            "robot_platform.tools.platform_cli.tests.test_main",
+            "-v",
+        ],
+        cwd=repo_root,
+    )
+
+
 def _run_stage(stage_name: str, runner) -> dict[str, object]:
     started = time.monotonic()
     rc = runner()
@@ -404,6 +496,147 @@ def _run_verify_phase1(project: str, report_path: Path, smoke_duration: float) -
     return 0 if overall_status == "passed" else 1
 
 
+PHASE2_CASES: dict[str, dict[str, object]] = {
+    "mapping": {
+        "requirements": ["SAFE-01"],
+        "target": "test_safety_mapping",
+        "regex": "test_safety_mapping",
+        "failure_reason": "unsafe_enabled_output_after_invalid_mapping",
+    },
+    "sensor_faults": {
+        "requirements": ["SAFE-02"],
+        "target": "test_safety_sensor_faults",
+        "regex": "test_safety_sensor_faults",
+        "failure_reason": "unsafe_enabled_output_after_sensor_fault",
+    },
+    "arming": {
+        "requirements": ["SAFE-03"],
+        "target": "test_safety_arming",
+        "regex": "test_safety_arming",
+        "failure_reason": "unsafe_enabled_output_after_invalid_arming",
+    },
+    "saturation": {
+        "requirements": ["SAFE-04"],
+        "target": "test_safety_saturation",
+        "regex": "test_safety_saturation",
+        "failure_reason": "actuator_saturation_oracle_missing",
+    },
+    "stale_command": {
+        "requirements": ["SAFE-05"],
+        "target": "test_balance_safety_path",
+        "regex": "test_balance_safety_path",
+        "failure_reason": "unsafe_enabled_output_after_stale_command",
+    },
+    "wheel_leg_danger": {
+        "requirements": ["SAFE-06"],
+        "target": "test_safety_wheel_leg",
+        "regex": "test_safety_wheel_leg",
+        "failure_reason": "unsafe_wheel_leg_danger_signature",
+    },
+}
+
+
+def _phase2_selected_cases(case_name: str | None) -> list[str]:
+    if case_name is None:
+        return list(PHASE2_CASES)
+    if case_name not in PHASE2_CASES:
+        raise ValueError(f"unknown phase2 case: {case_name}")
+    return [case_name]
+
+
+def _run_verify_phase2(project: str, report_path: Path, case_name: str | None) -> int:
+    if project != "balance_chassis":
+        print(f"unsupported project for phase2 verification: {project}", file=sys.stderr)
+        return 2
+
+    repo_root = _repo_root()
+    resolved_report_path = report_path if report_path.is_absolute() else repo_root / report_path
+    selected_cases = _phase2_selected_cases(case_name)
+    stages: list[dict[str, object]] = []
+
+    build_targets = [str(PHASE2_CASES[name]["target"]) for name in selected_cases]
+    build_stage = _run_stage(
+        "host_tests",
+        lambda: _run_host_ctest(build_targets, "|".join(str(PHASE2_CASES[name]["regex"]) for name in selected_cases)),
+    )
+    stages.append(build_stage)
+    if build_stage["exit_code"] != 0:
+        payload = {
+            "verification_run_version": 1,
+            "phase": "phase2",
+            "project": project,
+            "overall_status": "failed",
+            "failure_stage": "host_tests",
+            "failure_reason": "phase2_host_tests_failed",
+            "cases": [
+                {
+                    "name": name,
+                    "requirements": PHASE2_CASES[name]["requirements"],
+                    "status": "failed",
+                    "reason": PHASE2_CASES[name]["failure_reason"],
+                }
+                for name in selected_cases
+            ],
+            "stages": stages,
+        }
+        resolved_report_path.parent.mkdir(parents=True, exist_ok=True)
+        resolved_report_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print("verification summary: project=balance_chassis overall_status=failed failure_stage=host_tests")
+        print(f"verification report: {resolved_report_path}")
+        return 1
+
+    if case_name is None:
+        cli_stage = _run_stage("cli_tests", _run_phase2_cli_tests)
+        stages.append(cli_stage)
+        if cli_stage["exit_code"] != 0:
+            payload = {
+                "verification_run_version": 1,
+                "phase": "phase2",
+                "project": project,
+                "overall_status": "failed",
+                "failure_stage": "cli_tests",
+                "failure_reason": "phase2_cli_tests_failed",
+                "cases": [
+                    {
+                        "name": name,
+                        "requirements": PHASE2_CASES[name]["requirements"],
+                        "status": "passed",
+                    }
+                    for name in selected_cases
+                ],
+                "stages": stages,
+            }
+            resolved_report_path.parent.mkdir(parents=True, exist_ok=True)
+            resolved_report_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            print("verification summary: project=balance_chassis overall_status=failed failure_stage=cli_tests")
+            print(f"verification report: {resolved_report_path}")
+            return 1
+
+    payload = {
+        "verification_run_version": 1,
+        "phase": "phase2",
+        "project": project,
+        "overall_status": "passed",
+        "cases": [
+            {
+                "name": name,
+                "requirements": PHASE2_CASES[name]["requirements"],
+                "status": "passed",
+            }
+            for name in selected_cases
+        ],
+        "stages": stages,
+    }
+    resolved_report_path.parent.mkdir(parents=True, exist_ok=True)
+    resolved_report_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(
+        f"verification summary: project={project} overall_status=passed "
+        f"case={case_name or 'all'}"
+    )
+    print(f"verification report: {resolved_report_path}")
+    return 0
+
+
 def _run_sim(project: str, scenario: str, *, duration_s: float = 3.0, skip_build: bool = False) -> int:
     supported_projects = list(get_project_names())
     if project not in supported_projects:
@@ -514,6 +747,9 @@ def main() -> int:
 
     if cmd == "verify":
         try:
+            if args[1:2] == ["phase2"]:
+                project, report_path, case_name = _parse_verify_phase2_args(args[1:])
+                return _run_verify_phase2(project, report_path, case_name)
             project, report_path, smoke_duration = _parse_verify_phase1_args(args[1:])
         except ValueError as exc:
             print(str(exc), file=sys.stderr)

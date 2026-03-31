@@ -21,6 +21,7 @@
 #include "../app_intent/remote_intent_state.h"
 #include "../app_io/remote_topics.h"
 #include "../../../device/device_layer.h"
+#include <string.h>
 
 void remote_task_init(platform_remote_task_runtime_t *runtime)
 {
@@ -40,7 +41,12 @@ void remote_task_step(platform_remote_task_runtime_t *runtime)
         return;
     }
 
-    (void)platform_device_read_default_remote(&runtime->rc_input);
+    runtime->rc_result = platform_device_read_default_remote(&runtime->rc_input);
+    if (runtime->rc_result != PLATFORM_DEVICE_RESULT_OK)
+    {
+        memset(&runtime->rc_input, 0, sizeof(runtime->rc_input));
+        runtime->rc_input.valid = false;
+    }
     platform_remote_intent_bus_pull_inputs(&runtime->intent_bus, &runtime->robot_state);
     platform_remote_intent_state_apply_inputs(&runtime->intent_state, &runtime->rc_input, &runtime->robot_state);
     runtime->intent = platform_remote_intent_build(&runtime->intent_state);
