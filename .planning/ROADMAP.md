@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Fake-Link Runtime Proof** - Drive the real runtime through fake-link adapters and capture observable validation artifacts.
 - [x] **Phase 4: Authoritative Platform Composition** - Clarify ownership boundaries and define one blessed `balance_chassis` bring-up path.
 - [x] **Phase 5: Default Closure Loop** - Make one command path the default trusted loop for build, verification, smoke, and firmware generation.
+- [ ] **Phase 6: v1 Tech Debt Cleanup** - Close accumulated tech debt from the milestone audit before archiving v1.
 
 ## Phase Details
 
@@ -98,10 +99,22 @@ Plans:
 - [x] 05-01-PLAN.md — Implement `validate` CLI command with sequential stage pipeline, early-exit, and closure artifact.
 - [x] 05-02-PLAN.md — End-to-end verification of the closure loop against the real codebase.
 
+### Phase 6: v1 Tech Debt Cleanup
+**Goal**: Close accumulated tech debt identified by the v1 milestone audit so the validation pipeline covers all host tests and residual coupling is reduced.
+**Depends on**: Phase 5
+**Requirements**: None (tech debt closure, no new requirements)
+**Gap Closure**: Closes tech debt from `.planning/v1-MILESTONE-AUDIT.md`
+**Success Criteria** (what must be TRUE):
+  1. The `validate` pipeline's `host_tests` stage runs all host C test targets, including Phase 1 (`test_message_center`, `test_actuator_gateway`), Phase 3 (`test_device_profile_sitl_runtime_bindings`), and Phase 4 (`test_balance_app_startup`) targets — not only Phase 2 safety tests.
+  2. `control_task_registry.c` no longer includes `app_params.h` directly; task timing values are sourced through the neutral `control_task_params.h` seam.
+  3. SITL `main_sitl.c` printf calls use real newlines so `[RuntimeOutput]` lines are not collapsed.
+  4. Phase 2 has a formal VERIFICATION.md produced by the verifier.
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -110,3 +123,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 3. Fake-Link Runtime Proof | 3/3 | Complete | 2026-04-01 |
 | 4. Authoritative Platform Composition | 3/3 | Complete | 2026-04-01 |
 | 5. Default Closure Loop | 2/2 | Complete | 2026-04-01 |
+| 6. v1 Tech Debt Cleanup | 0/TBD | Pending | — |
