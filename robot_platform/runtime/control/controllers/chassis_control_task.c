@@ -2,7 +2,7 @@
 
 #include "cmsis_os.h"
 
-#include "../../app/balance_chassis/app_config/app_params.h"
+#include "../control_config/control_task_params.h"
 
 void chassis_task_init(platform_chassis_task_runtime_t *runtime)
 {

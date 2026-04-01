@@ -1,8 +1,8 @@
 #ifndef PLATFORM_TEST_BALANCE_SAFETY_HARNESS_H
 #define PLATFORM_TEST_BALANCE_SAFETY_HARNESS_H
 
-#include "../../../app/balance_chassis/app_bringup/chassis_task.h"
 #include "../../../app/balance_chassis/app_bringup/remote_task.h"
+#include "../../../control/controllers/chassis_control_task.h"
 #include "../../../control/execution/motor_control_task.h"
 #include "../../../control/state/ins_state_message.h"
 #include "../../../control/state/observe_task.h"

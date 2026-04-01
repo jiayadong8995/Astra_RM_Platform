@@ -1,7 +1,7 @@
 #include "motor_control_task.h"
 
 #include "cmsis_os.h"
-#include "../../app/balance_chassis/app_config/app_params.h"
+#include "../control_config/control_task_params.h"
 #include "actuator_gateway.h"
 #include "actuator_topics.h"
 
