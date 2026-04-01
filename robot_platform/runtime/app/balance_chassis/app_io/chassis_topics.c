@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#include "cmsis_os.h"
+#include "../../../control/readiness.h"
 
 static uint8_t g_actuator_command_observed;
 static uint32_t g_actuator_command_observation_count;
@@ -24,13 +24,7 @@ void chassis_runtime_bus_wait_ready(Chassis_Runtime_Bus_t *bus,
                                     platform_ins_state_message_t *ins,
                                     platform_device_feedback_t *feedback)
 {
-    while (ins->ready == 0U || !feedback->actuator_feedback.valid)
-    {
-        platform_robot_intent_t intent = {0};
-        platform_chassis_observe_message_t observe = {0};
-        chassis_runtime_bus_pull_inputs(bus, ins, &intent, &observe, feedback);
-        osDelay(1);
-    }
+    platform_readiness_wait_ins_and_feedback(bus->ins_sub, bus->device_feedback_sub, ins, feedback);
 }
 
 void chassis_runtime_bus_pull_inputs(Chassis_Runtime_Bus_t *bus,

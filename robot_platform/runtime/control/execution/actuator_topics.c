@@ -1,6 +1,6 @@
 #include "actuator_topics.h"
 
-#include "cmsis_os.h"
+#include "../readiness.h"
 
 void platform_actuator_bus_init(platform_actuator_bus_t *bus)
 {
@@ -11,17 +11,7 @@ void platform_actuator_bus_init(platform_actuator_bus_t *bus)
 
 void platform_actuator_bus_wait_ready(platform_actuator_bus_t *bus, platform_ins_state_message_t *ins_msg)
 {
-    while (ins_msg->ready == 0U)
-    {
-        if (SubGetMessage(bus->ins_sub, ins_msg))
-        {
-            if (ins_msg->ready != 0U)
-            {
-                break;
-            }
-        }
-        osDelay(1);
-    }
+    platform_readiness_wait_ins(bus->ins_sub, ins_msg);
 }
 
 void platform_actuator_bus_pull_cmd(platform_actuator_bus_t *bus, platform_actuator_command_t *actuator_msg)

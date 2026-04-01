@@ -1,6 +1,6 @@
 #include "observe_topics.h"
 
-#include "cmsis_os.h"
+#include "../readiness.h"
 
 void platform_observe_bus_init(platform_observe_bus_t *bus)
 {
@@ -12,11 +12,7 @@ void platform_observe_bus_init(platform_observe_bus_t *bus)
 
 void platform_observe_bus_wait_ready(platform_observe_bus_t *bus, platform_ins_state_message_t *ins_msg)
 {
-    while (ins_msg->ready == 0U)
-    {
-        SubGetMessage(bus->ins_sub, ins_msg);
-        osDelay(1);
-    }
+    platform_readiness_wait_ins(bus->ins_sub, ins_msg);
 }
 
 void platform_observe_bus_pull_inputs(platform_observe_bus_t *bus,

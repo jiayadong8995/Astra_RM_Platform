@@ -73,6 +73,7 @@ set(BALANCE_CHASSIS_APP_SOURCES
   ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
   ${PLATFORM_RUNTIME_DIR}/control/controllers/chassis_control_task.c
   ${PLATFORM_RUNTIME_DIR}/control/constraints/actuator_constraints.c
+  ${PLATFORM_RUNTIME_DIR}/control/readiness.c
   ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
   ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
   ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
@@ -230,6 +231,7 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
     ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
     ${PLATFORM_RUNTIME_DIR}/control/controllers/chassis_control_task.c
+    ${PLATFORM_RUNTIME_DIR}/control/readiness.c
     ${PLATFORM_RUNTIME_DIR}/control/constraints/actuator_constraints.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
