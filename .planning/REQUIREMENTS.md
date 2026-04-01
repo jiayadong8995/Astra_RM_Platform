@@ -7,8 +7,8 @@
 
 ### Build Pipeline
 
-- [ ] **PIPE-01**: Developer can run one documented command path that performs build, host-side tests, SITL smoke validation, and firmware generation for `balance_chassis`
-- [ ] **PIPE-02**: Build/test/generate failures return machine-readable results that identify which stage failed
+- [x] **PIPE-01**: Developer can run one documented command path that performs build, host-side tests, SITL smoke validation, and firmware generation for `balance_chassis`
+- [x] **PIPE-02**: Build/test/generate failures return machine-readable results that identify which stage failed
 - [x] **PIPE-03**: The project detects when generated STM32 artifacts are stale relative to the checked-in board source inputs before firmware output is trusted
 
 ### Host Verification
@@ -83,8 +83,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-01 | Phase 5 | Pending |
-| PIPE-02 | Phase 1 | Pending |
+| PIPE-01 | Phase 5 | Complete |
+| PIPE-02 | Phase 5 | Complete |
 | PIPE-03 | Phase 1 | Complete |
 | HOST-01 | Phase 1 | Complete |
 | HOST-02 | Phase 2 | Complete |
@@ -115,4 +115,4 @@
 
 ---
 *Requirements defined: 2026-03-30*
-*Last updated: 2026-03-31 after phase 02 completion*
+*Last updated: 2026-04-01 after phase 05 completion*

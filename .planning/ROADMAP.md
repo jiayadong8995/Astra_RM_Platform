@@ -14,9 +14,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Contracts and Verification Foundation** - Make host-native verification, contract sizing, and stage reporting trustworthy.
 - [x] **Phase 2: Host Safety Control Verification** - Prove `balance_chassis` control-path and safety behavior with deterministic host-side tests.
-- [ ] **Phase 3: Fake-Link Runtime Proof** - Drive the real runtime through fake-link adapters and capture observable validation artifacts.
-- [ ] **Phase 4: Authoritative Platform Composition** - Clarify ownership boundaries and define one blessed `balance_chassis` bring-up path.
-- [ ] **Phase 5: Default Closure Loop** - Make one command path the default trusted loop for build, verification, smoke, and firmware generation.
+- [x] **Phase 3: Fake-Link Runtime Proof** - Drive the real runtime through fake-link adapters and capture observable validation artifacts.
+- [x] **Phase 4: Authoritative Platform Composition** - Clarify ownership boundaries and define one blessed `balance_chassis` bring-up path.
+- [x] **Phase 5: Default Closure Loop** - Make one command path the default trusted loop for build, verification, smoke, and firmware generation.
 
 ## Phase Details
 
@@ -95,8 +95,8 @@ Plans:
   3. A successful run leaves machine-readable evidence that the validated stages completed before firmware output was produced.
 **Plans**: 2 plans
 Plans:
-- [ ] 05-01-PLAN.md — Implement `validate` CLI command with sequential stage pipeline, early-exit, and closure artifact.
-- [ ] 05-02-PLAN.md — End-to-end verification of the closure loop against the real codebase.
+- [x] 05-01-PLAN.md — Implement `validate` CLI command with sequential stage pipeline, early-exit, and closure artifact.
+- [x] 05-02-PLAN.md — End-to-end verification of the closure loop against the real codebase.
 
 ## Progress
 
@@ -107,6 +107,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Contracts and Verification Foundation | 5/5 | Complete | 2026-03-31 |
 | 2. Host Safety Control Verification | 3/3 | Complete | 2026-03-31 |
-| 3. Fake-Link Runtime Proof | 0/TBD | Not started | - |
-| 4. Authoritative Platform Composition | 0/TBD | Not started | - |
-| 5. Default Closure Loop | 0/2 | Not started | - |
+| 3. Fake-Link Runtime Proof | 3/3 | Complete | 2026-04-01 |
+| 4. Authoritative Platform Composition | 3/3 | Complete | 2026-04-01 |
+| 5. Default Closure Loop | 2/2 | Complete | 2026-04-01 |
