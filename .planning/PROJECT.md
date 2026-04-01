@@ -20,16 +20,20 @@ v1 is complete. The platform now has:
 
 The developer inner loop is: `python3 -m robot_platform.tools.platform_cli.main validate`
 
-## Next Milestone Goals (v2)
+## Current Milestone: v2.0 Platform Simplification
 
-The project trajectory points at constrained real-robot bring-up for the wheeled-legged minimum closed loop. v2 requirements (sketched in the archived v1 requirements) include:
+**Goal:** 缩减平台代码复杂度，从 5-6 层过度设计的架构瘦身到 4 层清晰结构，同时保持 v1 建立的验证能力。
 
-- Constrained hardware bring-up workflow with explicit entry criteria gated by v1 safety gates
-- Minimum closed-loop wheeled-legged bring-up under restricted conditions
-- Hardware artifact correlation with prior host/fake-link evidence
-- Trace replay for regression testing known failure cases
-- Richer fault-injection scenarios
-- Platform reuse proof against a second robot or board profile
+**Target features:**
+- 去掉 device_layer/device_profile 间接层，BSP 驱动通过简单接口直接暴露给 control
+- 收窄 message_center pub/sub 到真正需要跨任务解耦的场景，其余改为直接调用
+- 从 5-6 层（generated→bsp→device→control→app→module）精简到 4 层（bsp→control→app→module），参考 basic_framework 的分层风格
+- 测试和验证闭环跟着代码一起重构，允许临时断裂再修复
+- 借鉴 ROS 2 的接口标准化思路，让控制器只认接口不认硬件实现
+
+**Architecture direction:** 混合风格 — 靠近 basic_framework 的 4 层 + 克制的 pub/sub，同时借鉴 ROS 2 的接口标准化和 StandardRobotpp 的直接性。参考项目：references/external/basic_framework、references/external/StandardRobotpp、references/XRobot、references/external/ros2_control_demos、references/external/legged_control。
+
+**Not in v2 scope:** 硬件上车推到 v3，v2 专注代码简化。
 
 ## Requirements
 
@@ -39,36 +43,44 @@ All 24 v1 requirements satisfied. See [v1 requirements archive](.planning/milest
 
 ### Active
 
-*No active requirements. Run `/gsd:new-milestone` to define v2 requirements.*
+- [ ] 去掉 device_layer/device_profile 间接层，BSP 适配器通过标准化接口直接服务 control
+- [ ] message_center 收窄到必要的跨任务通信场景，非必要的 pub/sub 改为直接函数调用
+- [ ] runtime 层级从 5-6 层精简到 4 层（bsp→control→app→module）
+- [ ] 验证闭环（validate、host tests、verify）跟着重构更新，保持可用
+- [ ] balance_chassis 在简化后的架构上继续作为证明路径
 
 ### Out of Scope
 
-- Directly optimizing for full competition-ready robot behavior in the current roadmap — the immediate priority is safe engineering closure, not end-state feature breadth
-- Treating simulation data as a full substitute for real hardware truth — sim exists to catch logic and contract failures early, not to prove final real-world behavior
-- Narrowing the platform into a one-off `balance_chassis` codebase only — the project explicitly chooses a reusable platform direction even though it increases upfront cost
+- 硬件上车和真机闭环 — 推到 v3，v2 专注代码简化
+- 全面竞赛功能 — 当前优先级是架构健康度
+- 新增机器人 profile — 先在 balance_chassis 上证明简化后的架构
+- 高保真仿真 — sim 继续作为逻辑验证工具，不追求物理真实性
 
 ## Constraints
 
-- **Platform direction**: Build a reusable Robotmaster robot platform, not a one-off robot app
-- **Safety**: On-robot testing must be gated by pre-hardware verification
-- **Validation model**: Host-side tests and fake links catch logic and contract faults, but are not final physical proof — staged progression from fake data to constrained hardware validation
-- **Architecture**: Existing runtime layering preserved where it provides leverage; coupling actively reviewed
-- **Build environment**: Firmware generation depends on STM32CubeMX, cross-compilers, and local host setup
-- **Current target**: `balance_chassis` is the first concrete robot profile and the proving ground for the reusable platform
+- **Platform direction**: 保持可复用平台方向，但简化不必要的抽象
+- **Safety**: v1 的安全门控能力必须在简化后保留
+- **Validation model**: 验证闭环允许重构但不允许永久退步
+- **Architecture**: 目标是 4 层清晰结构，参考 basic_framework 和 ROS 2 接口模式
+- **Build environment**: 构建工具链不变（CMake + CubeMX + Python CLI）
+- **Current target**: balance_chassis 继续作为唯一证明路径
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Keep the project oriented around a reusable platform | The intended end state is a Robotmaster platform; generality preferred even at higher upfront cost | v1 Validated |
-| Split success criteria into staged maturity levels (v1 host-side, v2 hardware) | Simulated data is always fake; layered safety case needed | v1 Validated |
+| Split success criteria into staged maturity levels (v1 host-side, v2 simplification, v3 hardware) | v2 专注架构简化，硬件上车需要简化后的代码基础 | v2 Active |
 | Treat host-side TDD and fake data-link verification as first-class requirements | Primary blocker was lack of trust before hardware bring-up | v1 Validated |
 | Define "safe to bring up" by explicit failure modes to prevent | Must block inverted outputs, broken limits, invalid transitions, stale-link control, unstable coupling | v1 Validated |
 | Focused architecture review of platform weight and coupling | Implementation was overdesigned and too tightly coupled for effective TDD | v1 Validated |
+| 适度瘦身而非激进重写 | 保留平台方向和验证能力，去掉不必要的间接层和过度抽象 | v2 Active |
+| message_center 收窄到必要场景 | 只在真正需要跨任务解耦的地方用 pub/sub，其余直接调用更清晰 | v2 Active |
+| 去掉 device_layer/device_profile 间接层 | 只有一个机器人的情况下，这层间接增加了不必要的复杂度 | v2 Active |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 ---
-*Last updated: 2026-04-01 after v1 milestone completion*
+*Last updated: 2026-04-01 after v2.0 milestone start*
