@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Platform Simplification
 status: active
-stopped_at: completed v2-03-02-PLAN.md (with SUMMARY)
-last_updated: "2026-04-02T16:44:00Z"
+stopped_at: completed v2-04-01-PLAN.md (with SUMMARY)
+last_updated: "2026-04-02T16:53:00Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 7
-  percent: 70
+  completed_plans: 8
+  percent: 80
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-01)
 
 **Core value:** 缩减平台代码复杂度，让架构更直接、更易理解、更易测试，同时保持 v1 建立的安全验证能力。
-**Current focus:** v2.0 Platform Simplification — Phase 3: Device Layer Removal (in progress)
+**Current focus:** v2.0 Platform Simplification — Phase 4: Consolidation (in progress)
 
 ## Current Position
 
 Milestone: v2.0 — Platform Simplification
-Phase: 3 of 4 (Device Layer Removal) — in progress
-Plan: 2 of 3 completed with SUMMARY (v2-03-01, v2-03-02 done; v2-03-03 SUMMARY exists)
-Status: Phase 3 plans complete, pending phase-level verification
-Last activity: 2026-04-02 — Completed v2-03-02-PLAN.md with SUMMARY
+Phase: 4 of 4 (Consolidation) — in progress
+Plan: 1 of 3 completed with SUMMARY (v2-04-01 done)
+Status: In progress
+Last activity: 2026-04-02 — Completed v2-04-01-PLAN.md with SUMMARY
 
-Progress: [██████████████  ] 70%
+Progress: [████████████████] 80%
 
 ## Performance Metrics
 
-- Phases: 2/4 completed (Phase 3 plans done, pending phase-level verification)
-- Plans: 7/10 completed (v2-01: 2/2, v2-02: 2/2, v2-03: 3/3 with summaries)
+- Phases: 3/4 completed (Phase 4 plan 01 done)
+- Plans: 8/10 completed (v2-01: 2/2, v2-02: 2/2, v2-03: 3/3, v2-04: 1/3)
 - Requirements: 0/12 satisfied (SLIM-04 partially satisfied by plan 01)
 
 ## Accumulated Context
@@ -57,6 +57,9 @@ Progress: [██████████████  ] 70%
 - [D-v2-03-02-03] device_layer.c/h, device_profile.h, device_profile_hw/sitl.c, actuator_device.h all deleted — pure dead code after v2-03-01
 - device_types.h relocated to bsp/device_types.h — used by ports.h and remote_task.h
 - balance_chassis_device CMake library target removed — no longer needed
+- [D-v2-04-01-01] chassis_topics.c preserved as observation module with chassis_observation_on_publish() entry point
+- [D-v2-04-01-02] Bus structs inlined into task runtime structs — no intermediate bus abstraction
+- [D-v2-04-01-03] Relative includes for topics.h from task files — no new CMake include directory needed
 
 ### Todos
 - None
@@ -66,7 +69,7 @@ Progress: [██████████████  ] 70%
 
 ## Session Continuity
 
-Last session: 2026-04-02T16:44:00Z
-Stopped at: Completed v2-03-02-PLAN.md with SUMMARY
+Last session: 2026-04-02T16:53:00Z
+Stopped at: Completed v2-04-01-PLAN.md with SUMMARY
 Resume file: None
-Next action: Phase 3 verification or begin Phase 4 (Consolidation)
+Next action: Continue Phase 4 with v2-04-02-PLAN.md
