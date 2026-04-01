@@ -88,12 +88,15 @@ Plans:
 ### Phase 5: Default Closure Loop
 **Goal**: Developers can use one trusted command path as the default inner loop for `balance_chassis`, with earlier validation gates enforced before firmware output is considered usable.
 **Depends on**: Phase 4
-**Requirements**: PIPE-01
+**Requirements**: PIPE-01, PIPE-02
 **Success Criteria** (what must be TRUE):
   1. Developer can run one documented command path that performs build, host-side verification, fake-link or SITL smoke validation, and firmware generation for `balance_chassis`.
   2. The command path stops at the failing stage and does not treat later outputs as trusted when earlier gates fail.
   3. A successful run leaves machine-readable evidence that the validated stages completed before firmware output was produced.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 05-01-PLAN.md — Implement `validate` CLI command with sequential stage pipeline, early-exit, and closure artifact.
+- [ ] 05-02-PLAN.md — End-to-end verification of the closure loop against the real codebase.
 
 ## Progress
 
@@ -106,4 +109,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Host Safety Control Verification | 3/3 | Complete | 2026-03-31 |
 | 3. Fake-Link Runtime Proof | 0/TBD | Not started | - |
 | 4. Authoritative Platform Composition | 0/TBD | Not started | - |
-| 5. Default Closure Loop | 0/TBD | Not started | - |
+| 5. Default Closure Loop | 0/2 | Not started | - |
