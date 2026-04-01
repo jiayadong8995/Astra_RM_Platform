@@ -99,6 +99,21 @@ if(PLATFORM_HOST_TESTS)
   enable_testing()
   set(PLATFORM_SITL_BSP_DIR ${PLATFORM_RUNTIME_DIR}/bsp/sitl)
 
+  # Shared compile/link configuration for all host test targets.
+  add_library(platform_test_config INTERFACE)
+  target_compile_features(platform_test_config INTERFACE c_std_11)
+  target_compile_options(platform_test_config INTERFACE
+    -Wall -Wextra -Wpedantic -Wno-unused-parameter -O0 -g3
+  )
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(platform_test_config INTERFACE
+      -fsanitize=address,undefined -fno-omit-frame-pointer
+    )
+    target_link_options(platform_test_config INTERFACE
+      -fsanitize=address,undefined
+    )
+  endif()
+
   set(PLATFORM_MESSAGE_CENTER_HOST_TEST_SOURCE
     ${PLATFORM_HOST_TEST_DIR}/test_message_center.c
   )
@@ -120,38 +135,12 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_RUNTIME_DIR}/module/message_center/message_center.c
     ${PLATFORM_MESSAGE_CENTER_HOST_TEST_SOURCE}
   )
-
-  target_include_directories(test_message_center
-    PRIVATE
-      ${PLATFORM_RUNTIME_DIR}/module/message_center
-      ${PLATFORM_CONTROL_CONTRACT_DIR}
-      ${PLATFORM_HOST_TEST_DIR}
+  target_include_directories(test_message_center PRIVATE
+    ${PLATFORM_RUNTIME_DIR}/module/message_center
+    ${PLATFORM_CONTROL_CONTRACT_DIR}
+    ${PLATFORM_HOST_TEST_DIR}
   )
-
-  target_compile_features(test_message_center PRIVATE c_std_11)
-
-  target_compile_options(test_message_center
-    PRIVATE
-      -Wall
-      -Wextra
-      -Wpedantic
-      -Wno-unused-parameter
-      -O0
-      -g3
-  )
-
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_message_center
-      PRIVATE
-        -fsanitize=address,undefined
-        -fno-omit-frame-pointer
-    )
-    target_link_options(test_message_center
-      PRIVATE
-        -fsanitize=address,undefined
-    )
-  endif()
-
+  target_link_libraries(test_message_center PRIVATE platform_test_config)
   add_test(NAME test_message_center COMMAND test_message_center)
   set_tests_properties(test_message_center PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
@@ -162,39 +151,13 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_HOST_TEST_DIR}/test_actuator_gateway.c
     ${PLATFORM_RUNTIME_DIR}/bsp/ports_fake.c
   )
-
-  target_include_directories(test_actuator_gateway
-    PRIVATE
-      ${PLATFORM_RUNTIME_DIR}/control/execution
-      ${PLATFORM_RUNTIME_DIR}/bsp
-      ${PLATFORM_CONTROL_CONTRACT_DIR}
-      ${PLATFORM_HOST_TEST_DIR}
+  target_include_directories(test_actuator_gateway PRIVATE
+    ${PLATFORM_RUNTIME_DIR}/control/execution
+    ${PLATFORM_RUNTIME_DIR}/bsp
+    ${PLATFORM_CONTROL_CONTRACT_DIR}
+    ${PLATFORM_HOST_TEST_DIR}
   )
-
-  target_compile_features(test_actuator_gateway PRIVATE c_std_11)
-
-  target_compile_options(test_actuator_gateway
-    PRIVATE
-      -Wall
-      -Wextra
-      -Wpedantic
-      -Wno-unused-parameter
-      -O0
-      -g3
-  )
-
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_actuator_gateway
-      PRIVATE
-        -fsanitize=address,undefined
-        -fno-omit-frame-pointer
-    )
-    target_link_options(test_actuator_gateway
-      PRIVATE
-        -fsanitize=address,undefined
-    )
-  endif()
-
+  target_link_libraries(test_actuator_gateway PRIVATE platform_test_config)
   add_test(NAME test_actuator_gateway COMMAND test_actuator_gateway)
   set_tests_properties(test_actuator_gateway PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
@@ -338,32 +301,9 @@ if(PLATFORM_HOST_TESTS)
       ARM_MATH_CM7
   )
 
-  target_compile_features(balance_safety_host_runtime PUBLIC c_std_11)
-
-  target_compile_options(balance_safety_host_runtime
-    PRIVATE
-      -Wall
-      -Wextra
-      -Wpedantic
-      -Wno-unused-parameter
-      -O0
-      -g3
-  )
-
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(balance_safety_host_runtime
-      PRIVATE
-        -fsanitize=address,undefined
-        -fno-omit-frame-pointer
-    )
-    target_link_options(balance_safety_host_runtime
-      PRIVATE
-        -fsanitize=address,undefined
-    )
-  endif()
-
   target_link_libraries(balance_safety_host_runtime
     PUBLIC
+      platform_test_config
       cmsis_dsp_host
       pthread
       m
@@ -373,11 +313,6 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_HOST_TEST_DIR}/test_balance_safety_path.c
   )
   target_link_libraries(test_balance_safety_path PRIVATE balance_safety_host_runtime)
-  target_compile_features(test_balance_safety_path PRIVATE c_std_11)
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_balance_safety_path PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_balance_safety_path PRIVATE -fsanitize=address,undefined)
-  endif()
   add_test(NAME test_balance_safety_path COMMAND test_balance_safety_path)
   set_tests_properties(test_balance_safety_path PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
@@ -387,26 +322,12 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_APP_STARTUP_DIR}/balance_chassis_app_startup.c
     ${PLATFORM_HOST_TEST_DIR}/test_balance_app_startup.c
   )
-  target_include_directories(test_balance_app_startup
-    PRIVATE
-      ${PLATFORM_LEGACY_APP_DIR}
-      ${PLATFORM_APP_STARTUP_DIR}
-      ${PLATFORM_HOST_TEST_DIR}
+  target_include_directories(test_balance_app_startup PRIVATE
+    ${PLATFORM_LEGACY_APP_DIR}
+    ${PLATFORM_APP_STARTUP_DIR}
+    ${PLATFORM_HOST_TEST_DIR}
   )
-  target_compile_features(test_balance_app_startup PRIVATE c_std_11)
-  target_compile_options(test_balance_app_startup
-    PRIVATE
-      -Wall
-      -Wextra
-      -Wpedantic
-      -Wno-unused-parameter
-      -O0
-      -g3
-  )
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_balance_app_startup PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_balance_app_startup PRIVATE -fsanitize=address,undefined)
-  endif()
+  target_link_libraries(test_balance_app_startup PRIVATE platform_test_config)
   add_test(NAME test_balance_app_startup COMMAND test_balance_app_startup)
   set_tests_properties(test_balance_app_startup PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
@@ -416,11 +337,6 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_HOST_TEST_DIR}/test_safety_mapping.c
   )
   target_link_libraries(test_safety_mapping PRIVATE balance_safety_host_runtime)
-  target_compile_features(test_safety_mapping PRIVATE c_std_11)
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_safety_mapping PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_safety_mapping PRIVATE -fsanitize=address,undefined)
-  endif()
   add_test(NAME test_safety_mapping COMMAND test_safety_mapping)
   set_tests_properties(test_safety_mapping PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
@@ -430,11 +346,6 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_HOST_TEST_DIR}/test_safety_sensor_faults.c
   )
   target_link_libraries(test_safety_sensor_faults PRIVATE balance_safety_host_runtime)
-  target_compile_features(test_safety_sensor_faults PRIVATE c_std_11)
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_safety_sensor_faults PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_safety_sensor_faults PRIVATE -fsanitize=address,undefined)
-  endif()
   add_test(NAME test_safety_sensor_faults COMMAND test_safety_sensor_faults)
   set_tests_properties(test_safety_sensor_faults PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
@@ -444,11 +355,6 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_HOST_TEST_DIR}/test_safety_arming.c
   )
   target_link_libraries(test_safety_arming PRIVATE balance_safety_host_runtime)
-  target_compile_features(test_safety_arming PRIVATE c_std_11)
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_safety_arming PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_safety_arming PRIVATE -fsanitize=address,undefined)
-  endif()
   add_test(NAME test_safety_arming COMMAND test_safety_arming)
   set_tests_properties(test_safety_arming PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
@@ -458,11 +364,6 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_HOST_TEST_DIR}/test_safety_saturation.c
   )
   target_link_libraries(test_safety_saturation PRIVATE balance_safety_host_runtime)
-  target_compile_features(test_safety_saturation PRIVATE c_std_11)
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_safety_saturation PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_safety_saturation PRIVATE -fsanitize=address,undefined)
-  endif()
   add_test(NAME test_safety_saturation COMMAND test_safety_saturation)
   set_tests_properties(test_safety_saturation PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
@@ -472,11 +373,6 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_HOST_TEST_DIR}/test_safety_wheel_leg.c
   )
   target_link_libraries(test_safety_wheel_leg PRIVATE balance_safety_host_runtime)
-  target_compile_features(test_safety_wheel_leg PRIVATE c_std_11)
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_safety_wheel_leg PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_safety_wheel_leg PRIVATE -fsanitize=address,undefined)
-  endif()
   add_test(NAME test_safety_wheel_leg COMMAND test_safety_wheel_leg)
   set_tests_properties(test_safety_wheel_leg PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
@@ -486,11 +382,6 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_HOST_TEST_DIR}/test_bsp_ports_compile.c
   )
   target_link_libraries(test_bsp_ports_compile PRIVATE balance_safety_host_runtime)
-  target_compile_features(test_bsp_ports_compile PRIVATE c_std_11)
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_bsp_ports_compile PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_bsp_ports_compile PRIVATE -fsanitize=address,undefined)
-  endif()
   add_test(NAME test_bsp_ports_compile COMMAND test_bsp_ports_compile)
   set_tests_properties(test_bsp_ports_compile PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
