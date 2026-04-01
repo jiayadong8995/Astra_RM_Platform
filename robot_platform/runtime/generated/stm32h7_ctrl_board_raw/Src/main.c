@@ -27,6 +27,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "cmsis_os.h"
 
 /* USER CODE END Includes */
 
@@ -55,6 +56,7 @@
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 /* USER CODE BEGIN PFP */
+void MX_FREERTOS_Init(void);
 
 /* USER CODE END PFP */
 
@@ -104,6 +106,8 @@ int main(void)
   MX_UART5_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  MX_FREERTOS_Init();
+  osKernelStart();
 
   /* USER CODE END 2 */
 

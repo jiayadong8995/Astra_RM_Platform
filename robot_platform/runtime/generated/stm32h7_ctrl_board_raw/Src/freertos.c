@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "../../../app/balance_chassis/app_startup/balance_chassis_app_startup.h"
 
 /* USER CODE END Includes */
 
@@ -90,7 +91,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  balance_chassis_app_startup();
   /* USER CODE END RTOS_THREADS */
 
 }

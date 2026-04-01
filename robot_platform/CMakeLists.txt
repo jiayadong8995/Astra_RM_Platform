@@ -55,6 +55,47 @@ set(PLATFORM_MODULE_CONTROL_LIB_DIR ${PLATFORM_RUNTIME_DIR}/module/lib/control)
 set(PLATFORM_HOST_TEST_DIR ${PLATFORM_RUNTIME_DIR}/tests/host)
 
 set(BALANCE_CHASSIS_DEVICE_SOURCES)
+set(BALANCE_CHASSIS_APP_SOURCES
+  ${PLATFORM_APP_STARTUP_DIR}/balance_chassis_app_startup.c
+  ${PLATFORM_LEGACY_APP_DIR}/app_bringup/chassis_task.c
+  ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
+  ${PLATFORM_LEGACY_APP_DIR}/app_bringup/remote_task.c
+  ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
+  ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
+  ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
+  ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
+  ${PLATFORM_RUNTIME_DIR}/control/state/ins_topics.c
+  ${PLATFORM_RUNTIME_DIR}/control/state/ins_task.c
+  ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c
+  ${PLATFORM_RUNTIME_DIR}/control/state/observe_topics.c
+  ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
+  ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
+  ${PLATFORM_RUNTIME_DIR}/control/constraints/actuator_constraints.c
+  ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
+  ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
+  ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
+  ${PLATFORM_MODULE_CONTROL_LIB_DIR}/control_math.c
+  ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
+  ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
+  ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC/VMC_calc.c
+  ${PLATFORM_RUNTIME_DIR}/module/algorithm/kalman/kalman_filter.c
+  ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony/mahony_filter.c
+  ${PLATFORM_RUNTIME_DIR}/module/controller/controller.c
+  ${PLATFORM_RUNTIME_DIR}/module/lib/user_lib.c
+  ${PLATFORM_RUNTIME_DIR}/module/message_center/message_center.c
+)
+set(BALANCE_CHASSIS_CMSIS_DSP_SOURCES
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/BasicMathFunctions/BasicMathFunctions.c
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/CommonTables/CommonTables.c
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/ComplexMathFunctions/ComplexMathFunctions.c
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/ControllerFunctions/ControllerFunctions.c
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/FastMathFunctions/FastMathFunctions.c
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/FilteringFunctions/FilteringFunctions.c
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/MatrixFunctions/MatrixFunctions.c
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/StatisticsFunctions/StatisticsFunctions.c
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/SupportFunctions/SupportFunctions.c
+  ${CHASSIS_CMSIS_DIR}/DSP/Source/TransformFunctions/TransformFunctions.c
+)
 
 if(PLATFORM_HOST_TESTS)
   enable_testing()
@@ -634,11 +675,39 @@ set(BALANCE_CHASSIS_FREERTOS_SOURCES
   ${CHASSIS_FREERTOS_DIR}/timers.c
 )
 
+add_library(cmsis_dsp_hw STATIC
+  ${BALANCE_CHASSIS_CMSIS_DSP_SOURCES}
+)
+
+target_include_directories(cmsis_dsp_hw
+  PRIVATE
+    ${CHASSIS_HAL_DIR}/Inc
+    ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
+    ${CHASSIS_CMSIS_DIR}/Include
+    ${CHASSIS_CMSIS_DIR}/DSP/Include
+)
+
+target_compile_definitions(cmsis_dsp_hw
+  PRIVATE
+    USE_HAL_DRIVER
+    STM32H723xx
+    ARM_MATH_CM7
+)
+
+target_compile_options(cmsis_dsp_hw
+  PRIVATE
+    ${BALANCE_CHASSIS_COMMON_FLAGS}
+    -Wall
+    -Wextra
+    -Wno-unused-parameter
+)
+
 add_executable(balance_chassis_hw_seed.elf
   ${GENERATED_RAW_DIR}/Src/main.c
   ${GENERATED_RAW_DIR}/Src/freertos.c
   ${CHASSIS_ROOT}/Drivers/CMSIS/Device/ST/STM32H7xx/Source/Templates/gcc/startup_stm32h723xx.s
   ${BALANCE_CHASSIS_FREERTOS_SOURCES}
+  ${BALANCE_CHASSIS_APP_SOURCES}
 )
 
 target_link_libraries(balance_chassis_hw_seed.elf
@@ -646,6 +715,8 @@ target_link_libraries(balance_chassis_hw_seed.elf
     balance_chassis_generated_raw
     balance_chassis_bsp_seed
     balance_chassis_device
+    cmsis_dsp_hw
+    m
 )
 
 target_include_directories(balance_chassis_hw_seed.elf
@@ -653,6 +724,33 @@ target_include_directories(balance_chassis_hw_seed.elf
     ${CHASSIS_FREERTOS_DIR}/include
     ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS
     ${PLATFORM_FREERTOS_PORT_DIR}
+    ${PLATFORM_BOARD_BSP_DIR}
+    ${PLATFORM_DEVICE_DIR}
+    ${PLATFORM_DEVICE_DIR}/imu
+    ${PLATFORM_DEVICE_DIR}/remote
+    ${PLATFORM_DEVICE_DIR}/actuator
+    ${PLATFORM_DEVICE_DIR}/actuator/motor
+    ${PLATFORM_DEVICE_REMOTE_DIR}
+    ${PLATFORM_DEVICE_MOTOR_DIR}
+    ${PLATFORM_DEVICE_IMU_DIR}
+    ${PLATFORM_LEGACY_APP_DIR}
+    ${PLATFORM_APP_STARTUP_DIR}
+    ${PLATFORM_APP_IO_DIR}
+    ${PLATFORM_CONTROL_CONTRACT_DIR}
+    ${PLATFORM_RUNTIME_DIR}/control/controllers
+    ${PLATFORM_RUNTIME_DIR}/control/state
+    ${PLATFORM_RUNTIME_DIR}/control/execution
+    ${PLATFORM_RUNTIME_DIR}/control/constraints
+    ${PLATFORM_RUNTIME_DIR}/control/internal
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/kalman
+    ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony
+    ${PLATFORM_RUNTIME_DIR}/module/controller
+    ${PLATFORM_RUNTIME_DIR}/module/lib
+    ${PLATFORM_MODULE_CONTROL_LIB_DIR}
+    ${PLATFORM_RUNTIME_DIR}/module/message_center
 )
 
 target_compile_definitions(balance_chassis_hw_seed.elf
@@ -716,48 +814,6 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
   )
 
-  set(BALANCE_CHASSIS_APP_SOURCES
-    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/chassis_task.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/remote_task.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
-    ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
-    ${PLATFORM_RUNTIME_DIR}/control/state/ins_topics.c
-    ${PLATFORM_RUNTIME_DIR}/control/state/ins_task.c
-    ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c
-    ${PLATFORM_RUNTIME_DIR}/control/state/observe_topics.c
-    ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
-    ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
-    ${PLATFORM_RUNTIME_DIR}/control/constraints/actuator_constraints.c
-    ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
-    ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
-    ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
-    ${PLATFORM_MODULE_CONTROL_LIB_DIR}/control_math.c
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/VMC/VMC_calc.c
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/kalman/kalman_filter.c
-    ${PLATFORM_RUNTIME_DIR}/module/algorithm/mahony/mahony_filter.c
-    ${PLATFORM_RUNTIME_DIR}/module/controller/controller.c
-    ${PLATFORM_RUNTIME_DIR}/module/lib/user_lib.c
-    ${PLATFORM_RUNTIME_DIR}/module/message_center/message_center.c
-  )
-
-  set(BALANCE_CHASSIS_CMSIS_DSP_SOURCES
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/BasicMathFunctions/BasicMathFunctions.c
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/CommonTables/CommonTables.c
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/ComplexMathFunctions/ComplexMathFunctions.c
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/ControllerFunctions/ControllerFunctions.c
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/FastMathFunctions/FastMathFunctions.c
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/FilteringFunctions/FilteringFunctions.c
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/MatrixFunctions/MatrixFunctions.c
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/StatisticsFunctions/StatisticsFunctions.c
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/SupportFunctions/SupportFunctions.c
-    ${CHASSIS_CMSIS_DIR}/DSP/Source/TransformFunctions/TransformFunctions.c
-  )
-
   add_library(cmsis_dsp_sitl STATIC
     ${BALANCE_CHASSIS_CMSIS_DSP_SOURCES}
   )
@@ -785,7 +841,6 @@ if(PLATFORM_TARGET_SIM)
 
   add_executable(balance_chassis_sitl
     ${PLATFORM_SITL_BSP_DIR}/main_sitl.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/freertos_app.c
     ${BALANCE_CHASSIS_FREERTOS_SOURCES}
     ${BALANCE_CHASSIS_SITL_BSP_SOURCES}
     ${BALANCE_CHASSIS_APP_SOURCES}
@@ -801,6 +856,7 @@ if(PLATFORM_TARGET_SIM)
       ${PLATFORM_DEVICE_IMU_DIR}
       ${PLATFORM_DEVICE_REMOTE_DIR}
       ${PLATFORM_LEGACY_APP_DIR}
+      ${PLATFORM_APP_STARTUP_DIR}
       ${PLATFORM_APP_IO_DIR}
       ${PLATFORM_CONTROL_CONTRACT_DIR}
       # CMSIS / Core headers needed by FreeRTOS CMSIS wrapper and others

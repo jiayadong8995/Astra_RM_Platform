@@ -2,8 +2,7 @@
 #include <unistd.h>
 #include "FreeRTOS.h"
 #include "task.h"
-
-extern void MX_FREERTOS_Init(void);
+#include "../../app/balance_chassis/app_startup/balance_chassis_app_startup.h"
 
 int main(void) {
     printf("[SITL] Starting Astra Balance Chassis SITL\\n");
@@ -11,9 +10,9 @@ int main(void) {
     // Disable stdout buffering for correct logging
     setvbuf(stdout, NULL, _IONBF, 0);
 
-    // Initialize FreeRTOS tasks (calls the legacy initialization)
-    printf("[SITL] Calling MX_FREERTOS_Init()\\n");
-    MX_FREERTOS_Init();
+    // Register project tasks before starting the scheduler.
+    printf("[SITL] Calling balance_chassis_app_startup()\\n");
+    balance_chassis_app_startup();
     
     // Start the FreeRTOS POSIX Scheduler
     printf("[SITL] Starting FreeRTOS POSIX Scheduler...\\n");
