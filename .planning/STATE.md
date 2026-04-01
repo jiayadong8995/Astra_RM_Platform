@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in_progress
-stopped_at: Completed 06-02-PLAN.md — formal Phase 2 VERIFICATION.md produced
-last_updated: "2026-04-01T14:08:00Z"
+stopped_at: Completed 06-01-PLAN.md — SITL newlines, control decoupling, validate widening
+last_updated: "2026-04-01T14:11:00Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 16
-  completed_plans: 17
-  percent: 97
+  completed_plans: 18
+  percent: 100
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: `.planning/PROJECT.md` (updated 2026-03-30)
 Phase: 6 of 6 (v1-tech-debt-cleanup)
 Plan: 2 of 2
 Status: In progress
-Last activity: 2026-04-01 - Completed 06-02-PLAN.md
+Last activity: 2026-04-01 - Completed 06-01-PLAN.md
 
 Progress: [████████████████] 100%
 
@@ -36,7 +36,7 @@ Progress: [████████████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 14
+- Total plans completed: 15
 - Average duration: 7min
 - Total execution time: 0.75 hours
 
@@ -48,11 +48,11 @@ Progress: [████████████████] 100%
 | 02-host-safety-control-verification | 3 | 37min | 12min |
 | 03-fake-link-runtime-proof | 3 | 641min | 214min |
 | 05-default-closure-loop | 2 | 5min | 3min |
-| 06-v1-tech-debt-cleanup | 1 | 3min | 3min |
+| 06-v1-tech-debt-cleanup | 2 | 8min | 4min |
 
 **Recent Trend:**
 
-- Last 5 plans: 06-02 (3min), 05-02 (2min), 05-01 (3min), 03-03 (12min), 03-02 (624min)
+- Last 5 plans: 06-01 (5min), 06-02 (3min), 05-02 (2min), 05-01 (3min), 03-03 (12min)
 - Trend: Stable
 
 | Phase 01-contracts-and-verification-foundation P03 | 15min | 2 tasks | 5 files |
@@ -66,6 +66,7 @@ Progress: [████████████████] 100%
 | Phase 04-authoritative-platform-composition P02 | 6min | 2 tasks | 12 files |
 | Phase 05-default-closure-loop P01 | 3min | 2 tasks | 2 files |
 | Phase 05-default-closure-loop P02 | 2min | 2 tasks | 0 files |
+| Phase 06-v1-tech-debt-cleanup P01 | 5min | 2 tasks | 6 files |
 | Phase 06-v1-tech-debt-cleanup P02 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
@@ -120,6 +121,8 @@ Recent decisions affecting current work:
 - [Phase 05-default-closure-loop]: Smoke stage in validate is separate from verify_phase3 internal smoke — intentional duplication for independent gate enforcement.
 - [Phase 05-default-closure-loop]: hw_elf is best-effort after validation gates; freshness gate failure results in skipped status, not overall failure.
 - [Phase 05-default-closure-loop]: Closure artifact uses closure_version=1 schema distinct from verification_run_version.
+- [Phase 06-v1-tech-debt-cleanup]: Add backward-compatible unprefixed macro aliases in control_task_params.h so existing control task code compiles without app_params.h.
+- [Phase 06-v1-tech-debt-cleanup]: Redirect ins_task.c to control_task_params.h alongside control_task_registry.c to fully eliminate app_params.h from control/.
 
 ### Pending Todos
 
@@ -133,6 +136,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T14:08:00Z
-Stopped at: Completed 06-02-PLAN.md — formal Phase 2 VERIFICATION.md produced
+Last session: 2026-04-01T14:11:00Z
+Stopped at: Completed 06-01-PLAN.md — SITL newlines, control decoupling, validate widening
 Resume file: None
