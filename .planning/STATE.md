@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: complete
-stopped_at: v1 milestone archived
-last_updated: "2026-04-01T23:00:00Z"
+milestone: v2.0
+milestone_name: Platform Simplification
+status: active
+stopped_at: roadmap created, ready for phase 1 planning
+last_updated: "2026-04-01T23:30:00Z"
 last_activity: 2026-04-01
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 18
-  completed_plans: 18
-  percent: 100
+  total_phases: 4
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -20,27 +20,40 @@ progress:
 
 See: `.planning/PROJECT.md` (updated 2026-04-01)
 
-**Core value:** Make wheeled-legged Robotmaster control software safe to evolve by catching dangerous control and data-link errors before the robot ever gets a chance to go unstable on hardware.
-**Current focus:** v1 complete and archived. Next: `/gsd:new-milestone` for v2.
+**Core value:** 缩减平台代码复杂度，让架构更直接、更易理解、更易测试，同时保持 v1 建立的安全验证能力。
+**Current focus:** v2.0 Platform Simplification — Phase 1: Port Foundation
 
 ## Current Position
 
-Milestone: v1 — Complete and archived
-Next milestone: v2 (not yet started)
+Milestone: v2.0 — Platform Simplification
+Phase: 1 — Port Foundation (not yet planned)
+Plan: —
+Status: Awaiting phase planning
 
-Progress: [████████████████] 100%
+Progress: [                ] 0%
 
-## v1 Final Stats
+## Performance Metrics
 
-- Phases: 6
-- Plans: 18
-- Commits: 82
-- Requirements: 24/24 satisfied
-- Timeline: 2026-03-30 → 2026-04-01
-- Archives: `.planning/milestones/v1-ROADMAP.md`, `.planning/milestones/v1-REQUIREMENTS.md`
+- Phases: 0/4 completed
+- Plans: 0/0 completed
+- Requirements: 0/12 satisfied
+
+## Accumulated Context
+
+### Key Decisions
+- Migration order follows research-recommended sequence: command unification -> BSP ports -> test seam migration -> control migration -> readiness gate extraction -> device layer deletion -> topic consolidation -> directory flattening
+- 4 phases derived from 8 migration steps, grouped by delivery boundary
+- `test_balance_safety_path` is the critical invariant — must stay green at every step
+
+### Todos
+- None yet
+
+### Blockers
+- None
 
 ## Session Continuity
 
-Last session: 2026-04-01T23:00:00Z
-Stopped at: v1 milestone archived
+Last session: 2026-04-01T23:30:00Z
+Stopped at: Roadmap created, ready for phase 1 planning
 Resume file: None
+Next action: `/gsd:plan-phase 1`

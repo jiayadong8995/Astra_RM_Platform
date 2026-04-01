@@ -60,23 +60,24 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SLIM-01 | — | Pending |
-| SLIM-02 | — | Pending |
-| SLIM-03 | — | Pending |
-| SLIM-04 | — | Pending |
-| SLIM-05 | — | Pending |
-| KEEP-01 | — | Pending |
-| KEEP-02 | — | Pending |
-| KEEP-03 | — | Pending |
-| KEEP-04 | — | Pending |
-| QUAL-01 | — | Pending |
-| QUAL-02 | — | Pending |
-| QUAL-03 | — | Pending |
+| SLIM-04 | Phase 1 — Port Foundation | Pending |
+| KEEP-03 | Phase 1 — Port Foundation | Pending |
+| KEEP-04 | Phase 2 — Seam Migration | Pending |
+| KEEP-01 | Phase 2 — Seam Migration | Pending |
+| SLIM-01 | Phase 3 — Device Layer Removal | Pending |
+| SLIM-02 | Phase 3 — Device Layer Removal | Pending |
+| QUAL-01 | Phase 3 — Device Layer Removal | Pending |
+| SLIM-03 | Phase 4 — Consolidation | Pending |
+| SLIM-05 | Phase 4 — Consolidation | Pending |
+| KEEP-02 | Phase 4 — Consolidation | Pending |
+| QUAL-02 | Phase 4 — Consolidation | Pending |
+| QUAL-03 | Phase 4 — Consolidation | Pending |
 
 **Coverage:**
 - v2 requirements: 12 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 12
+- Mapped to phases: 12
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-01*
+*Traceability updated: 2026-04-01 (roadmap created)*
