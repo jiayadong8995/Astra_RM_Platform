@@ -248,42 +248,24 @@ static bool platform_balance_controller_has_wheel_leg_danger_signature(const pla
 
 static void zero_actuator_command_payload(platform_actuator_command_t *actuator_command)
 {
-    actuator_command->motors.left_leg_joint[0].torque_target = 0.0f;
-    actuator_command->motors.left_leg_joint[0].velocity_target = 0.0f;
-    actuator_command->motors.left_leg_joint[0].position_target = 0.0f;
-    actuator_command->motors.left_leg_joint[0].current_target = 0.0f;
-    actuator_command->motors.left_leg_joint[0].kp = 0.0f;
-    actuator_command->motors.left_leg_joint[0].kd = 0.0f;
-    actuator_command->motors.left_leg_joint[1].torque_target = 0.0f;
-    actuator_command->motors.left_leg_joint[1].velocity_target = 0.0f;
-    actuator_command->motors.left_leg_joint[1].position_target = 0.0f;
-    actuator_command->motors.left_leg_joint[1].current_target = 0.0f;
-    actuator_command->motors.left_leg_joint[1].kp = 0.0f;
-    actuator_command->motors.left_leg_joint[1].kd = 0.0f;
-    actuator_command->motors.right_leg_joint[0].torque_target = 0.0f;
-    actuator_command->motors.right_leg_joint[0].velocity_target = 0.0f;
-    actuator_command->motors.right_leg_joint[0].position_target = 0.0f;
-    actuator_command->motors.right_leg_joint[0].current_target = 0.0f;
-    actuator_command->motors.right_leg_joint[0].kp = 0.0f;
-    actuator_command->motors.right_leg_joint[0].kd = 0.0f;
-    actuator_command->motors.right_leg_joint[1].torque_target = 0.0f;
-    actuator_command->motors.right_leg_joint[1].velocity_target = 0.0f;
-    actuator_command->motors.right_leg_joint[1].position_target = 0.0f;
-    actuator_command->motors.right_leg_joint[1].current_target = 0.0f;
-    actuator_command->motors.right_leg_joint[1].kp = 0.0f;
-    actuator_command->motors.right_leg_joint[1].kd = 0.0f;
-    actuator_command->motors.left_wheel.torque_target = 0.0f;
-    actuator_command->motors.left_wheel.velocity_target = 0.0f;
-    actuator_command->motors.left_wheel.position_target = 0.0f;
-    actuator_command->motors.left_wheel.current_target = 0.0f;
-    actuator_command->motors.left_wheel.kp = 0.0f;
-    actuator_command->motors.left_wheel.kd = 0.0f;
-    actuator_command->motors.right_wheel.torque_target = 0.0f;
-    actuator_command->motors.right_wheel.velocity_target = 0.0f;
-    actuator_command->motors.right_wheel.position_target = 0.0f;
-    actuator_command->motors.right_wheel.current_target = 0.0f;
-    actuator_command->motors.right_wheel.kp = 0.0f;
-    actuator_command->motors.right_wheel.kd = 0.0f;
+    for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i)
+    {
+        actuator_command->motors.joints[i].torque_target = 0.0f;
+        actuator_command->motors.joints[i].velocity_target = 0.0f;
+        actuator_command->motors.joints[i].position_target = 0.0f;
+        actuator_command->motors.joints[i].current_target = 0.0f;
+        actuator_command->motors.joints[i].kp = 0.0f;
+        actuator_command->motors.joints[i].kd = 0.0f;
+    }
+    for (uint8_t i = 0; i < PLATFORM_WHEEL_MOTOR_COUNT; ++i)
+    {
+        actuator_command->motors.wheels[i].torque_target = 0.0f;
+        actuator_command->motors.wheels[i].velocity_target = 0.0f;
+        actuator_command->motors.wheels[i].position_target = 0.0f;
+        actuator_command->motors.wheels[i].current_target = 0.0f;
+        actuator_command->motors.wheels[i].kp = 0.0f;
+        actuator_command->motors.wheels[i].kd = 0.0f;
+    }
 }
 
 static void update_actuator_command_contract(platform_balance_controller_t *state,
@@ -293,22 +275,22 @@ static void update_actuator_command_contract(platform_balance_controller_t *stat
 
     state->actuator_command.start = (state->chassis.mode.start_enabled != 0U);
 
-    state->actuator_command.motors.left_leg_joint[0].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
-    state->actuator_command.motors.left_leg_joint[0].torque_target = state->left_leg.torque_set[0];
-    state->actuator_command.motors.left_leg_joint[0].valid = outputs_enabled;
-    state->actuator_command.motors.left_leg_joint[1].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
-    state->actuator_command.motors.left_leg_joint[1].torque_target = state->left_leg.torque_set[1];
-    state->actuator_command.motors.left_leg_joint[1].valid = outputs_enabled;
-    state->actuator_command.motors.right_leg_joint[0].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
-    state->actuator_command.motors.right_leg_joint[0].torque_target = state->right_leg.torque_set[0];
-    state->actuator_command.motors.right_leg_joint[0].valid = outputs_enabled;
-    state->actuator_command.motors.right_leg_joint[1].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
-    state->actuator_command.motors.right_leg_joint[1].torque_target = state->right_leg.torque_set[1];
-    state->actuator_command.motors.right_leg_joint[1].valid = outputs_enabled;
-    state->actuator_command.motors.left_wheel.control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
-    state->actuator_command.motors.left_wheel.current_target = (float)state->chassis.wheel_motor[0].give_current;
-    state->actuator_command.motors.right_wheel.control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
-    state->actuator_command.motors.right_wheel.current_target = (float)state->chassis.wheel_motor[1].give_current;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_LEFT_FRONT].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_LEFT_FRONT].torque_target = state->left_leg.torque_set[0];
+    state->actuator_command.motors.joints[PLATFORM_JOINT_LEFT_FRONT].valid = outputs_enabled;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_LEFT_REAR].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_LEFT_REAR].torque_target = state->left_leg.torque_set[1];
+    state->actuator_command.motors.joints[PLATFORM_JOINT_LEFT_REAR].valid = outputs_enabled;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].torque_target = state->right_leg.torque_set[0];
+    state->actuator_command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].valid = outputs_enabled;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_RIGHT_REAR].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_RIGHT_REAR].torque_target = state->right_leg.torque_set[1];
+    state->actuator_command.motors.joints[PLATFORM_JOINT_RIGHT_REAR].valid = outputs_enabled;
+    state->actuator_command.motors.wheels[PLATFORM_WHEEL_LEFT].control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
+    state->actuator_command.motors.wheels[PLATFORM_WHEEL_LEFT].current_target = (float)state->chassis.wheel_motor[0].give_current;
+    state->actuator_command.motors.wheels[PLATFORM_WHEEL_RIGHT].control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
+    state->actuator_command.motors.wheels[PLATFORM_WHEEL_RIGHT].current_target = (float)state->chassis.wheel_motor[1].give_current;
 
     if (outputs_enabled && platform_balance_controller_has_wheel_leg_danger_signature(state))
     {
@@ -317,12 +299,12 @@ static void update_actuator_command_contract(platform_balance_controller_t *stat
 
     state->actuator_command.control_enable = outputs_enabled;
     state->actuator_command.actuator_enable = outputs_enabled;
-    state->actuator_command.motors.left_leg_joint[0].valid = outputs_enabled;
-    state->actuator_command.motors.left_leg_joint[1].valid = outputs_enabled;
-    state->actuator_command.motors.right_leg_joint[0].valid = outputs_enabled;
-    state->actuator_command.motors.right_leg_joint[1].valid = outputs_enabled;
-    state->actuator_command.motors.left_wheel.valid = outputs_enabled;
-    state->actuator_command.motors.right_wheel.valid = outputs_enabled;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_LEFT_FRONT].valid = outputs_enabled;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_LEFT_REAR].valid = outputs_enabled;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].valid = outputs_enabled;
+    state->actuator_command.motors.joints[PLATFORM_JOINT_RIGHT_REAR].valid = outputs_enabled;
+    state->actuator_command.motors.wheels[PLATFORM_WHEEL_LEFT].valid = outputs_enabled;
+    state->actuator_command.motors.wheels[PLATFORM_WHEEL_RIGHT].valid = outputs_enabled;
 
     if (!outputs_enabled)
     {

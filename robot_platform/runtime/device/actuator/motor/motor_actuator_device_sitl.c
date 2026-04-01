@@ -85,10 +85,10 @@ static platform_device_result_t platform_motor_actuator_send_joint_commands(
     const platform_motor_command_set_t *command_set)
 {
   const platform_motor_command_t *joint_commands[4] = {
-      &command_set->left_leg_joint[0],
-      &command_set->left_leg_joint[1],
-      &command_set->right_leg_joint[0],
-      &command_set->right_leg_joint[1],
+      &command_set->joints[PLATFORM_JOINT_LEFT_FRONT],
+      &command_set->joints[PLATFORM_JOINT_LEFT_REAR],
+      &command_set->joints[PLATFORM_JOINT_RIGHT_FRONT],
+      &command_set->joints[PLATFORM_JOINT_RIGHT_REAR],
   };
 
   for (uint32_t i = 0; i < 4U; ++i)
@@ -136,8 +136,8 @@ static platform_device_result_t platform_motor_actuator_send_wheel_commands(
     float motor2_current;
   } packet = {
       .type = 2U,
-      .motor1_current = command_set->left_wheel.current_target,
-      .motor2_current = command_set->right_wheel.current_target,
+      .motor1_current = command_set->wheels[PLATFORM_WHEEL_LEFT].current_target,
+      .motor2_current = command_set->wheels[PLATFORM_WHEEL_RIGHT].current_target,
   };
 
   ssize_t sent = sendto(context->sock_fd,

@@ -15,11 +15,21 @@ typedef struct {
 } platform_motor_command_t;
 
 typedef struct {
-  platform_motor_command_t left_leg_joint[2];
-  platform_motor_command_t right_leg_joint[2];
-  platform_motor_command_t left_wheel;
-  platform_motor_command_t right_wheel;
+  platform_motor_command_t joints[PLATFORM_JOINT_MOTOR_COUNT];
+  platform_motor_command_t wheels[PLATFORM_WHEEL_MOTOR_COUNT];
 } platform_motor_command_set_t;
+
+enum {
+  PLATFORM_JOINT_LEFT_FRONT  = 0,
+  PLATFORM_JOINT_LEFT_REAR   = 1,
+  PLATFORM_JOINT_RIGHT_FRONT = 2,
+  PLATFORM_JOINT_RIGHT_REAR  = 3,
+};
+
+enum {
+  PLATFORM_WHEEL_LEFT  = 0,
+  PLATFORM_WHEEL_RIGHT = 1,
+};
 
 typedef struct {
   uint32_t timestamp_us;

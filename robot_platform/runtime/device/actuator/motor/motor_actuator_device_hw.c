@@ -67,21 +67,21 @@ static platform_device_result_t platform_motor_actuator_write(platform_motor_dev
   }
 
   config->mit_ctrl_fn(config->joint_can_handle, context->joints[0]->para.id, 0.0f, 0.0f,
-                      command_set->left_leg_joint[0].kp, command_set->left_leg_joint[0].kd,
-                      command_set->left_leg_joint[0].torque_target);
+                      command_set->joints[PLATFORM_JOINT_LEFT_FRONT].kp, command_set->joints[PLATFORM_JOINT_LEFT_FRONT].kd,
+                      command_set->joints[PLATFORM_JOINT_LEFT_FRONT].torque_target);
   config->mit_ctrl_fn(config->joint_can_handle, context->joints[1]->para.id, 0.0f, 0.0f,
-                      command_set->left_leg_joint[1].kp, command_set->left_leg_joint[1].kd,
-                      command_set->left_leg_joint[1].torque_target);
+                      command_set->joints[PLATFORM_JOINT_LEFT_REAR].kp, command_set->joints[PLATFORM_JOINT_LEFT_REAR].kd,
+                      command_set->joints[PLATFORM_JOINT_LEFT_REAR].torque_target);
   config->mit_ctrl_fn(config->joint_can_handle, context->joints[2]->para.id, 0.0f, 0.0f,
-                      command_set->right_leg_joint[0].kp, command_set->right_leg_joint[0].kd,
-                      command_set->right_leg_joint[0].torque_target);
+                      command_set->joints[PLATFORM_JOINT_RIGHT_FRONT].kp, command_set->joints[PLATFORM_JOINT_RIGHT_FRONT].kd,
+                      command_set->joints[PLATFORM_JOINT_RIGHT_FRONT].torque_target);
   config->mit_ctrl_fn(config->joint_can_handle, context->joints[3]->para.id, 0.0f, 0.0f,
-                      command_set->right_leg_joint[1].kp, command_set->right_leg_joint[1].kd,
-                      command_set->right_leg_joint[1].torque_target);
+                      command_set->joints[PLATFORM_JOINT_RIGHT_REAR].kp, command_set->joints[PLATFORM_JOINT_RIGHT_REAR].kd,
+                      command_set->joints[PLATFORM_JOINT_RIGHT_REAR].torque_target);
 
   config->wheel_cmd_fn(config->wheel_can_handle,
-                       (int16_t)command_set->left_wheel.current_target,
-                       (int16_t)command_set->right_wheel.current_target,
+                       (int16_t)command_set->wheels[PLATFORM_WHEEL_LEFT].current_target,
+                       (int16_t)command_set->wheels[PLATFORM_WHEEL_RIGHT].current_target,
                        0,
                        0);
 

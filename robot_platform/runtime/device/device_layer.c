@@ -1,7 +1,5 @@
 #include "device_layer.h"
 
-static void platform_map_device_command_to_motor_set(const platform_device_command_t *command,
-                                                     platform_motor_command_set_t *motor_set);
 static void platform_copy_feedback_to_input(const platform_device_feedback_t *feedback,
                                             platform_device_input_t *input);
 static platform_device_result_t platform_default_layer_ensure_ready(void);
@@ -163,16 +161,13 @@ platform_device_result_t platform_device_layer_read_imu(platform_device_layer_t 
 platform_device_result_t platform_device_layer_write_command(platform_device_layer_t *layer,
                                                              const platform_device_command_t *command)
 {
-  platform_motor_command_set_t motor_set = {0};
-
   if (layer->motor.ops.write_motor_command == 0)
   {
     return PLATFORM_DEVICE_RESULT_UNSUPPORTED;
   }
 
   layer->command_sequence++;
-  platform_map_device_command_to_motor_set(command, &motor_set);
-  return layer->motor.ops.write_motor_command(&layer->motor, &motor_set);
+  return layer->motor.ops.write_motor_command(&layer->motor, &command->motors);
 }
 
 platform_device_result_t platform_device_layer_read_feedback(platform_device_layer_t *layer,
@@ -293,64 +288,6 @@ void platform_device_reset_test_hooks(void)
 {
   g_platform_test_hooks = (platform_device_test_hooks_t){0};
   g_platform_default_layer_ready = false;
-}
-
-static void platform_map_device_command_to_motor_set(const platform_device_command_t *command,
-                                                     platform_motor_command_set_t *motor_set)
-{
-  motor_set->left_leg_joint[0].control_mode = command->joints[0].control_mode;
-  motor_set->left_leg_joint[0].torque_target = command->joints[0].torque_target;
-  motor_set->left_leg_joint[0].velocity_target = command->joints[0].velocity_target;
-  motor_set->left_leg_joint[0].position_target = command->joints[0].position_target;
-  motor_set->left_leg_joint[0].current_target = command->joints[0].current_target;
-  motor_set->left_leg_joint[0].kp = command->joints[0].kp;
-  motor_set->left_leg_joint[0].kd = command->joints[0].kd;
-  motor_set->left_leg_joint[0].valid = command->joints[0].valid;
-
-  motor_set->left_leg_joint[1].control_mode = command->joints[1].control_mode;
-  motor_set->left_leg_joint[1].torque_target = command->joints[1].torque_target;
-  motor_set->left_leg_joint[1].velocity_target = command->joints[1].velocity_target;
-  motor_set->left_leg_joint[1].position_target = command->joints[1].position_target;
-  motor_set->left_leg_joint[1].current_target = command->joints[1].current_target;
-  motor_set->left_leg_joint[1].kp = command->joints[1].kp;
-  motor_set->left_leg_joint[1].kd = command->joints[1].kd;
-  motor_set->left_leg_joint[1].valid = command->joints[1].valid;
-
-  motor_set->right_leg_joint[0].control_mode = command->joints[2].control_mode;
-  motor_set->right_leg_joint[0].torque_target = command->joints[2].torque_target;
-  motor_set->right_leg_joint[0].velocity_target = command->joints[2].velocity_target;
-  motor_set->right_leg_joint[0].position_target = command->joints[2].position_target;
-  motor_set->right_leg_joint[0].current_target = command->joints[2].current_target;
-  motor_set->right_leg_joint[0].kp = command->joints[2].kp;
-  motor_set->right_leg_joint[0].kd = command->joints[2].kd;
-  motor_set->right_leg_joint[0].valid = command->joints[2].valid;
-
-  motor_set->right_leg_joint[1].control_mode = command->joints[3].control_mode;
-  motor_set->right_leg_joint[1].torque_target = command->joints[3].torque_target;
-  motor_set->right_leg_joint[1].velocity_target = command->joints[3].velocity_target;
-  motor_set->right_leg_joint[1].position_target = command->joints[3].position_target;
-  motor_set->right_leg_joint[1].current_target = command->joints[3].current_target;
-  motor_set->right_leg_joint[1].kp = command->joints[3].kp;
-  motor_set->right_leg_joint[1].kd = command->joints[3].kd;
-  motor_set->right_leg_joint[1].valid = command->joints[3].valid;
-
-  motor_set->left_wheel.control_mode = command->wheels[0].control_mode;
-  motor_set->left_wheel.torque_target = command->wheels[0].torque_target;
-  motor_set->left_wheel.velocity_target = command->wheels[0].velocity_target;
-  motor_set->left_wheel.position_target = command->wheels[0].position_target;
-  motor_set->left_wheel.current_target = command->wheels[0].current_target;
-  motor_set->left_wheel.kp = command->wheels[0].kp;
-  motor_set->left_wheel.kd = command->wheels[0].kd;
-  motor_set->left_wheel.valid = command->wheels[0].valid;
-
-  motor_set->right_wheel.control_mode = command->wheels[1].control_mode;
-  motor_set->right_wheel.torque_target = command->wheels[1].torque_target;
-  motor_set->right_wheel.velocity_target = command->wheels[1].velocity_target;
-  motor_set->right_wheel.position_target = command->wheels[1].position_target;
-  motor_set->right_wheel.current_target = command->wheels[1].current_target;
-  motor_set->right_wheel.kp = command->wheels[1].kp;
-  motor_set->right_wheel.kd = command->wheels[1].kd;
-  motor_set->right_wheel.valid = command->wheels[1].valid;
 }
 
 static void platform_copy_feedback_to_input(const platform_device_feedback_t *feedback,
