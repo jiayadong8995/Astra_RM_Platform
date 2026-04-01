@@ -213,6 +213,7 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_SITL_BSP_DIR}/BMI088driver_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/remote_control_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/bsp_ports_sitl.c
   )
 
   set(BALANCE_SAFETY_HOST_RUNTIME_SOURCES
@@ -299,6 +300,7 @@ if(PLATFORM_HOST_TESTS)
       ${PLATFORM_HOST_TEST_DIR}/test_support/os
       ${PLATFORM_SITL_BSP_DIR}
       ${PLATFORM_BOARD_BSP_DIR}
+      ${PLATFORM_RUNTIME_DIR}/bsp
       ${PLATFORM_DEVICE_DIR}
       ${PLATFORM_DEVICE_DIR}/imu
       ${PLATFORM_DEVICE_DIR}/remote
@@ -515,6 +517,36 @@ if(PLATFORM_HOST_TESTS)
   set_tests_properties(test_safety_wheel_leg PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
   )
+
+  add_executable(test_bsp_ports_compile
+    ${PLATFORM_RUNTIME_DIR}/bsp/ports_fake.c
+    ${PLATFORM_HOST_TEST_DIR}/test_bsp_ports_compile.c
+  )
+  target_include_directories(test_bsp_ports_compile
+    PRIVATE
+      ${PLATFORM_RUNTIME_DIR}/bsp
+      ${PLATFORM_CONTROL_CONTRACT_DIR}
+      ${PLATFORM_DEVICE_DIR}
+      ${PLATFORM_HOST_TEST_DIR}
+  )
+  target_compile_features(test_bsp_ports_compile PRIVATE c_std_11)
+  target_compile_options(test_bsp_ports_compile
+    PRIVATE
+      -Wall
+      -Wextra
+      -Wpedantic
+      -Wno-unused-parameter
+      -O0
+      -g3
+  )
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_bsp_ports_compile PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_bsp_ports_compile PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_bsp_ports_compile COMMAND test_bsp_ports_compile)
+  set_tests_properties(test_bsp_ports_compile PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
 endif()
 
 if(PLATFORM_TARGET_HW)
@@ -597,6 +629,7 @@ set(BALANCE_CHASSIS_BSP_SEED_SOURCES
   ${PLATFORM_BOARD_BSP_DIR}/bsp_PWM.c
   ${PLATFORM_BOARD_BSP_DIR}/bsp_uart.c
   ${PLATFORM_BOARD_BSP_DIR}/can_bsp.c
+  ${PLATFORM_BOARD_BSP_DIR}/bsp_ports_hw.c
   ${PLATFORM_DEVICE_REMOTE_DIR}/remote_control.c
   ${PLATFORM_DEVICE_MOTOR_DIR}/dm4310_drv.c
 )
@@ -644,9 +677,16 @@ target_link_libraries(balance_chassis_bsp_seed
 target_include_directories(balance_chassis_bsp_seed
   PUBLIC
     ${PLATFORM_BOARD_BSP_DIR}
+    ${PLATFORM_RUNTIME_DIR}/bsp
     ${PLATFORM_DEVICE_REMOTE_DIR}
     ${PLATFORM_DEVICE_MOTOR_DIR}
     ${PLATFORM_CONTROL_CONTRACT_DIR}
+    ${PLATFORM_DEVICE_DIR}
+    ${PLATFORM_DEVICE_DIR}/imu
+    ${PLATFORM_DEVICE_DIR}/remote
+    ${PLATFORM_DEVICE_DIR}/actuator
+    ${PLATFORM_DEVICE_DIR}/actuator/motor
+    ${PLATFORM_DEVICE_IMU_DIR}
     ${PLATFORM_LEGACY_APP_DIR}
     ${PLATFORM_APP_IO_DIR}
     ${CHASSIS_FREERTOS_DIR}/include
@@ -727,6 +767,7 @@ target_include_directories(balance_chassis_hw_seed.elf
     ${CHASSIS_FREERTOS_DIR}/CMSIS_RTOS
     ${PLATFORM_FREERTOS_PORT_DIR}
     ${PLATFORM_BOARD_BSP_DIR}
+    ${PLATFORM_RUNTIME_DIR}/bsp
     ${PLATFORM_DEVICE_DIR}
     ${PLATFORM_DEVICE_DIR}/imu
     ${PLATFORM_DEVICE_DIR}/remote
@@ -814,6 +855,7 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_SITL_BSP_DIR}/BMI088driver_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/remote_control_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
+    ${PLATFORM_SITL_BSP_DIR}/bsp_ports_sitl.c
   )
 
   add_library(cmsis_dsp_sitl STATIC
@@ -852,6 +894,7 @@ if(PLATFORM_TARGET_SIM)
     PRIVATE
       # SITL overrides (must be first to override main.h, etc)
       ${PLATFORM_SITL_BSP_DIR}
+      ${PLATFORM_RUNTIME_DIR}/bsp
       # Original hardware headers so app/module can find them
       ${PLATFORM_BOARD_BSP_DIR}
       ${PLATFORM_DEVICE_MOTOR_DIR}
