@@ -1,5 +1,6 @@
 """Minimal CLI for the current robot_platform bootstrap stage."""
 
+import datetime
 import json
 import subprocess
 import sys
@@ -24,6 +25,7 @@ HELP = {
     "sim": "Run simulation scenario.",
     "test": "Unified regression entry.",
     "verify": "Run report-driven verification flows.",
+    "validate": "Run full closure loop: build, test, smoke, verify, firmware.",
 }
 
 
@@ -188,6 +190,52 @@ def _parse_verify_phase3_args(args: list[str]) -> tuple[str, Path, str | None]:
         raise ValueError(f"unknown verify option: {arg}")
 
     return project, report, case
+
+
+def _parse_validate_args(args: list[str]) -> tuple[str, Path]:
+    project = "balance_chassis"
+    report = Path("build/closure_reports/closure_balance_chassis.json")
+    i = 0
+    while i < len(args):
+        arg = args[i]
+        if arg == "--project":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --project")
+            project = args[i + 1]
+            i += 2
+            continue
+        if arg == "--report":
+            if i + 1 >= len(args):
+                raise ValueError("missing value for --report")
+            report = Path(args[i + 1])
+            i += 2
+            continue
+        raise ValueError(f"unknown validate option: {arg}")
+    return project, report
+
+
+def _write_closure_report(
+    report_path: Path,
+    stages: list[dict[str, object]],
+    project: str,
+    failure_stage: str | None,
+    failure_reason: str | None,
+    hw_elf_attempted: bool,
+    hw_elf_status: str | None,
+) -> None:
+    payload = {
+        "closure_version": 1,
+        "project": project,
+        "overall_status": "failed" if failure_stage is not None else "passed",
+        "failure_stage": failure_stage,
+        "failure_reason": failure_reason,
+        "hw_elf_attempted": hw_elf_attempted,
+        "hw_elf_status": hw_elf_status,
+        "stages": stages,
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def _generate_balance_chassis() -> int:
@@ -880,6 +928,96 @@ def _run_verify_phase3(project: str, report_path: Path, case_name: str | None) -
     return 0 if overall_status == "passed" else 1
 
 
+def _run_validate(project: str, report_path: Path) -> int:
+    repo_root = _repo_root()
+    profile = get_project_profile(project)
+    if profile is None:
+        print(f"missing profile for project: {project}", file=sys.stderr)
+        return 2
+
+    resolved_report_path = report_path if report_path.is_absolute() else repo_root / report_path
+    stages: list[dict[str, object]] = []
+
+    def _fail(stage_name: str, reason: str) -> int:
+        _write_closure_report(resolved_report_path, stages, project, stage_name, reason, False, None)
+        print(f"closure summary: project={project} overall_status=failed failure_stage={stage_name}")
+        print(f"closure report: {resolved_report_path}")
+        return 1
+
+    # Stage 1: build_sitl
+    stage = _run_stage("build_sitl", lambda: _build_sitl(profile.sitl_target))
+    stages.append(stage)
+    if stage["exit_code"] != 0:
+        return _fail("build_sitl", "build_failed")
+
+    # Stage 2: host_tests — all PHASE2_CASES host C safety tests
+    all_targets = [str(PHASE2_CASES[name]["target"]) for name in PHASE2_CASES]
+    all_regex = "|".join(str(PHASE2_CASES[name]["regex"]) for name in PHASE2_CASES)
+    stage = _run_stage("host_tests", lambda: _run_host_ctest(all_targets, all_regex))
+    stages.append(stage)
+    if stage["exit_code"] != 0:
+        return _fail("host_tests", "host_tests_failed")
+
+    # Stage 3: python_tests
+    stage = _run_stage("python_tests", lambda: _run_tests("sim"))
+    stages.append(stage)
+    if stage["exit_code"] != 0:
+        return _fail("python_tests", "python_tests_failed")
+
+    # Stage 4: smoke — standalone SITL smoke gate
+    smoke_report_path = repo_root / "build" / "sim_reports" / profile.report_name
+    smoke_started = time.monotonic()
+    smoke_rc = _run_sim(project, "sitl", duration_s=1.0, skip_build=True)
+    smoke_duration_s = round(time.monotonic() - smoke_started, 3)
+    smoke_report = _load_json_report(smoke_report_path)
+    smoke_status, smoke_failure = _smoke_stage_status(smoke_report)
+    smoke_stage: dict[str, object] = {
+        "name": "smoke",
+        "status": smoke_status if smoke_status != "blocked" else "failed",
+        "exit_code": smoke_rc,
+        "duration_s": smoke_duration_s,
+    }
+    if isinstance(smoke_report, dict):
+        smoke_stage["smoke_report"] = str(smoke_report_path)
+        smoke_stage["runtime_output_observation_count"] = int(
+            smoke_report.get("runtime_output_observation_count", 0) or 0
+        )
+    stages.append(smoke_stage)
+    if smoke_status != "passed":
+        reason = smoke_failure or "smoke_failed"
+        _write_closure_report(resolved_report_path, stages, project, "smoke", reason, False, None)
+        print(f"closure summary: project={project} overall_status=failed failure_stage=smoke")
+        print(f"closure report: {resolved_report_path}")
+        return 1
+
+    # Stage 5: verify_phase3
+    phase3_report = repo_root / "build" / "verification_reports" / "phase3_balance_chassis.json"
+    stage = _run_stage(
+        "verify_phase3",
+        lambda: _run_verify_phase3(project, phase3_report, None),
+    )
+    stages.append(stage)
+    if stage["exit_code"] != 0:
+        return _fail("verify_phase3", "phase3_verification_failed")
+
+    # All validation gates passed — attempt hw_elf as best-effort
+    hw_elf_attempted = False
+    hw_elf_status: str | None = None
+    freshness_rc = _require_generated_artifact_freshness()
+    if freshness_rc != 0:
+        hw_elf_status = "skipped"
+    else:
+        hw_elf_attempted = True
+        hw_stage = _run_stage("build_hw_elf", lambda: _build_hw_seed("balance_chassis_hw_seed.elf"))
+        stages.append(hw_stage)
+        hw_elf_status = "passed" if hw_stage["exit_code"] == 0 else "failed"
+
+    _write_closure_report(resolved_report_path, stages, project, None, None, hw_elf_attempted, hw_elf_status)
+    print(f"closure summary: project={project} overall_status=passed failure_stage=None")
+    print(f"closure report: {resolved_report_path}")
+    return 0
+
+
 def _run_sim(project: str, scenario: str, *, duration_s: float = 3.0, skip_build: bool = False) -> int:
     supported_projects = list(get_project_names())
     if project not in supported_projects:
@@ -943,7 +1081,7 @@ def main() -> int:
     args = sys.argv[1:]
     if not args:
         print("robot_platform CLI")
-        print("supported commands: generate build flash debug replay sim test verify")
+        print("supported commands: generate build flash debug replay sim test verify validate")
         return 0
 
     cmd = args[0]
@@ -1001,6 +1139,14 @@ def main() -> int:
             print(str(exc), file=sys.stderr)
             return 2
         return _run_verify_phase1(project, report_path, smoke_duration)
+
+    if cmd == "validate":
+        try:
+            project, report_path = _parse_validate_args(args[1:])
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 2
+        return _run_validate(project, report_path)
 
     print(f"command placeholder: {cmd}")
     print(HELP[cmd])
