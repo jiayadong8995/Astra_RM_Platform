@@ -4,18 +4,19 @@
 #include "bsp_dwt.h"
 #include "cmsis_os.h"
 #include "../control_config/control_task_params.h"
+#include "../topics.h"
 #include "../../bsp/ports.h"
 #include "ins_state_estimator.h"
 #include "ins_state_message.h"
-#include "ins_topics.h"
+#include "message_center.h"
 
 static platform_ins_state_estimator_t runtime_state;
-static platform_ins_bus_t runtime_bus;
+static Publisher_t *ins_pub;
 
 void INS_Init(void)
 {
    platform_ins_state_estimator_init(&runtime_state);
-   platform_ins_bus_init(&runtime_bus);
+   ins_pub = PubRegister(TOPIC_INS_DATA, sizeof(platform_ins_state_message_t));
 }
 
 void INS_task(void)
@@ -33,7 +34,7 @@ void INS_task(void)
             platform_ins_state_estimator_apply_sample(&runtime_state, ins_dt, sample.accel, sample.gyro);
         }
         platform_ins_state_estimator_build_msg(&runtime_state, &msg);
-        platform_ins_bus_publish(&runtime_bus, &msg);
+        PubPushMessage(ins_pub, (void *)&msg);
 
         osDelay(INS_TASK_PERIOD_MS);
      }

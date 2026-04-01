@@ -6,12 +6,13 @@
 #include "../../../control/contracts/robot_state.h"
 #include "../../../bsp/device_types.h"
 #include "../app_intent/remote_intent_state.h"
-#include "../app_io/remote_topics.h"
+#include "message_center.h"
 
 typedef struct
 {
     platform_remote_intent_state_t intent_state;
-    platform_remote_intent_bus_t intent_bus;
+    Publisher_t *intent_pub;
+    Subscriber_t *robot_state_sub;
     platform_rc_input_t rc_input;
     platform_device_result_t rc_result;
     platform_robot_state_t robot_state;

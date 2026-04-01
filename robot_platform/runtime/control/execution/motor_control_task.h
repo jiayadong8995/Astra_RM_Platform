@@ -4,11 +4,13 @@
 #include "../contracts/actuator_command.h"
 #include "../contracts/device_feedback.h"
 #include "../state/ins_state_message.h"
-#include "actuator_topics.h"
+#include "message_center.h"
 
 typedef struct
 {
-    platform_actuator_bus_t runtime_bus;
+    Subscriber_t *ins_sub;
+    Subscriber_t *actuator_cmd_sub;
+    Publisher_t *device_feedback_pub;
     platform_ins_state_message_t ins_msg;
     platform_actuator_command_t actuator_msg;
     platform_device_feedback_t device_feedback;

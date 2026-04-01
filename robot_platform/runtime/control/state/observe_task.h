@@ -6,12 +6,15 @@
 #include "chassis_observe_message.h"
 #include "chassis_observer.h"
 #include "ins_state_message.h"
-#include "observe_topics.h"
+#include "message_center.h"
 
 typedef struct
 {
     platform_chassis_observer_t runtime;
-    platform_observe_bus_t runtime_bus;
+    Publisher_t *observe_pub;
+    Subscriber_t *ins_sub;
+    Subscriber_t *cmd_sub;
+    Subscriber_t *feedback_sub;
     platform_ins_state_message_t ins_msg;
     platform_robot_intent_t intent;
     platform_device_feedback_t feedback_msg;

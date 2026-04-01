@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "../../../app/balance_chassis/app_io/chassis_topics.h"
+#include "../../../control/topics.h"
 
 void platform_balance_safety_harness_seed_ins(platform_balance_safety_harness_t *harness,
                                               const platform_ins_state_message_t *ins_msg)
@@ -28,7 +29,7 @@ void platform_balance_safety_harness_init(platform_balance_safety_harness_t *har
     memset(harness, 0, sizeof(*harness));
     chassis_runtime_bus_reset_observation();
 
-    harness->ins_pub = PubRegister("ins_data", sizeof(platform_ins_state_message_t));
+    harness->ins_pub = PubRegister(TOPIC_INS_DATA, sizeof(platform_ins_state_message_t));
     remote_task_init(&harness->remote);
     observe_task_init(&harness->observe);
     motor_control_task_init(&harness->motor);

@@ -61,12 +61,9 @@ set(BALANCE_CHASSIS_APP_SOURCES
   ${PLATFORM_LEGACY_APP_DIR}/app_bringup/remote_task.c
   ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
   ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
-  ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
   ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
-  ${PLATFORM_RUNTIME_DIR}/control/state/ins_topics.c
   ${PLATFORM_RUNTIME_DIR}/control/state/ins_task.c
   ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c
-  ${PLATFORM_RUNTIME_DIR}/control/state/observe_topics.c
   ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
   ${PLATFORM_RUNTIME_DIR}/control/task_registry/control_task_registry.c
   ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
@@ -74,7 +71,6 @@ set(BALANCE_CHASSIS_APP_SOURCES
   ${PLATFORM_RUNTIME_DIR}/control/constraints/actuator_constraints.c
   ${PLATFORM_RUNTIME_DIR}/control/readiness.c
   ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
-  ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
   ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
   ${PLATFORM_MODULE_CONTROL_LIB_DIR}/control_math.c
   ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
@@ -222,17 +218,14 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_LEGACY_APP_DIR}/app_bringup/remote_task.c
     ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
-    ${PLATFORM_LEGACY_APP_DIR}/app_io/remote_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
-    ${PLATFORM_RUNTIME_DIR}/control/state/observe_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
     ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
     ${PLATFORM_RUNTIME_DIR}/control/controllers/chassis_control_task.c
     ${PLATFORM_RUNTIME_DIR}/control/readiness.c
     ${PLATFORM_RUNTIME_DIR}/control/constraints/actuator_constraints.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
-    ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
     ${PLATFORM_MODULE_CONTROL_LIB_DIR}/control_math.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c

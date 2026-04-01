@@ -2,8 +2,9 @@
 
 #include "cmsis_os.h"
 #include "../control_config/control_task_params.h"
+#include "../readiness.h"
+#include "../topics.h"
 #include "actuator_gateway.h"
-#include "actuator_topics.h"
 
 void motor_control_task_init(platform_motor_control_task_runtime_t *runtime)
 {
@@ -12,7 +13,9 @@ void motor_control_task_init(platform_motor_control_task_runtime_t *runtime)
         return;
     }
 
-    platform_actuator_bus_init(&runtime->runtime_bus);
+    runtime->ins_sub = SubRegister(TOPIC_INS_DATA, sizeof(platform_ins_state_message_t));
+    runtime->actuator_cmd_sub = SubRegister(TOPIC_ACTUATOR_CMD, sizeof(platform_actuator_command_t));
+    runtime->device_feedback_pub = PubRegister(TOPIC_DEVICE_FEEDBACK, sizeof(platform_device_feedback_t));
 }
 
 void motor_control_task_prepare(platform_motor_control_task_runtime_t *runtime)
@@ -22,7 +25,7 @@ void motor_control_task_prepare(platform_motor_control_task_runtime_t *runtime)
         return;
     }
 
-    platform_actuator_bus_wait_ready(&runtime->runtime_bus, &runtime->ins_msg);
+    platform_readiness_wait_ins(runtime->ins_sub, &runtime->ins_msg);
     platform_actuator_gateway_init();
     osDelay(APP_CHASSIS_STARTUP_DELAY_MS);
 }
@@ -34,10 +37,10 @@ void motor_control_task_step(platform_motor_control_task_runtime_t *runtime)
         return;
     }
 
-    platform_actuator_bus_pull_cmd(&runtime->runtime_bus, &runtime->actuator_msg);
+    SubGetMessage(runtime->actuator_cmd_sub, &runtime->actuator_msg);
     if (platform_actuator_gateway_capture_feedback(&runtime->device_feedback) == PLATFORM_DEVICE_RESULT_OK)
     {
-        platform_actuator_bus_publish_feedback(&runtime->runtime_bus, &runtime->device_feedback);
+        PubPushMessage(runtime->device_feedback_pub, (void *)&runtime->device_feedback);
     }
     runtime->systick = osKernelSysTick();
     platform_actuator_gateway_dispatch_command(&runtime->actuator_msg, runtime->systick);

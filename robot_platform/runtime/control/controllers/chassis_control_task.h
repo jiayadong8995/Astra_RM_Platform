@@ -1,12 +1,17 @@
 #ifndef PLATFORM_CONTROL_CONTROLLERS_CHASSIS_CONTROL_TASK_H
 #define PLATFORM_CONTROL_CONTROLLERS_CHASSIS_CONTROL_TASK_H
 
-#include "../../app/balance_chassis/app_io/chassis_topics.h"
 #include "balance_controller.h"
+#include "message_center.h"
 
 typedef struct
 {
-    Chassis_Runtime_Bus_t runtime_bus;
+    Publisher_t *robot_state_pub;
+    Publisher_t *actuator_command_pub;
+    Subscriber_t *ins_sub;
+    Subscriber_t *cmd_sub;
+    Subscriber_t *observe_sub;
+    Subscriber_t *device_feedback_sub;
     platform_balance_controller_t runtime_state;
     platform_balance_controller_input_t inputs;
     platform_balance_controller_output_t outputs;
