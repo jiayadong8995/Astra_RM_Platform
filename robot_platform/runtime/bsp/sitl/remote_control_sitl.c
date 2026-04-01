@@ -1,4 +1,4 @@
-#include "../../device/remote/dbus/remote_control.h"
+#include "../drivers/remote/dbus/remote_control.h"
 
 #include <arpa/inet.h>
 #include <fcntl.h>

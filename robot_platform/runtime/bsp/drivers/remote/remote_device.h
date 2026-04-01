@@ -1,8 +1,8 @@
 #ifndef PLATFORM_REMOTE_DEVICE_H
 #define PLATFORM_REMOTE_DEVICE_H
 
-#include "../device_types.h"
-#include "../../control/contracts/device_input.h"
+#include "../../device_types.h"
+#include "../../../control/contracts/device_input.h"
 
 typedef struct platform_remote_device platform_remote_device_t;
 

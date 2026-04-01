@@ -1,9 +1,9 @@
 #ifndef PLATFORM_MOTOR_DEVICE_H
 #define PLATFORM_MOTOR_DEVICE_H
 
-#include "../../device_types.h"
-#include "../../../control/contracts/actuator_command.h"
-#include "../../../control/contracts/device_feedback.h"
+#include "../../../device_types.h"
+#include "../../../../control/contracts/actuator_command.h"
+#include "../../../../control/contracts/device_feedback.h"
 
 typedef struct platform_motor_device platform_motor_device_t;
 

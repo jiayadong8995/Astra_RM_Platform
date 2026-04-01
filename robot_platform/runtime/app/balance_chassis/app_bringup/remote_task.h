@@ -4,7 +4,7 @@
 #include "../../../control/contracts/device_input.h"
 #include "../../../control/contracts/robot_intent.h"
 #include "../../../control/contracts/robot_state.h"
-#include "../../../device/device_types.h"
+#include "../../../bsp/device_types.h"
 #include "../app_intent/remote_intent_state.h"
 #include "../app_io/remote_topics.h"
 

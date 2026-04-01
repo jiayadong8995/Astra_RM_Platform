@@ -1,8 +1,8 @@
 #ifndef PLATFORM_IMU_DEVICE_H
 #define PLATFORM_IMU_DEVICE_H
 
-#include "../device_types.h"
-#include "../../control/contracts/device_input.h"
+#include "../../device_types.h"
+#include "../../../control/contracts/device_input.h"
 
 typedef struct platform_imu_device platform_imu_device_t;
 

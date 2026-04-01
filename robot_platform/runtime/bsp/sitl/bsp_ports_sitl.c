@@ -1,10 +1,10 @@
 #include "ports.h"
 
-#include "imu/bmi088/BMI088driver.h"
-#include "imu/bmi088_device.h"
-#include "remote/dbus/remote_control.h"
-#include "remote/dbus_remote_device.h"
-#include "actuator/motor/motor_actuator_device.h"
+#include "drivers/imu/bmi088/BMI088driver.h"
+#include "drivers/imu/bmi088_device.h"
+#include "drivers/remote/dbus/remote_control.h"
+#include "drivers/remote/dbus_remote_device.h"
+#include "drivers/actuator/motor/motor_actuator_device.h"
 
 static platform_imu_device_t g_imu;
 static platform_remote_device_t g_remote;

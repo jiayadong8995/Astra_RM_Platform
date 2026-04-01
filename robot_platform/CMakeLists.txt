@@ -43,10 +43,10 @@ set(GENERATED_RAW_DIR ${PLATFORM_RUNTIME_DIR}/generated/stm32h7_ctrl_board_raw)
 set(PLATFORM_FREERTOS_PORT_DIR ${PLATFORM_THIRD_PARTY_DIR}/freertos_port_gcc_cm7_r0p1)
 set(PLATFORM_LINKER_SCRIPT ${PLATFORM_ROOT}/cmake/linker/stm32h723_flash.ld)
 set(PLATFORM_BOARD_BSP_DIR ${PLATFORM_RUNTIME_DIR}/bsp/boards/stm32h7_ctrl_board)
-set(PLATFORM_DEVICE_DIR ${PLATFORM_RUNTIME_DIR}/device)
-set(PLATFORM_DEVICE_REMOTE_DIR ${PLATFORM_DEVICE_DIR}/remote/dbus)
-set(PLATFORM_DEVICE_MOTOR_DIR ${PLATFORM_DEVICE_DIR}/actuator/motor/dm4310)
-set(PLATFORM_DEVICE_IMU_DIR ${PLATFORM_DEVICE_DIR}/imu/bmi088)
+set(PLATFORM_BSP_DRIVERS_DIR ${PLATFORM_RUNTIME_DIR}/bsp/drivers)
+set(PLATFORM_DRIVERS_REMOTE_DIR ${PLATFORM_BSP_DRIVERS_DIR}/remote/dbus)
+set(PLATFORM_DRIVERS_MOTOR_DIR ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor/dm4310)
+set(PLATFORM_DRIVERS_IMU_DIR ${PLATFORM_BSP_DRIVERS_DIR}/imu/bmi088)
 set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
 set(PLATFORM_APP_STARTUP_DIR ${PLATFORM_LEGACY_APP_DIR}/app_startup)
 set(PLATFORM_APP_IO_DIR ${PLATFORM_LEGACY_APP_DIR}/app_io)
@@ -54,7 +54,6 @@ set(PLATFORM_CONTROL_CONTRACT_DIR ${PLATFORM_RUNTIME_DIR}/control/contracts)
 set(PLATFORM_MODULE_CONTROL_LIB_DIR ${PLATFORM_RUNTIME_DIR}/module/lib/control)
 set(PLATFORM_HOST_TEST_DIR ${PLATFORM_RUNTIME_DIR}/tests/host)
 
-set(BALANCE_CHASSIS_DEVICE_SOURCES)
 set(BALANCE_CHASSIS_APP_SOURCES
   ${PLATFORM_APP_STARTUP_DIR}/balance_chassis_app_startup.c
   ${PLATFORM_LEGACY_APP_DIR}/app_bringup/chassis_task.c
@@ -172,7 +171,6 @@ if(PLATFORM_HOST_TESTS)
     PRIVATE
       ${PLATFORM_RUNTIME_DIR}/control/execution
       ${PLATFORM_RUNTIME_DIR}/bsp
-      ${PLATFORM_RUNTIME_DIR}/device
       ${PLATFORM_CONTROL_CONTRACT_DIR}
       ${PLATFORM_HOST_TEST_DIR}
   )
@@ -236,11 +234,6 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/execution/motor_control_task.c
-    ${PLATFORM_RUNTIME_DIR}/device/device_profile_sitl.c
-    ${PLATFORM_RUNTIME_DIR}/device/device_layer.c
-    ${PLATFORM_RUNTIME_DIR}/device/imu/bmi088_device_sitl.c
-    ${PLATFORM_RUNTIME_DIR}/device/remote/dbus_remote_device_sitl.c
-    ${PLATFORM_RUNTIME_DIR}/device/actuator/motor/motor_actuator_device_sitl.c
     ${PLATFORM_MODULE_CONTROL_LIB_DIR}/control_math.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/EKF/QuaternionEKF.c
     ${PLATFORM_RUNTIME_DIR}/module/algorithm/PID/pid.c
@@ -307,14 +300,14 @@ if(PLATFORM_HOST_TESTS)
       ${PLATFORM_SITL_BSP_DIR}
       ${PLATFORM_BOARD_BSP_DIR}
       ${PLATFORM_RUNTIME_DIR}/bsp
-      ${PLATFORM_DEVICE_DIR}
-      ${PLATFORM_DEVICE_DIR}/imu
-      ${PLATFORM_DEVICE_DIR}/remote
-      ${PLATFORM_DEVICE_DIR}/actuator
-      ${PLATFORM_DEVICE_DIR}/actuator/motor
-      ${PLATFORM_DEVICE_REMOTE_DIR}
-      ${PLATFORM_DEVICE_MOTOR_DIR}
-      ${PLATFORM_DEVICE_IMU_DIR}
+      ${PLATFORM_BSP_DRIVERS_DIR}
+      ${PLATFORM_BSP_DRIVERS_DIR}/imu
+      ${PLATFORM_BSP_DRIVERS_DIR}/remote
+      ${PLATFORM_BSP_DRIVERS_DIR}/actuator
+      ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor
+      ${PLATFORM_DRIVERS_REMOTE_DIR}
+      ${PLATFORM_DRIVERS_MOTOR_DIR}
+      ${PLATFORM_DRIVERS_IMU_DIR}
       ${PLATFORM_LEGACY_APP_DIR}
       ${PLATFORM_APP_IO_DIR}
       ${PLATFORM_CONTROL_CONTRACT_DIR}
@@ -426,34 +419,6 @@ if(PLATFORM_HOST_TESTS)
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
   )
 
-  add_executable(test_device_profile_safety_seams
-    ${PLATFORM_HOST_TEST_DIR}/test_device_profile_safety_seams.c
-  )
-  target_link_libraries(test_device_profile_safety_seams PRIVATE balance_safety_host_runtime)
-  target_compile_features(test_device_profile_safety_seams PRIVATE c_std_11)
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_device_profile_safety_seams PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_device_profile_safety_seams PRIVATE -fsanitize=address,undefined)
-  endif()
-  add_test(NAME test_device_profile_safety_seams COMMAND test_device_profile_safety_seams)
-  set_tests_properties(test_device_profile_safety_seams PROPERTIES
-    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
-  )
-
-  add_executable(test_device_profile_sitl_runtime_bindings
-    ${PLATFORM_HOST_TEST_DIR}/test_device_profile_sitl_runtime_bindings.c
-  )
-  target_link_libraries(test_device_profile_sitl_runtime_bindings PRIVATE balance_safety_host_runtime)
-  target_compile_features(test_device_profile_sitl_runtime_bindings PRIVATE c_std_11)
-  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(test_device_profile_sitl_runtime_bindings PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
-    target_link_options(test_device_profile_sitl_runtime_bindings PRIVATE -fsanitize=address,undefined)
-  endif()
-  add_test(NAME test_device_profile_sitl_runtime_bindings COMMAND test_device_profile_sitl_runtime_bindings)
-  set_tests_properties(test_device_profile_sitl_runtime_bindings PROPERTIES
-    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
-  )
-
   add_executable(test_safety_mapping
     ${PLATFORM_HOST_TEST_DIR}/test_safety_mapping.c
   )
@@ -540,25 +505,6 @@ if(PLATFORM_HOST_TESTS)
 endif()
 
 if(PLATFORM_TARGET_HW)
-  list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
-    ${PLATFORM_DEVICE_DIR}/device_profile_hw.c
-    ${PLATFORM_DEVICE_DIR}/device_layer.c
-    ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_hw.c
-    ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_hw.c
-    ${PLATFORM_DEVICE_DIR}/actuator/motor/motor_actuator_device_hw.c
-  )
-endif()
-
-if(PLATFORM_TARGET_SIM)
-  list(APPEND BALANCE_CHASSIS_DEVICE_SOURCES
-    ${PLATFORM_DEVICE_DIR}/device_profile_sitl.c
-    ${PLATFORM_DEVICE_DIR}/device_layer.c
-    ${PLATFORM_DEVICE_DIR}/imu/bmi088_device_sitl.c
-    ${PLATFORM_DEVICE_DIR}/remote/dbus_remote_device_sitl.c
-    ${PLATFORM_DEVICE_DIR}/actuator/motor/motor_actuator_device_sitl.c
-  )
-endif()
-if(PLATFORM_TARGET_HW)
 
 
 set(BALANCE_CHASSIS_CPU_FLAGS
@@ -620,8 +566,11 @@ set(BALANCE_CHASSIS_BSP_SEED_SOURCES
   ${PLATFORM_BOARD_BSP_DIR}/bsp_uart.c
   ${PLATFORM_BOARD_BSP_DIR}/can_bsp.c
   ${PLATFORM_BOARD_BSP_DIR}/bsp_ports_hw.c
-  ${PLATFORM_DEVICE_REMOTE_DIR}/remote_control.c
-  ${PLATFORM_DEVICE_MOTOR_DIR}/dm4310_drv.c
+  ${PLATFORM_DRIVERS_REMOTE_DIR}/remote_control.c
+  ${PLATFORM_DRIVERS_MOTOR_DIR}/dm4310_drv.c
+  ${PLATFORM_BSP_DRIVERS_DIR}/imu/bmi088_device_hw.c
+  ${PLATFORM_BSP_DRIVERS_DIR}/remote/dbus_remote_device_hw.c
+  ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor/motor_actuator_device_hw.c
 )
 
 add_library(balance_chassis_generated_raw STATIC
@@ -637,8 +586,8 @@ target_include_directories(balance_chassis_generated_raw
     ${CHASSIS_CMSIS_DIR}/Include
     ${CHASSIS_CMSIS_DIR}/DSP/Include
     ${PLATFORM_BOARD_BSP_DIR}
-    ${PLATFORM_DEVICE_REMOTE_DIR}
-    ${PLATFORM_DEVICE_MOTOR_DIR}
+    ${PLATFORM_DRIVERS_REMOTE_DIR}
+    ${PLATFORM_DRIVERS_MOTOR_DIR}
 )
 
 target_compile_definitions(balance_chassis_generated_raw
@@ -668,15 +617,15 @@ target_include_directories(balance_chassis_bsp_seed
   PUBLIC
     ${PLATFORM_BOARD_BSP_DIR}
     ${PLATFORM_RUNTIME_DIR}/bsp
-    ${PLATFORM_DEVICE_REMOTE_DIR}
-    ${PLATFORM_DEVICE_MOTOR_DIR}
+    ${PLATFORM_DRIVERS_REMOTE_DIR}
+    ${PLATFORM_DRIVERS_MOTOR_DIR}
     ${PLATFORM_CONTROL_CONTRACT_DIR}
-    ${PLATFORM_DEVICE_DIR}
-    ${PLATFORM_DEVICE_DIR}/imu
-    ${PLATFORM_DEVICE_DIR}/remote
-    ${PLATFORM_DEVICE_DIR}/actuator
-    ${PLATFORM_DEVICE_DIR}/actuator/motor
-    ${PLATFORM_DEVICE_IMU_DIR}
+    ${PLATFORM_BSP_DRIVERS_DIR}
+    ${PLATFORM_BSP_DRIVERS_DIR}/imu
+    ${PLATFORM_BSP_DRIVERS_DIR}/remote
+    ${PLATFORM_BSP_DRIVERS_DIR}/actuator
+    ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor
+    ${PLATFORM_DRIVERS_IMU_DIR}
     ${PLATFORM_LEGACY_APP_DIR}
     ${PLATFORM_APP_IO_DIR}
     ${CHASSIS_FREERTOS_DIR}/include
@@ -746,7 +695,6 @@ target_link_libraries(balance_chassis_hw_seed.elf
   PRIVATE
     balance_chassis_generated_raw
     balance_chassis_bsp_seed
-    balance_chassis_device
     cmsis_dsp_hw
     m
 )
@@ -758,14 +706,14 @@ target_include_directories(balance_chassis_hw_seed.elf
     ${PLATFORM_FREERTOS_PORT_DIR}
     ${PLATFORM_BOARD_BSP_DIR}
     ${PLATFORM_RUNTIME_DIR}/bsp
-    ${PLATFORM_DEVICE_DIR}
-    ${PLATFORM_DEVICE_DIR}/imu
-    ${PLATFORM_DEVICE_DIR}/remote
-    ${PLATFORM_DEVICE_DIR}/actuator
-    ${PLATFORM_DEVICE_DIR}/actuator/motor
-    ${PLATFORM_DEVICE_REMOTE_DIR}
-    ${PLATFORM_DEVICE_MOTOR_DIR}
-    ${PLATFORM_DEVICE_IMU_DIR}
+    ${PLATFORM_BSP_DRIVERS_DIR}
+    ${PLATFORM_BSP_DRIVERS_DIR}/imu
+    ${PLATFORM_BSP_DRIVERS_DIR}/remote
+    ${PLATFORM_BSP_DRIVERS_DIR}/actuator
+    ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor
+    ${PLATFORM_DRIVERS_REMOTE_DIR}
+    ${PLATFORM_DRIVERS_MOTOR_DIR}
+    ${PLATFORM_DRIVERS_IMU_DIR}
     ${PLATFORM_LEGACY_APP_DIR}
     ${PLATFORM_APP_STARTUP_DIR}
     ${PLATFORM_APP_IO_DIR}
@@ -846,6 +794,9 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_SITL_BSP_DIR}/remote_control_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/bsp_ports_sitl.c
+    ${PLATFORM_BSP_DRIVERS_DIR}/imu/bmi088_device_sitl.c
+    ${PLATFORM_BSP_DRIVERS_DIR}/remote/dbus_remote_device_sitl.c
+    ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor/motor_actuator_device_sitl.c
   )
 
   add_library(cmsis_dsp_sitl STATIC
@@ -887,9 +838,14 @@ if(PLATFORM_TARGET_SIM)
       ${PLATFORM_RUNTIME_DIR}/bsp
       # Original hardware headers so app/module can find them
       ${PLATFORM_BOARD_BSP_DIR}
-      ${PLATFORM_DEVICE_MOTOR_DIR}
-      ${PLATFORM_DEVICE_IMU_DIR}
-      ${PLATFORM_DEVICE_REMOTE_DIR}
+      ${PLATFORM_DRIVERS_MOTOR_DIR}
+      ${PLATFORM_DRIVERS_IMU_DIR}
+      ${PLATFORM_DRIVERS_REMOTE_DIR}
+      ${PLATFORM_BSP_DRIVERS_DIR}
+      ${PLATFORM_BSP_DRIVERS_DIR}/imu
+      ${PLATFORM_BSP_DRIVERS_DIR}/remote
+      ${PLATFORM_BSP_DRIVERS_DIR}/actuator
+      ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor
       ${PLATFORM_LEGACY_APP_DIR}
       ${PLATFORM_APP_STARTUP_DIR}
       ${PLATFORM_APP_IO_DIR}
@@ -939,83 +895,7 @@ if(PLATFORM_TARGET_SIM)
   target_link_libraries(balance_chassis_sitl
     PRIVATE
       cmsis_dsp_sitl
-      balance_chassis_device
       pthread
       m
   )
-endif()
-
-if((PLATFORM_TARGET_HW OR PLATFORM_TARGET_SIM) AND NOT TARGET balance_chassis_device)
-  add_library(balance_chassis_device STATIC
-    ${BALANCE_CHASSIS_DEVICE_SOURCES}
-  )
-
-  target_include_directories(balance_chassis_device
-    PUBLIC
-      ${PLATFORM_DEVICE_DIR}
-      ${PLATFORM_DEVICE_DIR}/imu
-      ${PLATFORM_DEVICE_DIR}/remote
-      ${PLATFORM_DEVICE_DIR}/actuator
-      ${PLATFORM_DEVICE_DIR}/actuator/motor
-      ${PLATFORM_DEVICE_REMOTE_DIR}
-      ${PLATFORM_DEVICE_MOTOR_DIR}
-      ${PLATFORM_DEVICE_IMU_DIR}
-      ${PLATFORM_CONTROL_CONTRACT_DIR}
-      ${PLATFORM_MODULE_CONTROL_LIB_DIR}
-  )
-
-  target_compile_options(balance_chassis_device
-    PRIVATE
-      -Wall
-      -Wextra
-      -Wno-unused-parameter
-  )
-
-  if(PLATFORM_TARGET_HW)
-    target_include_directories(balance_chassis_device
-      PUBLIC
-        ${PLATFORM_BOARD_BSP_DIR}
-        ${PLATFORM_DEVICE_REMOTE_DIR}
-        ${PLATFORM_DEVICE_MOTOR_DIR}
-        ${PLATFORM_DEVICE_IMU_DIR}
-        ${GENERATED_RAW_DIR}/Inc
-        ${CHASSIS_HAL_DIR}/Inc
-        ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
-        ${CHASSIS_CMSIS_DIR}/Include
-        ${CHASSIS_CMSIS_DIR}/DSP/Include
-    )
-    target_link_libraries(balance_chassis_device
-      PUBLIC
-        balance_chassis_generated_raw
-        balance_chassis_bsp_seed
-    )
-    target_compile_definitions(balance_chassis_device
-      PUBLIC
-        USE_HAL_DRIVER
-        STM32H723xx
-        PLATFORM_DEVICE_BACKEND_HW
-    )
-    target_compile_options(balance_chassis_device
-      PRIVATE
-        ${BALANCE_CHASSIS_COMMON_FLAGS}
-    )
-  endif()
-
-  if(PLATFORM_TARGET_SIM)
-    target_include_directories(balance_chassis_device
-      PUBLIC
-        ${GENERATED_RAW_DIR}/Inc
-        ${CHASSIS_HAL_DIR}/Inc
-        ${CHASSIS_CMSIS_DIR}/Device/ST/STM32H7xx/Include
-        ${CHASSIS_CMSIS_DIR}/Include
-        ${CHASSIS_CMSIS_DIR}/DSP/Include
-    )
-    target_compile_definitions(balance_chassis_device
-      PUBLIC
-        USE_HAL_DRIVER
-        STM32H723xx
-        PLATFORM_DEVICE_BACKEND_SITL
-        SITL_BUILD
-    )
-  endif()
 endif()

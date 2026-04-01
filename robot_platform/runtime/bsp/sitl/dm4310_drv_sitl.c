@@ -1,4 +1,4 @@
-#include "../../device/actuator/motor/dm4310/dm4310_drv.h"
+#include "../drivers/actuator/motor/dm4310/dm4310_drv.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
