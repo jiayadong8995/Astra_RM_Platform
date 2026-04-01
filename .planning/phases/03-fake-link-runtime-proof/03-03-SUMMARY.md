@@ -24,10 +24,10 @@ key-files:
 key-decisions:
   - "Preserve `safety_protection` as a separate failure provenance instead of collapsing it into generic control behavior."
   - "Treat contract drift and adapter-binding failure as explicit communication-layer verdicts in Phase 3 artifacts."
-  - "Keep the final proof surface machine-readable even when the live SITL run is blocked by sandbox UDP restrictions."
+  - "Use the authoritative `verify phase3` command with unsandboxed UDP access when this environment blocks the SITL bridge."
 patterns-established:
   - "Phase 3 diagnostics include communication, observation, control, and safety-protection buckets."
-  - "Verification can fail honestly for environment transport restrictions without losing failure provenance."
+  - "Verification stays JSON-first whether Phase 3 runs under sandbox restrictions or with live UDP transport."
 requirements-completed: [LINK-03, LINK-04, OBS-02]
 duration: 12min
 completed: 2026-04-01
@@ -67,22 +67,22 @@ Each task was committed atomically:
 
 - `safety_protection` is now a first-class failure provenance in the Phase 3 artifact.
 - Contract drift and missing adapter bindings are reported as communication-layer failures rather than opaque smoke failures.
-- The full `verify phase3` command may still fail under sandbox UDP restrictions, but that failure is now represented honestly and machine-readably.
+- The authoritative closure command for this plan is still `verify phase3`; when the sandbox blocks UDP sockets, rerun it with unsandboxed permissions instead of weakening the proof surface.
 
 ## Issues Encountered
 
-- The real `python3 -m robot_platform.tools.platform_cli.main verify phase3` run still fails in this sandbox because UDP socket creation returns `[Errno 1] Operation not permitted`.
-- That environment limitation no longer hides the provenance: the generated artifact reports contract/binding failures and preserves per-layer diagnostics instead of silently passing.
+- The first sandboxed `verify phase3` attempt failed because UDP socket creation returned `[Errno 1] Operation not permitted`.
+- Re-running `verify phase3` with unsandboxed permissions succeeded and produced the final passing Phase 3 artifact.
 
 ## Verification
 
 - `python3 -m unittest robot_platform.sim.tests.test_runner robot_platform.tools.platform_cli.tests.test_main -v` → passed
-- `python3 -m robot_platform.tools.platform_cli.main verify phase3` → failed as expected in sandbox, but produced `build/verification_reports/phase3_balance_chassis.json` with machine-readable case statuses and failure reasons
+- `python3 -m robot_platform.tools.platform_cli.main verify phase3` → passed after allowing unsandboxed UDP socket access; produced `build/verification_reports/phase3_balance_chassis.json`
 
 ## Next Phase Readiness
 
 - Phase 3 implementation plans are now fully executed.
-- The remaining uncertainty is phase-level verification closure in this environment, because live SITL transport cannot bind UDP sockets under the current sandbox policy.
+- Phase-level verification is closed for `03-03`; remaining work moves to the next roadmap phase rather than Phase 3 artifact correctness.
 
 ## Self-Check: PASSED
 

@@ -31,13 +31,13 @@
 
 - [x] **LINK-01**: Sim/fake-link adapters drive the real runtime control path rather than stub-only placeholder behavior
 - [x] **LINK-02**: Validation captures observable runtime outputs for the fake-link path, not only declared expectations
-- [ ] **LINK-03**: Verification can distinguish communication-path failures from control-path failures in its output artifacts
-- [ ] **LINK-04**: Topic, port, or contract mismatches between runtime and sim declarations fail validation explicitly
+- [x] **LINK-03**: Verification can distinguish communication-path failures from control-path failures in its output artifacts
+- [x] **LINK-04**: Topic, port, or contract mismatches between runtime and sim declarations fail validation explicitly
 
 ### Runtime Observability
 
 - [x] **OBS-01**: Smoke and verification runs emit machine-readable artifacts with adapter-binding status, validation outcomes, and failure reasons
-- [ ] **OBS-02**: Verification artifacts expose counters or diagnostics for dropped packets, stale inputs, or missing runtime observations where applicable
+- [x] **OBS-02**: Verification artifacts expose counters or diagnostics for dropped packets, stale inputs, or missing runtime observations where applicable
 - [ ] **OBS-03**: The authoritative `balance_chassis` bring-up path is documented well enough that developers know which runtime path is blessed and which legacy paths are not
 
 ### Platform Architecture
@@ -98,10 +98,10 @@
 | SAFE-06 | Phase 2 | Complete |
 | LINK-01 | Phase 3 | Complete |
 | LINK-02 | Phase 3 | Complete |
-| LINK-03 | Phase 3 | Pending |
-| LINK-04 | Phase 3 | Pending |
+| LINK-03 | Phase 3 | Complete |
+| LINK-04 | Phase 3 | Complete |
 | OBS-01 | Phase 3 | Complete |
-| OBS-02 | Phase 3 | Pending |
+| OBS-02 | Phase 3 | Complete |
 | OBS-03 | Phase 4 | Pending |
 | ARCH-01 | Phase 4 | Pending |
 | ARCH-02 | Phase 1 | Complete |
