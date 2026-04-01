@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Fake-Link Runtime Proof** - Drive the real runtime through fake-link adapters and capture observable validation artifacts.
 - [x] **Phase 4: Authoritative Platform Composition** - Clarify ownership boundaries and define one blessed `balance_chassis` bring-up path.
 - [x] **Phase 5: Default Closure Loop** - Make one command path the default trusted loop for build, verification, smoke, and firmware generation.
-- [ ] **Phase 6: v1 Tech Debt Cleanup** - Close accumulated tech debt from the milestone audit before archiving v1.
+- [x] **Phase 6: v1 Tech Debt Cleanup** - Close accumulated tech debt from the milestone audit before archiving v1.
 
 ## Phase Details
 
@@ -111,8 +111,8 @@ Plans:
   4. Phase 2 has a formal VERIFICATION.md produced by the verifier.
 **Plans**: 2 plans
 Plans:
-- [ ] 06-01-PLAN.md — Fix SITL newlines, decouple control_task_registry, and widen validate host_tests to all CTest targets.
-- [ ] 06-02-PLAN.md — Produce formal Phase 2 VERIFICATION.md from live evidence.
+- [x] 06-01-PLAN.md — Fix SITL newlines, decouple control_task_registry, and widen validate host_tests to all CTest targets.
+- [x] 06-02-PLAN.md — Produce formal Phase 2 VERIFICATION.md from live evidence.
 
 ## Progress
 
@@ -126,4 +126,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 | 3. Fake-Link Runtime Proof | 3/3 | Complete | 2026-04-01 |
 | 4. Authoritative Platform Composition | 3/3 | Complete | 2026-04-01 |
 | 5. Default Closure Loop | 2/2 | Complete | 2026-04-01 |
-| 6. v1 Tech Debt Cleanup | 0/2 | In Progress | — |
+| 6. v1 Tech Debt Cleanup | 2/2 | Complete | 2026-04-01 |
