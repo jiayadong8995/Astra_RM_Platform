@@ -20,6 +20,12 @@
 
 **Requirements:** SLIM-04, KEEP-03
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] v2-01-01-PLAN.md — Unify command types (eliminate parallel `platform_actuator_command_t` / `platform_device_command_t`, delete ~160 lines of mapping code)
+- [ ] v2-01-02-PLAN.md — Introduce BSP port interfaces (`bsp/ports.h` + HW/SITL/fake implementations, wired into CMake)
+
 **Success Criteria:**
 1. `platform_actuator_command_t` and `platform_device_command_t` are unified into a single command struct — no field mapping code remains in actuator_gateway or device_layer
 2. BSP port header (`bsp/ports.h`) declares `platform_imu_read()`, `platform_remote_read()`, `platform_motor_write_command()` with concrete HW and SITL implementations alongside existing device_layer code
@@ -74,7 +80,7 @@
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 1 | Port Foundation | SLIM-04, KEEP-03 | Pending |
+| 1 | Port Foundation | SLIM-04, KEEP-03 | Planned |
 | 2 | Seam Migration | KEEP-04, KEEP-01 | Pending |
 | 3 | Device Layer Removal | SLIM-01, SLIM-02, QUAL-01 | Pending |
 | 4 | Consolidation | SLIM-03, SLIM-05, KEEP-02, QUAL-02, QUAL-03 | Pending |
