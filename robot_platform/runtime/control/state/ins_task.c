@@ -3,7 +3,7 @@
 #include "bsp_PWM.h"
 #include "bsp_dwt.h"
 #include "cmsis_os.h"
-#include "../../app/balance_chassis/app_config/app_params.h"
+#include "../control_config/control_task_params.h"
 #include "../../device/device_layer.h"
 #include "ins_state_estimator.h"
 #include "ins_state_message.h"
