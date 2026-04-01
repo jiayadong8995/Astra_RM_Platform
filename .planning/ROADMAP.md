@@ -60,6 +60,13 @@ Plans:
 
 **Requirements:** SLIM-01, SLIM-02, QUAL-01
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] v2-03-01-PLAN.md — Rewire BSP port implementations to call drivers directly, relocate device_types.h, clean actuator_gateway
+- [ ] v2-03-02-PLAN.md — Delete device/ directory, remove CMake device library, relocate driver files to BSP, clean tests
+- [ ] v2-03-03-PLAN.md — Extract wait_ready startup gates into standalone functions
+
 **Success Criteria:**
 1. All 29 device_layer files and 14 semantic wrapper vtable files are deleted from the repository
 2. No source file imports or includes anything from `runtime/device/`
@@ -87,8 +94,8 @@ Plans:
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 1 | Port Foundation | SLIM-04, KEEP-03 | Complete |
-| 2 | Seam Migration | KEEP-04, KEEP-01 | Planned |
-| 3 | Device Layer Removal | SLIM-01, SLIM-02, QUAL-01 | Pending |
+| 2 | Seam Migration | KEEP-04, KEEP-01 | Complete |
+| 3 | Device Layer Removal | SLIM-01, SLIM-02, QUAL-01 | Planned |
 | 4 | Consolidation | SLIM-03, SLIM-05, KEEP-02, QUAL-02, QUAL-03 | Pending |
 
 ## Coverage
