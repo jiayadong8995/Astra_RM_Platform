@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 04-authoritative-platform-composition-02-PLAN.md
-last_updated: "2026-04-01T12:16:42.927Z"
+status: ready
+stopped_at: Completed 04-authoritative-platform-composition-03-PLAN.md
+last_updated: "2026-04-01T12:22:26.632Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 13
+  completed_plans: 14
   percent: 100
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-03-30)
 
 **Core value:** Make wheeled-legged Robotmaster control software safe to evolve by catching dangerous control and data-link errors before the robot ever gets a chance to go unstable on hardware.
-**Current focus:** Phase 04 — authoritative-platform-composition
+**Current focus:** Phase 05 — default-closure-loop
 
 ## Current Position
 
-Phase: 04 (authoritative-platform-composition) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
+Phase: 04 (authoritative-platform-composition) — COMPLETE
+Plan: 3 of 3
+Status: Ready for Phase 05 planning
 Last activity: 2026-04-01
 
 Progress: [██████████] 100%
@@ -108,6 +108,9 @@ Recent decisions affecting current work:
 - [Phase 04-authoritative-platform-composition]: Keep remote task registration in app composition while moving the observe/chassis/motor registration chain under runtime/control ownership.
 - [Phase 04-authoritative-platform-composition]: Preserve legacy chassis-task helpers through a compatibility shell so existing host harnesses keep driving the authoritative runtime chain.
 - [Phase 04-authoritative-platform-composition]: Route control task timing through a neutral control header that still derives values from the current balance_chassis proving path.
+- [Phase 04-authoritative-platform-composition]: Reused verify phase3 as the only machine-readable bring-up proof surface for authoritative startup metadata.
+- [Phase 04-authoritative-platform-composition]: Kept detailed bring-up authority wording in one dedicated balance_chassis doc and used surrounding READMEs as linked ownership summaries.
+- [Phase 04-authoritative-platform-composition]: Documented freertos_app.c explicitly as a compatibility-only legacy surface instead of leaving its authority implicit.
 
 ### Pending Todos
 
@@ -121,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T12:16:42.923Z
-Stopped at: Completed 04-authoritative-platform-composition-02-PLAN.md
+Last session: 2026-04-01T12:22:26.627Z
+Stopped at: Completed 04-authoritative-platform-composition-03-PLAN.md
 Resume file: None

@@ -83,7 +83,7 @@ Plans:
 Plans:
 - [x] 04-01-PLAN.md - Converge hardware and SITL startup on one shared app-startup API and remove parallel `MX_FREERTOS_Init` authority.
 - [x] 04-02-PLAN.md - Move the authoritative observation/control/execution chain under `runtime/control` ownership while keeping `balance_chassis` as the proving path.
-- [ ] 04-03-PLAN.md - Publish the blessed bring-up path and legacy demotion in both verification output and developer docs.
+- [x] 04-03-PLAN.md - Publish the blessed bring-up path and legacy demotion in both verification output and developer docs.
 
 ### Phase 5: Default Closure Loop
 **Goal**: Developers can use one trusted command path as the default inner loop for `balance_chassis`, with earlier validation gates enforced before firmware output is considered usable.

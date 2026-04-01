@@ -38,7 +38,7 @@
 
 - [x] **OBS-01**: Smoke and verification runs emit machine-readable artifacts with adapter-binding status, validation outcomes, and failure reasons
 - [x] **OBS-02**: Verification artifacts expose counters or diagnostics for dropped packets, stale inputs, or missing runtime observations where applicable
-- [ ] **OBS-03**: The authoritative `balance_chassis` bring-up path is documented well enough that developers know which runtime path is blessed and which legacy paths are not
+- [x] **OBS-03**: The authoritative `balance_chassis` bring-up path is documented well enough that developers know which runtime path is blessed and which legacy paths are not
 
 ### Platform Architecture
 
@@ -102,7 +102,7 @@
 | LINK-04 | Phase 3 | Complete |
 | OBS-01 | Phase 3 | Complete |
 | OBS-02 | Phase 3 | Complete |
-| OBS-03 | Phase 4 | Pending |
+| OBS-03 | Phase 4 | Complete |
 | ARCH-01 | Phase 4 | Complete |
 | ARCH-02 | Phase 1 | Complete |
 | ARCH-03 | Phase 4 | Complete |
