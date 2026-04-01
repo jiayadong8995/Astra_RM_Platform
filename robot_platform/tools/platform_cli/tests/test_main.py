@@ -10,10 +10,12 @@ from unittest import mock
 from robot_platform.tools.platform_cli.main import (
     _generate_balance_chassis,
     _parse_sim_args,
+    _parse_validate_args,
     _parse_verify_phase1_args,
     _parse_verify_phase2_args,
     _parse_verify_phase3_args,
     main,
+    _run_validate,
     _run_verify_phase1,
     _run_verify_phase2,
     _run_verify_phase3,
@@ -507,6 +509,185 @@ class VerifyPhase3Tests(unittest.TestCase):
             self.assertEqual(payload["cases"][0]["name"], "runtime_outputs")
             self.assertEqual(payload["cases"][0]["status"], "failed")
             self.assertEqual(payload["cases"][0]["reason"], "runtime_output_observation_count=0")
+
+
+class ParseValidateArgsTests(unittest.TestCase):
+    def test_defaults(self) -> None:
+        project, report = _parse_validate_args([])
+        self.assertEqual(project, "balance_chassis")
+        self.assertEqual(report, Path("build/closure_reports/closure_balance_chassis.json"))
+
+    def test_explicit_values(self) -> None:
+        project, report = _parse_validate_args(
+            ["--project", "balance_chassis", "--report", "tmp/closure.json"]
+        )
+        self.assertEqual(project, "balance_chassis")
+        self.assertEqual(report, Path("tmp/closure.json"))
+
+    def test_rejects_unknown_option(self) -> None:
+        with self.assertRaisesRegex(ValueError, "unknown validate option"):
+            _parse_validate_args(["--unknown"])
+
+
+class ValidateTests(unittest.TestCase):
+    def _make_smoke_report(self, repo_root: Path, passed: bool) -> None:
+        smoke_path = repo_root / "build" / "sim_reports" / "sitl_smoke.json"
+        smoke_path.parent.mkdir(parents=True, exist_ok=True)
+        smoke_path.write_text(
+            json.dumps(
+                {
+                    "runtime_output_observations": [{"topic": "actuator_command", "sample_count": 2}],
+                    "runtime_output_observation_count": 1,
+                    "smoke_result": {"passed": passed},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def test_early_exit_on_build_sitl_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            report_path = repo_root / "build" / "closure_reports" / "closure.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=1),
+            ):
+                rc = _run_validate("balance_chassis", report_path)
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "failed")
+            self.assertEqual(payload["failure_stage"], "build_sitl")
+            self.assertEqual(len(payload["stages"]), 1)
+            self.assertEqual(payload["closure_version"], 1)
+            self.assertIsInstance(payload["timestamp"], str)
+
+    def test_early_exit_on_host_tests_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            report_path = repo_root / "build" / "closure_reports" / "closure.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_ctest", return_value=1),
+            ):
+                rc = _run_validate("balance_chassis", report_path)
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "failed")
+            self.assertEqual(payload["failure_stage"], "host_tests")
+            self.assertEqual(len(payload["stages"]), 2)
+            self.assertEqual(payload["stages"][0]["status"], "passed")
+            self.assertEqual(payload["stages"][1]["status"], "failed")
+
+    def test_early_exit_on_python_tests_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            report_path = repo_root / "build" / "closure_reports" / "closure.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_ctest", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_tests", return_value=1),
+            ):
+                rc = _run_validate("balance_chassis", report_path)
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "failed")
+            self.assertEqual(payload["failure_stage"], "python_tests")
+            self.assertEqual(len(payload["stages"]), 3)
+
+    def test_early_exit_on_smoke_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            report_path = repo_root / "build" / "closure_reports" / "closure.json"
+            self._make_smoke_report(repo_root, passed=False)
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_ctest", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_tests", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=1),
+            ):
+                rc = _run_validate("balance_chassis", report_path)
+
+            self.assertEqual(rc, 1)
+            payload = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "failed")
+            self.assertEqual(payload["failure_stage"], "smoke")
+            self.assertEqual(len(payload["stages"]), 4)
+
+    def test_full_pass_writes_closure_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            report_path = repo_root / "build" / "closure_reports" / "closure.json"
+            self._make_smoke_report(repo_root, passed=True)
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_ctest", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_tests", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_verify_phase3", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._require_generated_artifact_freshness", return_value=1),
+            ):
+                rc = _run_validate("balance_chassis", report_path)
+
+            self.assertEqual(rc, 0)
+            payload = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "passed")
+            self.assertIsNone(payload["failure_stage"])
+            self.assertEqual(payload["hw_elf_status"], "skipped")
+            self.assertEqual(len(payload["stages"]), 5)
+            self.assertEqual(
+                [s["name"] for s in payload["stages"]],
+                ["build_sitl", "host_tests", "python_tests", "smoke", "verify_phase3"],
+            )
+            self.assertEqual(payload["closure_version"], 1)
+            self.assertIsInstance(payload["timestamp"], str)
+
+    def test_hw_elf_failure_does_not_change_overall_passed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            report_path = repo_root / "build" / "closure_reports" / "closure.json"
+            self._make_smoke_report(repo_root, passed=True)
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_ctest", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_tests", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_verify_phase3", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._require_generated_artifact_freshness", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._build_hw_seed", return_value=1),
+            ):
+                rc = _run_validate("balance_chassis", report_path)
+
+            self.assertEqual(rc, 0)
+            payload = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["overall_status"], "passed")
+            self.assertEqual(payload["hw_elf_status"], "failed")
+            self.assertEqual(len(payload["stages"]), 6)
 
 
 class GeneratedArtifactFreshnessTests(unittest.TestCase):
