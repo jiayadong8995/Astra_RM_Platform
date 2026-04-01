@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Platform Simplification
-status: active
-stopped_at: completed v2-04-02-PLAN.md (with SUMMARY)
-last_updated: "2026-04-02T16:59:53Z"
+status: complete
+stopped_at: completed v2-04-03-PLAN.md (with SUMMARY)
+last_updated: "2026-04-02T17:10:00Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
-  percent: 90
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-01)
 
 **Core value:** 缩减平台代码复杂度，让架构更直接、更易理解、更易测试，同时保持 v1 建立的安全验证能力。
-**Current focus:** v2.0 Platform Simplification — Phase 4: Consolidation (in progress)
+**Current focus:** v2.0 Platform Simplification — Complete
 
 ## Current Position
 
 Milestone: v2.0 — Platform Simplification
-Phase: 4 of 4 (Consolidation) — in progress
-Plan: 2 of 3 completed with SUMMARY (v2-04-02 done)
-Status: In progress
-Last activity: 2026-04-02 — Completed v2-04-02-PLAN.md with SUMMARY
+Phase: 4 of 4 (Consolidation) — complete
+Plan: 3 of 3 completed with SUMMARY (v2-04-03 done)
+Status: Milestone complete
+Last activity: 2026-04-02 — Completed v2-04-03-PLAN.md with SUMMARY
 
-Progress: [██████████████████] 90%
+Progress: [████████████████████] 100%
 
 ## Performance Metrics
 
-- Phases: 3/4 completed (Phase 4 plan 02 done)
-- Plans: 9/10 completed (v2-01: 2/2, v2-02: 2/2, v2-03: 3/3, v2-04: 2/3)
+- Phases: 4/4 completed
+- Plans: 10/10 completed (v2-01: 2/2, v2-02: 2/2, v2-03: 3/3, v2-04: 3/3)
 - Requirements: 0/12 satisfied (SLIM-04 partially satisfied by plan 01)
 
 ## Accumulated Context
@@ -61,6 +61,9 @@ Progress: [██████████████████] 90%
 - [D-v2-04-01-02] Bus structs inlined into task runtime structs — no intermediate bus abstraction
 - [D-v2-04-01-03] Relative includes for topics.h from task files — no new CMake include directory needed
 - [D-v2-04-02-01] GENERATED_RAW_DIR variable moved after PLATFORM_BOARD_BSP_DIR in CMakeLists.txt to fix evaluation order
+- [D-v2-04-03-01] platform_test_config INTERFACE library carries compile options, sanitizers, and c_std_11 for all test targets
+- [D-v2-04-03-02] balance_safety_host_runtime links platform_test_config PUBLIC so downstream test executables inherit config
+- [D-v2-04-03-03] Removed stale test_device_profile_* from ALL_HOST_TEST_TARGETS, added test_bsp_ports_compile
 
 ### Todos
 - None
@@ -70,7 +73,7 @@ Progress: [██████████████████] 90%
 
 ## Session Continuity
 
-Last session: 2026-04-02T16:59:53Z
-Stopped at: Completed v2-04-02-PLAN.md with SUMMARY
+Last session: 2026-04-02T17:10:00Z
+Stopped at: Completed v2-04-03-PLAN.md with SUMMARY — Milestone v2.0 complete
 Resume file: None
-Next action: Continue Phase 4 with v2-04-03-PLAN.md
+Next action: None — v2.0 Platform Simplification milestone is complete
