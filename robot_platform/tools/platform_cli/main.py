@@ -569,6 +569,18 @@ PHASE2_CASES: dict[str, dict[str, object]] = {
 }
 
 PHASE3_CHAIN = "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output"
+AUTHORITATIVE_BRINGUP = {
+    "hardware_path": "main.c -> MX_FREERTOS_Init() -> balance_chassis_app_startup() -> scheduler",
+    "sitl_path": "main_sitl.c -> balance_chassis_app_startup() -> scheduler",
+    "shared_app_startup_api": "balance_chassis_app_startup()",
+    "legacy_paths": [
+        {
+            "path": "runtime/app/balance_chassis/app_bringup/freertos_app.c",
+            "status": "compatibility-only",
+            "reason": "removed as an authoritative startup owner in favor of balance_chassis_app_startup().",
+        }
+    ],
+}
 
 PHASE3_CASES: dict[str, dict[str, object]] = {
     "runtime_binding": {
@@ -847,6 +859,7 @@ def _run_verify_phase3(project: str, report_path: Path, case_name: str | None) -
         "phase": "phase3",
         "project": project,
         "overall_status": overall_status,
+        "authoritative_bringup": AUTHORITATIVE_BRINGUP,
         "cases": cases,
         "stages": stages,
     }

@@ -332,6 +332,19 @@ class VerifyPhase3Tests(unittest.TestCase):
             self.assertEqual(payload["cases"][3]["status"], "passed")
             self.assertEqual(payload["cases"][4]["status"], "passed")
             self.assertEqual(payload["cases"][5]["status"], "passed")
+            self.assertEqual(payload["authoritative_bringup"]["hardware_path"], "main.c -> MX_FREERTOS_Init() -> balance_chassis_app_startup() -> scheduler")
+            self.assertEqual(payload["authoritative_bringup"]["sitl_path"], "main_sitl.c -> balance_chassis_app_startup() -> scheduler")
+            self.assertEqual(payload["authoritative_bringup"]["shared_app_startup_api"], "balance_chassis_app_startup()")
+            self.assertEqual(
+                payload["authoritative_bringup"]["legacy_paths"],
+                [
+                    {
+                        "path": "runtime/app/balance_chassis/app_bringup/freertos_app.c",
+                        "status": "compatibility-only",
+                        "reason": "removed as an authoritative startup owner in favor of balance_chassis_app_startup().",
+                    }
+                ],
+            )
 
     def test_classification_case_requires_separate_safety_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
