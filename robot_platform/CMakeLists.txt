@@ -48,6 +48,7 @@ set(PLATFORM_DEVICE_REMOTE_DIR ${PLATFORM_DEVICE_DIR}/remote/dbus)
 set(PLATFORM_DEVICE_MOTOR_DIR ${PLATFORM_DEVICE_DIR}/actuator/motor/dm4310)
 set(PLATFORM_DEVICE_IMU_DIR ${PLATFORM_DEVICE_DIR}/imu/bmi088)
 set(PLATFORM_LEGACY_APP_DIR ${PLATFORM_RUNTIME_DIR}/app/balance_chassis)
+set(PLATFORM_APP_STARTUP_DIR ${PLATFORM_LEGACY_APP_DIR}/app_startup)
 set(PLATFORM_APP_IO_DIR ${PLATFORM_LEGACY_APP_DIR}/app_io)
 set(PLATFORM_CONTROL_CONTRACT_DIR ${PLATFORM_RUNTIME_DIR}/control/contracts)
 set(PLATFORM_MODULE_CONTROL_LIB_DIR ${PLATFORM_RUNTIME_DIR}/module/lib/control)
@@ -342,6 +343,35 @@ if(PLATFORM_HOST_TESTS)
   endif()
   add_test(NAME test_balance_safety_path COMMAND test_balance_safety_path)
   set_tests_properties(test_balance_safety_path PROPERTIES
+    ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
+  )
+
+  add_executable(test_balance_app_startup
+    ${PLATFORM_APP_STARTUP_DIR}/balance_chassis_app_startup.c
+    ${PLATFORM_HOST_TEST_DIR}/test_balance_app_startup.c
+  )
+  target_include_directories(test_balance_app_startup
+    PRIVATE
+      ${PLATFORM_LEGACY_APP_DIR}
+      ${PLATFORM_APP_STARTUP_DIR}
+      ${PLATFORM_HOST_TEST_DIR}
+  )
+  target_compile_features(test_balance_app_startup PRIVATE c_std_11)
+  target_compile_options(test_balance_app_startup
+    PRIVATE
+      -Wall
+      -Wextra
+      -Wpedantic
+      -Wno-unused-parameter
+      -O0
+      -g3
+  )
+  if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(test_balance_app_startup PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(test_balance_app_startup PRIVATE -fsanitize=address,undefined)
+  endif()
+  add_test(NAME test_balance_app_startup COMMAND test_balance_app_startup)
+  set_tests_properties(test_balance_app_startup PROPERTIES
     ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
   )
 
