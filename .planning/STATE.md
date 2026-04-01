@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 03-fake-link-runtime-proof-03-PLAN.md
-last_updated: "2026-04-01T04:34:48.291Z"
-last_activity: 2026-04-01
+status: executing
+stopped_at: Completed 04-authoritative-platform-composition-01-PLAN.md
+last_updated: "2026-04-01T12:08:26.616Z"
+last_activity: 2026-04-01 -- Phase 04 execution started
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 14
+  completed_plans: 12
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-03-30)
 
 **Core value:** Make wheeled-legged Robotmaster control software safe to evolve by catching dangerous control and data-link errors before the robot ever gets a chance to go unstable on hardware.
-**Current focus:** Phase 03 — fake-link-runtime-proof
+**Current focus:** Phase 04 — authoritative-platform-composition
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
-Status: Ready for verification
-Last activity: 2026-04-01
+Phase: 04 (authoritative-platform-composition) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 04
+Last activity: 2026-04-01 -- Phase 04 execution started
 
 Progress: [██████████] 100%
 
@@ -102,6 +102,8 @@ Recent decisions affecting current work:
 - [Phase 03-fake-link-runtime-proof]: Preserve safety_protection as a separate failure provenance in Phase 3 artifacts.
 - [Phase 03-fake-link-runtime-proof]: Treat contract drift and adapter-binding failure as explicit communication-layer verdicts in Phase 3 artifacts.
 - [Phase 03-fake-link-runtime-proof]: Use unsandboxed verify phase3 runs when sandbox UDP restrictions block the SITL bridge.
+- [Phase 04-authoritative-platform-composition]: Keep balance_chassis_app_startup thin and project-owned while generated freertos.c remains the sole MX_FREERTOS_Init owner.
+- [Phase 04-authoritative-platform-composition]: SITL and hardware may keep different host entries, but both must converge on the same balance_chassis_app_startup bring-up seam.
 
 ### Pending Todos
 
@@ -111,9 +113,10 @@ None yet.
 
 - Phase 02 closure is complete; remaining trust gaps move to Phase 03 fake-link runtime proof and observability.
 - v2 hardware bring-up remains intentionally gated on v1 validation closure; simulated evidence is not treated as physical proof.
+- Hardware make configure/build still resolves to host cc, so balance_chassis_hw_seed.elf fails before link on Cortex-M flags (-mthumb, -mfpu, -mfloat-abi).
 
 ## Session Continuity
 
-Last session: 2026-04-01T04:33:49Z
-Stopped at: Completed 03-fake-link-runtime-proof-03-PLAN.md
+Last session: 2026-04-01T12:08:02.750Z
+Stopped at: Completed 04-authoritative-platform-composition-01-PLAN.md
 Resume file: None

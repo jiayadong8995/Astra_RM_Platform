@@ -42,9 +42,9 @@
 
 ### Platform Architecture
 
-- [ ] **ARCH-01**: The platform defines one authoritative ownership boundary between orchestration, device adapters, control logic, and robot-project composition
+- [x] **ARCH-01**: The platform defines one authoritative ownership boundary between orchestration, device adapters, control logic, and robot-project composition
 - [x] **ARCH-02**: Runtime contracts and message transport reject unsafe payload sizing instead of silently allowing overflow-prone behavior
-- [ ] **ARCH-03**: The current platform architecture is reviewed for unnecessary coupling and overdesign, with v1 changes focused on making the existing reusable direction testable rather than broader
+- [x] **ARCH-03**: The current platform architecture is reviewed for unnecessary coupling and overdesign, with v1 changes focused on making the existing reusable direction testable rather than broader
 - [ ] **ARCH-04**: `balance_chassis` remains the proving path for the reusable platform, without collapsing the platform into one-off robot-specific shortcuts
 
 ## v2 Requirements
@@ -103,9 +103,9 @@
 | OBS-01 | Phase 3 | Complete |
 | OBS-02 | Phase 3 | Complete |
 | OBS-03 | Phase 4 | Pending |
-| ARCH-01 | Phase 4 | Pending |
+| ARCH-01 | Phase 4 | Complete |
 | ARCH-02 | Phase 1 | Complete |
-| ARCH-03 | Phase 4 | Pending |
+| ARCH-03 | Phase 4 | Complete |
 | ARCH-04 | Phase 4 | Pending |
 
 **Coverage:**

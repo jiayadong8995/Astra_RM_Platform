@@ -81,7 +81,7 @@ Plans:
   4. `balance_chassis` remains the proving path for the reusable platform rather than a special-case bypass around it.
 **Plans**: 3 plans
 Plans:
-- [ ] 04-01-PLAN.md - Converge hardware and SITL startup on one shared app-startup API and remove parallel `MX_FREERTOS_Init` authority.
+- [x] 04-01-PLAN.md - Converge hardware and SITL startup on one shared app-startup API and remove parallel `MX_FREERTOS_Init` authority.
 - [ ] 04-02-PLAN.md - Move the authoritative observation/control/execution chain under `runtime/control` ownership while keeping `balance_chassis` as the proving path.
 - [ ] 04-03-PLAN.md - Publish the blessed bring-up path and legacy demotion in both verification output and developer docs.
 
