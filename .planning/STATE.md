@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-stopped_at: Completed 06-01-PLAN.md — SITL newlines, control decoupling, validate widening
-last_updated: "2026-04-01T14:11:00Z"
+status: complete
+stopped_at: v1 milestone archived
+last_updated: "2026-04-01T23:00:00Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 6
-  completed_phases: 5
-  total_plans: 16
+  completed_phases: 6
+  total_plans: 18
   completed_plans: 18
   percent: 100
 ---
@@ -18,124 +18,29 @@ progress:
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-03-30)
+See: `.planning/PROJECT.md` (updated 2026-04-01)
 
 **Core value:** Make wheeled-legged Robotmaster control software safe to evolve by catching dangerous control and data-link errors before the robot ever gets a chance to go unstable on hardware.
-**Current focus:** Phase 6 — v1 tech debt cleanup before milestone archive
+**Current focus:** v1 complete and archived. Next: `/gsd:new-milestone` for v2.
 
 ## Current Position
 
-Phase: 6 of 6 (v1-tech-debt-cleanup)
-Plan: 2 of 2
-Status: In progress
-Last activity: 2026-04-01 - Completed 06-01-PLAN.md
+Milestone: v1 — Complete and archived
+Next milestone: v2 (not yet started)
 
 Progress: [████████████████] 100%
 
-## Performance Metrics
+## v1 Final Stats
 
-**Velocity:**
-
-- Total plans completed: 15
-- Average duration: 7min
-- Total execution time: 0.75 hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01-contracts-and-verification-foundation | 5 | 33min | 6min |
-| 02-host-safety-control-verification | 3 | 37min | 12min |
-| 03-fake-link-runtime-proof | 3 | 641min | 214min |
-| 05-default-closure-loop | 2 | 5min | 3min |
-| 06-v1-tech-debt-cleanup | 2 | 8min | 4min |
-
-**Recent Trend:**
-
-- Last 5 plans: 06-01 (5min), 06-02 (3min), 05-02 (2min), 05-01 (3min), 03-03 (12min)
-- Trend: Stable
-
-| Phase 01-contracts-and-verification-foundation P03 | 15min | 2 tasks | 5 files |
-| Phase 01-contracts-and-verification-foundation P05 | 2min | 2 tasks | 3 files |
-| Phase 02-host-safety-control-verification P01 | 12min | 1 tasks | 21 files |
-| Phase 02-host-safety-control-verification P02 | 25min | 2 tasks | 14 files |
-| Phase 02-host-safety-control-verification P03 | 13min | 2 tasks | 13 files |
-| Phase 03-fake-link-runtime-proof P01 | 5min | 2 tasks | 7 files |
-| Phase 03-fake-link-runtime-proof P02 | 624 | 2 tasks | 10 files |
-| Phase 03-fake-link-runtime-proof P03 | 12min | 2 tasks | 3 files |
-| Phase 04-authoritative-platform-composition P02 | 6min | 2 tasks | 12 files |
-| Phase 05-default-closure-loop P01 | 3min | 2 tasks | 2 files |
-| Phase 05-default-closure-loop P02 | 2min | 2 tasks | 0 files |
-| Phase 06-v1-tech-debt-cleanup P01 | 5min | 2 tasks | 6 files |
-| Phase 06-v1-tech-debt-cleanup P02 | 3min | 2 tasks | 2 files |
-
-## Accumulated Context
-
-### Decisions
-
-Decisions are logged in `PROJECT.md` Key Decisions table.
-Recent decisions affecting current work:
-
-- Phase 1: Start with contract sizing, host test entrypoints, sanitizer coverage, and machine-readable stage reporting.
-- Phase 2: Treat host-side safety verification as the first real proof point for `balance_chassis` control behavior.
-- Phase 3: Require fake-link validation to observe real runtime outputs and distinguish comms faults from control faults.
-- Phase 4: Preserve reusable platform intent while reducing coupling and defining one blessed bring-up path.
-- [Phase 02-host-safety-control-verification]: Treat Phase 2 as the work to make the current `balance_chassis` main control path injectible, observable, and fail-fast under host-side safety verification.
-- [Phase 02-host-safety-control-verification]: Validate the current task/topic main path as implemented today rather than planning against an idealized direct-interface-only path.
-- [Phase 02-host-safety-control-verification]: Inject fake sensor and remote cases through device/profile seams, while using message/topic or equivalent runtime-ingress seams for link-loss and stale-command faults.
-- [Phase 02-host-safety-control-verification]: Use `actuator_command` plus key enable bits as the first authoritative observation surface for safety verdicts.
-- [Phase 02-host-safety-control-verification]: Prefer hard safety oracles and a narrow set of explicit wheel-leg danger signatures over broad qualitative control evaluation.
-- [Phase 02-host-safety-control-verification]: Do not preserve `device_layer` or mixed robot/control parameter wrappers by default if they obstruct a clear, testable safety-verification path.
-- [Phase 01-contracts-and-verification-foundation]: Keep the first host verification surface limited to message_center and a single checked-in executable.
-- [Phase 01-contracts-and-verification-foundation]: Default host tests to ASan and UBSan, with leak detection disabled only for the traced CTest process in this environment.
-- [Phase 01-contracts-and-verification-foundation]: Store one declared-size payload buffer per topic in a static byte pool, with subscriber generation tracking instead of fixed local buffers.
-- [Phase 01-contracts-and-verification-foundation]: Widen message_center topic payload sizing from uint8_t to size_t so runtime contracts above 255 bytes remain representable.
-- [Phase 01-contracts-and-verification-foundation]: Treat actuator_command as the single required Phase 1 runtime output proof target instead of declared-only chassis_state/leg outputs.
-- [Phase 01-contracts-and-verification-foundation]: `verify phase1` is now the authoritative JSON-first closure command and only passes when the required runtime output is truly observed.
-- [Phase 01-contracts-and-verification-foundation]: SITL proof stubs may be deterministic and ready-by-default when they are necessary to prove the minimum live path inside the fixed 1-second smoke window.
-- [Phase 01-contracts-and-verification-foundation]: Freshness metadata is recorded immediately after successful CubeMX generation as a deterministic manifest of IOC and generated tree hashes.
-- [Phase 01-contracts-and-verification-foundation]: Only hardware-trusting build modes are gated by freshness refusal so the 01-04 minimum live proof path remains the shortest evidence path.
-- [Phase 01-contracts-and-verification-foundation]: Keep actuator_gateway host coverage on public APIs plus the three platform_device_* seams only.
-- [Phase 01-contracts-and-verification-foundation]: Treat actuator dispatch validity as control_enable && actuator_enable across all mapped motors.
-- [Phase 02-host-safety-control-verification]: Keep the current remote_task -> Observe_task -> Chassis_task -> motor_control_task chain authoritative by extracting reusable init/prepare/step helpers instead of introducing a controller-only harness.
-- [Phase 02-host-safety-control-verification]: Only timestamped remote samples participate in stale-command freshness so Phase 2 can add SAFE-05 without invalidating earlier zero-timestamp host seams.
-- [Phase 02-host-safety-control-verification]: The authoritative `verify phase2` artifact is local to the Phase 2 CLI and reports SAFE-01 through SAFE-06 without depending on fake-link infrastructure.
-- [Phase 02-host-safety-control-verification]: Wheel-leg danger coverage stays narrow and machine-judgeable instead of trying to prove broad closed-loop stability on host.
-- [Phase 03-fake-link-runtime-proof]: Mirror the hardware profile pattern in SITL by binding static config objects instead of null-config stub wrappers.
-- [Phase 03-fake-link-runtime-proof]: Keep the Phase 3 proof narrow: verify runtime-backed IMU and remote bindings explicitly, while leaving motor control flow unchanged apart from lazy socket setup needed for host init.
-- [Phase 03-fake-link-runtime-proof]: Keep Phase 3 proof JSON-first by deriving verify phase3 results from the authoritative smoke artifact instead of creating a parallel report path.
-- [Phase 03-fake-link-runtime-proof]: Record remote UDP transport and adapter binding truth alongside runtime output observations so the artifact can prove the full fake-link chain surface.
-- [Phase 03-fake-link-runtime-proof]: Treat missing SITL device include/define wiring as a blocking build issue and auto-fix it inside this plan so phase3 verification can build end to end.
-- [Phase 03-fake-link-runtime-proof]: Preserve safety_protection as a separate failure provenance in Phase 3 artifacts.
-- [Phase 03-fake-link-runtime-proof]: Treat contract drift and adapter-binding failure as explicit communication-layer verdicts in Phase 3 artifacts.
-- [Phase 03-fake-link-runtime-proof]: Use unsandboxed verify phase3 runs when sandbox UDP restrictions block the SITL bridge.
-- [Phase 04-authoritative-platform-composition]: Keep balance_chassis_app_startup thin and project-owned while generated freertos.c remains the sole MX_FREERTOS_Init owner.
-- [Phase 04-authoritative-platform-composition]: SITL and hardware may keep different host entries, but both must converge on the same balance_chassis_app_startup bring-up seam.
-- [Phase 04-authoritative-platform-composition]: Keep remote task registration in app composition while moving the observe/chassis/motor registration chain under runtime/control ownership.
-- [Phase 04-authoritative-platform-composition]: Preserve legacy chassis-task helpers through a compatibility shell so existing host harnesses keep driving the authoritative runtime chain.
-- [Phase 04-authoritative-platform-composition]: Route control task timing through a neutral control header that still derives values from the current balance_chassis proving path.
-- [Phase 04-authoritative-platform-composition]: Reused verify phase3 as the only machine-readable bring-up proof surface for authoritative startup metadata.
-- [Phase 04-authoritative-platform-composition]: Kept detailed bring-up authority wording in one dedicated balance_chassis doc and used surrounding READMEs as linked ownership summaries.
-- [Phase 04-authoritative-platform-composition]: Documented freertos_app.c explicitly as a compatibility-only legacy surface instead of leaving its authority implicit.
-- [Phase 05-default-closure-loop]: Reuse _run_stage for all validate pipeline stages instead of creating a new timing/status wrapper.
-- [Phase 05-default-closure-loop]: Smoke stage in validate is separate from verify_phase3 internal smoke — intentional duplication for independent gate enforcement.
-- [Phase 05-default-closure-loop]: hw_elf is best-effort after validation gates; freshness gate failure results in skipped status, not overall failure.
-- [Phase 05-default-closure-loop]: Closure artifact uses closure_version=1 schema distinct from verification_run_version.
-- [Phase 06-v1-tech-debt-cleanup]: Add backward-compatible unprefixed macro aliases in control_task_params.h so existing control task code compiles without app_params.h.
-- [Phase 06-v1-tech-debt-cleanup]: Redirect ins_task.c to control_task_params.h alongside control_task_registry.c to fully eliminate app_params.h from control/.
-
-### Pending Todos
-
-None yet.
-
-### Blockers/Concerns
-
-- Phase 02 closure is complete; remaining trust gaps move to Phase 03 fake-link runtime proof and observability.
-- v2 hardware bring-up remains intentionally gated on v1 validation closure; simulated evidence is not treated as physical proof.
-- Hardware make configure/build still resolves to host cc, so balance_chassis_hw_seed.elf fails before link on Cortex-M flags (-mthumb, -mfpu, -mfloat-abi).
+- Phases: 6
+- Plans: 18
+- Commits: 82
+- Requirements: 24/24 satisfied
+- Timeline: 2026-03-30 → 2026-04-01
+- Archives: `.planning/milestones/v1-ROADMAP.md`, `.planning/milestones/v1-REQUIREMENTS.md`
 
 ## Session Continuity
 
-Last session: 2026-04-01T14:11:00Z
-Stopped at: Completed 06-01-PLAN.md — SITL newlines, control decoupling, validate widening
+Last session: 2026-04-01T23:00:00Z
+Stopped at: v1 milestone archived
 Resume file: None
