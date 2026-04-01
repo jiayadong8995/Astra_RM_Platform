@@ -20,7 +20,7 @@
 #include "../app_intent/remote_intent.h"
 #include "../app_intent/remote_intent_state.h"
 #include "../app_io/remote_topics.h"
-#include "../../../device/device_layer.h"
+#include "../../../bsp/ports.h"
 #include <string.h>
 
 void remote_task_init(platform_remote_task_runtime_t *runtime)
@@ -41,7 +41,7 @@ void remote_task_step(platform_remote_task_runtime_t *runtime)
         return;
     }
 
-    runtime->rc_result = platform_device_read_default_remote(&runtime->rc_input);
+    runtime->rc_result = platform_remote_read(&runtime->rc_input);
     if (runtime->rc_result != PLATFORM_DEVICE_RESULT_OK)
     {
         memset(&runtime->rc_input, 0, sizeof(runtime->rc_input));

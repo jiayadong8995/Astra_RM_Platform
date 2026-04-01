@@ -1,4 +1,5 @@
 #include "device_layer_stubs.h"
+#include "ports.h"
 
 #include <string.h>
 
@@ -67,6 +68,27 @@ platform_device_result_t platform_device_write_default_command(const platform_de
     }
 
     g_last_command = *command;
+    g_write_call_count += 1U;
+    return PLATFORM_DEVICE_RESULT_OK;
+}
+
+/* Port-API stubs: actuator_gateway now calls ports instead of device_layer.
+   These delegate to the same stub state so existing tests keep working.
+   Task 2 will migrate test_actuator_gateway to ports_fake and remove these. */
+platform_device_result_t platform_motor_read_feedback(platform_device_feedback_t *feedback)
+{
+    return platform_device_read_default_feedback(feedback);
+}
+
+platform_device_result_t platform_motor_write_command(const platform_motor_command_set_t *cmd)
+{
+    if (cmd == NULL) {
+        return PLATFORM_DEVICE_RESULT_INVALID;
+    }
+
+    platform_device_command_t wrapper = {0};
+    wrapper.motors = *cmd;
+    g_last_command = wrapper;
     g_write_call_count += 1U;
     return PLATFORM_DEVICE_RESULT_OK;
 }

@@ -1,4 +1,5 @@
 #include "actuator_gateway.h"
+#include "../../device/device_layer.h"
 
 #define PLATFORM_DEVICE_COMMAND_FAULT_INVALID_MAPPING 0x1U
 
@@ -7,12 +8,14 @@ static bool platform_command_dispatch_enabled(const platform_actuator_command_t 
 
 void platform_actuator_gateway_init(void)
 {
+    /* device_layer init is still needed: HW/SITL port implementations
+       delegate to device_layer.  Will be removed with device_layer. */
     (void)platform_device_init_default_profile();
 }
 
 platform_device_result_t platform_actuator_gateway_capture_feedback(platform_device_feedback_t *feedback_msg)
 {
-    return platform_device_read_default_feedback(feedback_msg);
+    return platform_motor_read_feedback(feedback_msg);
 }
 
 void platform_actuator_gateway_dispatch_command(const platform_actuator_command_t *actuator_msg,
@@ -47,7 +50,7 @@ void platform_actuator_gateway_dispatch_command(const platform_actuator_command_
         }
     }
 
-    (void)platform_device_write_default_command(&device_command);
+    (void)platform_motor_write_command(&device_command.motors);
 }
 
 static bool platform_profile_command_mapping_valid(const platform_actuator_command_t *actuator_msg)

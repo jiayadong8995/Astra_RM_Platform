@@ -3,7 +3,7 @@
 
 #include "../contracts/actuator_command.h"
 #include "../contracts/device_feedback.h"
-#include "../../device/device_layer.h"
+#include "../../bsp/ports.h"
 
 void platform_actuator_gateway_init(void);
 platform_device_result_t platform_actuator_gateway_capture_feedback(platform_device_feedback_t *feedback_msg);

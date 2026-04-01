@@ -102,7 +102,13 @@ platform_device_result_t platform_remote_read(platform_rc_input_t *input)
 
 platform_device_result_t platform_motor_write_command(const platform_motor_command_set_t *cmd)
 {
-    (void)cmd;
+    platform_device_command_t wrapper = {0};
+    wrapper.motors = *cmd;
+    g_last_command = wrapper;
+    if (g_fake_hooks.write_command != 0)
+    {
+        return g_fake_hooks.write_command(&wrapper, g_fake_hooks.context);
+    }
     return PLATFORM_DEVICE_RESULT_OK;
 }
 

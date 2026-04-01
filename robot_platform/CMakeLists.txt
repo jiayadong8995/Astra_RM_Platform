@@ -170,6 +170,7 @@ if(PLATFORM_HOST_TESTS)
   target_include_directories(test_actuator_gateway
     PRIVATE
       ${PLATFORM_RUNTIME_DIR}/control/execution
+      ${PLATFORM_RUNTIME_DIR}/bsp
       ${PLATFORM_RUNTIME_DIR}/device
       ${PLATFORM_CONTROL_CONTRACT_DIR}
       ${PLATFORM_HOST_TEST_DIR}

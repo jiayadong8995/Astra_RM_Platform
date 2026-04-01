@@ -4,7 +4,7 @@
 #include "bsp_dwt.h"
 #include "cmsis_os.h"
 #include "../control_config/control_task_params.h"
-#include "../../device/device_layer.h"
+#include "../../bsp/ports.h"
 #include "ins_state_estimator.h"
 #include "ins_state_message.h"
 #include "ins_topics.h"
@@ -28,7 +28,7 @@ void INS_task(void)
      while(1)
      {
         ins_dt = DWT_GetDeltaT(&runtime_state.dwt_count);
-        if (platform_device_read_default_imu(&sample) == PLATFORM_DEVICE_RESULT_OK && sample.valid)
+        if (platform_imu_read(&sample) == PLATFORM_DEVICE_RESULT_OK && sample.valid)
         {
             platform_ins_state_estimator_apply_sample(&runtime_state, ins_dt, sample.accel, sample.gyro);
         }
