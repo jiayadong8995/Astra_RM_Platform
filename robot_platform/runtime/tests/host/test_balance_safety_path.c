@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "chassis_topics.h"
-#include "device_layer.h"
+#include "ports_fake.h"
 #include "message_center.h"
 #include "test_support/balance_safety_harness.h"
 
@@ -98,7 +98,7 @@ int main(void)
 {
     platform_balance_safety_harness_t harness = {0};
     platform_test_device_hook_context_t hook_context = {0};
-    platform_device_test_hooks_t hooks = {0};
+    platform_ports_fake_hooks_t hooks = {0};
     platform_actuator_command_t first_command = {0};
     platform_actuator_command_t latest_command = {0};
     platform_robot_state_t robot_state = {0};
@@ -110,7 +110,7 @@ int main(void)
     hooks.read_feedback = read_feedback;
     hooks.write_command = write_command;
     hooks.context = &hook_context;
-    platform_device_set_test_hooks(&hooks);
+    platform_ports_fake_set_hooks(&hooks);
 
     platform_balance_safety_harness_init(&harness);
     robot_state.health.state_valid = true;
@@ -161,6 +161,6 @@ int main(void)
     assert(latest_command.motors.wheels[PLATFORM_WHEEL_LEFT].current_target == 0.0f);
     assert(latest_command.motors.wheels[PLATFORM_WHEEL_RIGHT].current_target == 0.0f);
 
-    platform_device_reset_test_hooks();
+    platform_ports_fake_reset_hooks();
     return 0;
 }

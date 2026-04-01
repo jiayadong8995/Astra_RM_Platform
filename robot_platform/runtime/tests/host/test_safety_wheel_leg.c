@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "chassis_topics.h"
-#include "device_layer.h"
+#include "ports_fake.h"
 #include "test_support/balance_safety_harness.h"
 
 typedef struct
@@ -46,7 +46,7 @@ int main(void)
 {
     platform_balance_safety_harness_t harness = {0};
     platform_test_wheel_leg_context_t context = {0};
-    platform_device_test_hooks_t hooks = {0};
+    platform_ports_fake_hooks_t hooks = {0};
     platform_robot_state_t robot_state = {0};
     platform_ins_state_message_t ins_msg = {0};
     platform_actuator_command_t observed = {0};
@@ -57,7 +57,7 @@ int main(void)
     hooks.read_remote = read_remote;
     hooks.read_feedback = read_feedback;
     hooks.context = &context;
-    platform_device_set_test_hooks(&hooks);
+    platform_ports_fake_set_hooks(&hooks);
 
     platform_balance_safety_harness_init(&harness);
     {
@@ -82,6 +82,6 @@ int main(void)
     assert(observed.motors.joints[PLATFORM_JOINT_LEFT_FRONT].torque_target == 0.0f);
     assert(observed.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].torque_target == 0.0f);
 
-    platform_device_reset_test_hooks();
+    platform_ports_fake_reset_hooks();
     return 0;
 }

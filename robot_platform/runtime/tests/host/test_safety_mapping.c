@@ -3,7 +3,7 @@
 
 #include "actuator_gateway.h"
 #include "chassis_topics.h"
-#include "device_layer.h"
+#include "ports_fake.h"
 #include "message_center.h"
 #include "test_support/balance_safety_harness.h"
 
@@ -59,7 +59,7 @@ static void seed_robot_state(const platform_robot_state_t *robot_state)
 static platform_actuator_command_t observe_started_command(platform_test_mapping_context_t *context)
 {
     platform_balance_safety_harness_t harness = {0};
-    platform_device_test_hooks_t hooks = {0};
+    platform_ports_fake_hooks_t hooks = {0};
     platform_actuator_command_t observed = {0};
     platform_robot_state_t robot_state = {0};
     uint32_t baseline_writes;
@@ -68,7 +68,7 @@ static platform_actuator_command_t observe_started_command(platform_test_mapping
     hooks.read_feedback = read_feedback;
     hooks.write_command = write_command;
     hooks.context = context;
-    platform_device_set_test_hooks(&hooks);
+    platform_ports_fake_set_hooks(&hooks);
 
     platform_balance_safety_harness_init(&harness);
     robot_state.health.state_valid = true;
@@ -124,6 +124,6 @@ int main(void)
     assert(context.write_count == (baseline_writes + 1U));
     assert_all_outputs_disabled(&context.last_command);
 
-    platform_device_reset_test_hooks();
+    platform_ports_fake_reset_hooks();
     return 0;
 }

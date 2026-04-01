@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "chassis_topics.h"
-#include "device_layer.h"
+#include "ports_fake.h"
 #include "message_center.h"
 #include "test_support/balance_safety_harness.h"
 
@@ -57,7 +57,7 @@ static void test_invalid_transitions_stay_blocked(void)
 {
     platform_balance_safety_harness_t harness = {0};
     platform_test_arming_context_t context = {0};
-    platform_device_test_hooks_t hooks = {0};
+    platform_ports_fake_hooks_t hooks = {0};
     platform_robot_state_t robot_state = {0};
     platform_actuator_command_t observed = {0};
 
@@ -69,7 +69,7 @@ static void test_invalid_transitions_stay_blocked(void)
     hooks.read_remote = read_remote;
     hooks.read_feedback = read_feedback;
     hooks.context = &context;
-    platform_device_set_test_hooks(&hooks);
+    platform_ports_fake_set_hooks(&hooks);
 
     platform_balance_safety_harness_init(&harness);
     seed_robot_state(&robot_state);
@@ -92,6 +92,6 @@ static void test_invalid_transitions_stay_blocked(void)
 int main(void)
 {
     test_invalid_transitions_stay_blocked();
-    platform_device_reset_test_hooks();
+    platform_ports_fake_reset_hooks();
     return 0;
 }

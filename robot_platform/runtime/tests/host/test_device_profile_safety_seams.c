@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "device_layer.h"
+#include "ports_fake.h"
 
 typedef struct
 {
@@ -57,7 +58,8 @@ static platform_device_result_t write_command(const platform_device_command_t *c
 int main(void)
 {
     platform_test_device_seam_context_t context = {0};
-    platform_device_test_hooks_t hooks = {0};
+    platform_ports_fake_hooks_t port_hooks = {0};
+    platform_device_test_hooks_t device_hooks = {0};
     platform_rc_input_t remote = {0};
     platform_imu_sample_t imu = {0};
     platform_device_feedback_t feedback = {0};
@@ -70,17 +72,15 @@ int main(void)
     context.feedback.actuator_feedback.valid = true;
     context.feedback.actuator_feedback.wheels[1].online = true;
 
-    hooks.init_default_profile = init_default_profile;
-    hooks.read_remote = read_remote;
-    hooks.read_imu = read_imu;
-    hooks.read_feedback = read_feedback;
-    hooks.write_command = write_command;
-    hooks.context = &context;
-    platform_device_set_test_hooks(&hooks);
+    /* Install port hooks via ports_fake (bridges to device_layer internally) */
+    port_hooks.read_remote = read_remote;
+    port_hooks.read_imu = read_imu;
+    port_hooks.read_feedback = read_feedback;
+    port_hooks.write_command = write_command;
+    port_hooks.context = &context;
+    platform_ports_fake_set_hooks(&port_hooks);
 
-    assert(platform_device_init_default_profile() == PLATFORM_DEVICE_RESULT_OK);
-    assert(context.init_count == 1U);
-
+    /* Verify port hooks route through device_layer default API */
     assert(platform_device_read_default_remote(&remote) == PLATFORM_DEVICE_RESULT_OK);
     assert(memcmp(&remote, &context.remote, sizeof(remote)) == 0);
 
@@ -96,6 +96,19 @@ int main(void)
     assert(context.write_count == 1U);
     assert(memcmp(&context.last_command, &command, sizeof(command)) == 0);
 
-    platform_device_reset_test_hooks();
+    /* init_default_profile is a device_layer concept not covered by ports_fake;
+       verify it still works via direct device_layer hook. */
+    device_hooks.init_default_profile = init_default_profile;
+    device_hooks.read_remote = read_remote;
+    device_hooks.read_imu = read_imu;
+    device_hooks.read_feedback = read_feedback;
+    device_hooks.write_command = write_command;
+    device_hooks.context = &context;
+    platform_device_set_test_hooks(&device_hooks);
+
+    assert(platform_device_init_default_profile() == PLATFORM_DEVICE_RESULT_OK);
+    assert(context.init_count == 1U);
+
+    platform_ports_fake_reset_hooks();
     return 0;
 }
