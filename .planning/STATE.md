@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Platform Simplification
 status: active
-stopped_at: completed v2-04-01-PLAN.md (with SUMMARY)
-last_updated: "2026-04-02T16:53:00Z"
+stopped_at: completed v2-04-02-PLAN.md (with SUMMARY)
+last_updated: "2026-04-02T16:59:53Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 10
-  completed_plans: 8
-  percent: 80
+  completed_plans: 9
+  percent: 90
 ---
 
 # Project State
@@ -27,16 +27,16 @@ See: `.planning/PROJECT.md` (updated 2026-04-01)
 
 Milestone: v2.0 — Platform Simplification
 Phase: 4 of 4 (Consolidation) — in progress
-Plan: 1 of 3 completed with SUMMARY (v2-04-01 done)
+Plan: 2 of 3 completed with SUMMARY (v2-04-02 done)
 Status: In progress
-Last activity: 2026-04-02 — Completed v2-04-01-PLAN.md with SUMMARY
+Last activity: 2026-04-02 — Completed v2-04-02-PLAN.md with SUMMARY
 
-Progress: [████████████████] 80%
+Progress: [██████████████████] 90%
 
 ## Performance Metrics
 
-- Phases: 3/4 completed (Phase 4 plan 01 done)
-- Plans: 8/10 completed (v2-01: 2/2, v2-02: 2/2, v2-03: 3/3, v2-04: 1/3)
+- Phases: 3/4 completed (Phase 4 plan 02 done)
+- Plans: 9/10 completed (v2-01: 2/2, v2-02: 2/2, v2-03: 3/3, v2-04: 2/3)
 - Requirements: 0/12 satisfied (SLIM-04 partially satisfied by plan 01)
 
 ## Accumulated Context
@@ -60,6 +60,7 @@ Progress: [████████████████] 80%
 - [D-v2-04-01-01] chassis_topics.c preserved as observation module with chassis_observation_on_publish() entry point
 - [D-v2-04-01-02] Bus structs inlined into task runtime structs — no intermediate bus abstraction
 - [D-v2-04-01-03] Relative includes for topics.h from task files — no new CMake include directory needed
+- [D-v2-04-02-01] GENERATED_RAW_DIR variable moved after PLATFORM_BOARD_BSP_DIR in CMakeLists.txt to fix evaluation order
 
 ### Todos
 - None
@@ -69,7 +70,7 @@ Progress: [████████████████] 80%
 
 ## Session Continuity
 
-Last session: 2026-04-02T16:53:00Z
-Stopped at: Completed v2-04-01-PLAN.md with SUMMARY
+Last session: 2026-04-02T16:59:53Z
+Stopped at: Completed v2-04-02-PLAN.md with SUMMARY
 Resume file: None
-Next action: Continue Phase 4 with v2-04-02-PLAN.md
+Next action: Continue Phase 4 with v2-04-03-PLAN.md
