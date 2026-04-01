@@ -4,16 +4,6 @@
 #include "actuator_gateway.h"
 #include "ports_fake.h"
 
-/* actuator_gateway_init still calls platform_device_init_default_profile
-   which lives in device_layer.  Provide a minimal stub here. */
-static uint32_t g_init_call_count;
-
-platform_device_result_t platform_device_init_default_profile(void)
-{
-    g_init_call_count += 1U;
-    return PLATFORM_DEVICE_RESULT_OK;
-}
-
 /* Hook context for feedback seeding */
 static platform_device_feedback_t g_seeded_feedback;
 static platform_device_result_t g_feedback_result;
@@ -41,7 +31,6 @@ static platform_device_result_t hook_write_command(const platform_device_command
 
 static void reset_test_state(void)
 {
-    g_init_call_count = 0U;
     g_write_call_count = 0U;
     g_feedback_result = PLATFORM_DEVICE_RESULT_OK;
     memset(&g_seeded_feedback, 0, sizeof(g_seeded_feedback));
@@ -144,13 +133,12 @@ static void assert_motor_command_matches(const platform_motor_command_t *actual,
     assert(actual->valid == expected_valid);
 }
 
-static void test_init_calls_default_profile_once(void)
+static void test_init_does_not_crash(void)
 {
     reset_test_state();
 
     platform_actuator_gateway_init();
 
-    assert(g_init_call_count == 1U);
     assert(g_write_call_count == 0U);
 }
 
@@ -241,7 +229,7 @@ static void test_dispatch_clears_validity_when_actuator_or_control_is_disabled(v
 
 int main(void)
 {
-    test_init_calls_default_profile_once();
+    test_init_does_not_crash();
     test_capture_feedback_forwards_result_and_payload();
     test_dispatch_maps_contract_motors_into_device_command();
     test_dispatch_clears_validity_when_actuator_or_control_is_disabled();
