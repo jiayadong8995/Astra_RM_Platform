@@ -1,6 +1,6 @@
 # runtime/control
 
-这一层承接运行时主控制链：
+这一层承接运行时主控制链。See `robot_platform/docs/balance_chassis_bringup.md` for the authoritative `app` versus `control` ownership split.
 
 - `state`
 - `controllers`
@@ -12,8 +12,9 @@
 
 - 板级访问
 - 设备驱动
-- 业务模式管理
+- `app` 负责的业务模式管理
 - 通用控制原件库
+- project startup wiring
 
 当前这一层已经开始承接真实实现：
 
@@ -33,3 +34,4 @@
 - `state` 负责 `DeviceInput -> RobotState`
 - `controllers` 负责 `RobotState + RobotIntent -> ActuatorCommand`
 - `execution` 负责 `ActuatorCommand -> DeviceCommand/执行反馈`
+- `app` owns remote intent ingress and project composition; `control` owns the runtime observe -> control -> execution path
