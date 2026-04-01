@@ -19,7 +19,7 @@ platform test
 
 当前已经落地：
 
-- `generate`: 使用 `references/legacy/Astra_RM2025_Balance_legacy/Chassis/CtrlBoard-H7_IMU.ioc` 调用官方 `STM32CubeMX` CLI 生成 `runtime/generated/stm32h7_ctrl_board_raw`
+- `generate`: 使用 `references/legacy/Astra_RM2025_Balance_legacy/Chassis/CtrlBoard-H7_IMU.ioc` 调用官方 `STM32CubeMX` CLI 生成 `runtime/bsp/boards/stm32h7_ctrl_board/generated`
 - `build hw_elf`: 构建 `balance_chassis_hw_seed.elf`
 - `build hw_seed`: 构建底层静态库种子 `balance_chassis_bsp_seed`
 - `build sitl`: 构建 Linux 上运行的 `balance_chassis_sitl`

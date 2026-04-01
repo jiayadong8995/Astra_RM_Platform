@@ -241,14 +241,14 @@ def _write_closure_report(
 def _generate_balance_chassis() -> int:
     repo_root = _repo_root()
     ioc_path = repo_root / "references" / "legacy" / "Astra_RM2025_Balance_legacy" / "Chassis" / "CtrlBoard-H7_IMU.ioc"
-    out_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
+    out_dir = repo_root / "robot_platform" / "runtime" / "bsp" / "boards" / "stm32h7_ctrl_board" / "generated"
     return run_codegen(ioc_path, out_dir)
 
 
 def _generated_artifact_paths() -> tuple[Path, Path]:
     repo_root = _repo_root()
     ioc_path = repo_root / "references" / "legacy" / "Astra_RM2025_Balance_legacy" / "Chassis" / "CtrlBoard-H7_IMU.ioc"
-    generated_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
+    generated_dir = repo_root / "robot_platform" / "runtime" / "bsp" / "boards" / "stm32h7_ctrl_board" / "generated"
     return ioc_path, generated_dir
 
 

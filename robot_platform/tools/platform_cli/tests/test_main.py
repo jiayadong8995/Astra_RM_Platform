@@ -731,7 +731,7 @@ class GeneratedArtifactFreshnessTests(unittest.TestCase):
             source_ioc.parent.mkdir(parents=True, exist_ok=True)
             source_ioc.write_text("ioc-version=1\n", encoding="utf-8")
 
-            generated_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
+            generated_dir = repo_root / "robot_platform" / "runtime" / "bsp" / "boards" / "stm32h7_ctrl_board" / "generated"
             generated_dir.mkdir(parents=True, exist_ok=True)
             (generated_dir / "Src").mkdir()
             (generated_dir / "Src" / "main.c").write_text("int main(void) { return 0; }\n", encoding="utf-8")
@@ -768,7 +768,7 @@ class GeneratedArtifactFreshnessTests(unittest.TestCase):
             )
             source_ioc.parent.mkdir(parents=True, exist_ok=True)
             source_ioc.write_text("ioc-version=1\n", encoding="utf-8")
-            generated_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
+            generated_dir = repo_root / "robot_platform" / "runtime" / "bsp" / "boards" / "stm32h7_ctrl_board" / "generated"
             generated_dir.mkdir(parents=True, exist_ok=True)
 
             rc, stdout = self._run_main_with_stdout(repo_root, ["platform_cli", "build", "hw_elf"])
@@ -792,7 +792,7 @@ class GeneratedArtifactFreshnessTests(unittest.TestCase):
             )
             source_ioc.parent.mkdir(parents=True, exist_ok=True)
             source_ioc.write_text("ioc-version=2\n", encoding="utf-8")
-            generated_dir = repo_root / "robot_platform" / "runtime" / "generated" / "stm32h7_ctrl_board_raw"
+            generated_dir = repo_root / "robot_platform" / "runtime" / "bsp" / "boards" / "stm32h7_ctrl_board" / "generated"
             generated_dir.mkdir(parents=True, exist_ok=True)
             (generated_dir / "freshness_manifest.json").write_text(
                 json.dumps(
