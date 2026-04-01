@@ -83,15 +83,15 @@ static void assert_dispatch_matches_observed_command(const platform_actuator_com
 {
     const bool dispatch_enabled = observed->control_enable && observed->actuator_enable;
 
-    assert(written->joints[0].valid == (observed->motors.left_leg_joint[0].valid && dispatch_enabled));
-    assert(written->joints[1].valid == (observed->motors.left_leg_joint[1].valid && dispatch_enabled));
-    assert(written->joints[2].valid == (observed->motors.right_leg_joint[0].valid && dispatch_enabled));
-    assert(written->joints[3].valid == (observed->motors.right_leg_joint[1].valid && dispatch_enabled));
-    assert(written->wheels[0].valid == (observed->motors.left_wheel.valid && dispatch_enabled));
-    assert(written->wheels[1].valid == (observed->motors.right_wheel.valid && dispatch_enabled));
-    assert(written->joints[0].control_mode == observed->motors.left_leg_joint[0].control_mode);
-    assert(written->wheels[0].control_mode == observed->motors.left_wheel.control_mode);
-    assert(written->wheels[1].control_mode == observed->motors.right_wheel.control_mode);
+    assert(written->motors.joints[PLATFORM_JOINT_LEFT_FRONT].valid == (observed->motors.joints[PLATFORM_JOINT_LEFT_FRONT].valid && dispatch_enabled));
+    assert(written->motors.joints[PLATFORM_JOINT_LEFT_REAR].valid == (observed->motors.joints[PLATFORM_JOINT_LEFT_REAR].valid && dispatch_enabled));
+    assert(written->motors.joints[PLATFORM_JOINT_RIGHT_FRONT].valid == (observed->motors.joints[PLATFORM_JOINT_RIGHT_FRONT].valid && dispatch_enabled));
+    assert(written->motors.joints[PLATFORM_JOINT_RIGHT_REAR].valid == (observed->motors.joints[PLATFORM_JOINT_RIGHT_REAR].valid && dispatch_enabled));
+    assert(written->motors.wheels[PLATFORM_WHEEL_LEFT].valid == (observed->motors.wheels[PLATFORM_WHEEL_LEFT].valid && dispatch_enabled));
+    assert(written->motors.wheels[PLATFORM_WHEEL_RIGHT].valid == (observed->motors.wheels[PLATFORM_WHEEL_RIGHT].valid && dispatch_enabled));
+    assert(written->motors.joints[PLATFORM_JOINT_LEFT_FRONT].control_mode == observed->motors.joints[PLATFORM_JOINT_LEFT_FRONT].control_mode);
+    assert(written->motors.wheels[PLATFORM_WHEEL_LEFT].control_mode == observed->motors.wheels[PLATFORM_WHEEL_LEFT].control_mode);
+    assert(written->motors.wheels[PLATFORM_WHEEL_RIGHT].control_mode == observed->motors.wheels[PLATFORM_WHEEL_RIGHT].control_mode);
 }
 
 int main(void)
@@ -141,8 +141,8 @@ int main(void)
     assert(!latest_command.start);
     assert(!latest_command.control_enable);
     assert(!latest_command.actuator_enable);
-    assert(latest_command.motors.left_leg_joint[0].torque_target == 0.0f);
-    assert(latest_command.motors.right_leg_joint[0].torque_target == 0.0f);
+    assert(latest_command.motors.joints[PLATFORM_JOINT_LEFT_FRONT].torque_target == 0.0f);
+    assert(latest_command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].torque_target == 0.0f);
 
     hook_context.remote_result = PLATFORM_DEVICE_RESULT_OK;
     hook_context.remote.sample_time_us = 2000U;
@@ -158,8 +158,8 @@ int main(void)
     assert(!latest_command.start);
     assert(!latest_command.control_enable);
     assert(!latest_command.actuator_enable);
-    assert(latest_command.motors.left_wheel.current_target == 0.0f);
-    assert(latest_command.motors.right_wheel.current_target == 0.0f);
+    assert(latest_command.motors.wheels[PLATFORM_WHEEL_LEFT].current_target == 0.0f);
+    assert(latest_command.motors.wheels[PLATFORM_WHEEL_RIGHT].current_target == 0.0f);
 
     platform_device_reset_test_hooks();
     return 0;

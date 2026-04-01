@@ -47,10 +47,10 @@ static void assert_output_blocked(const platform_actuator_command_t *observed)
 {
     assert(!observed->control_enable);
     assert(!observed->actuator_enable);
-    assert(!observed->motors.left_wheel.valid);
-    assert(!observed->motors.right_wheel.valid);
-    assert(!observed->motors.left_leg_joint[0].valid);
-    assert(!observed->motors.right_leg_joint[0].valid);
+    assert(!observed->motors.wheels[PLATFORM_WHEEL_LEFT].valid);
+    assert(!observed->motors.wheels[PLATFORM_WHEEL_RIGHT].valid);
+    assert(!observed->motors.joints[PLATFORM_JOINT_LEFT_FRONT].valid);
+    assert(!observed->motors.joints[PLATFORM_JOINT_RIGHT_FRONT].valid);
 }
 
 static void test_invalid_transitions_stay_blocked(void)

@@ -77,10 +77,10 @@ int main(void)
     assert(observed.start);
     assert(!observed.control_enable);
     assert(!observed.actuator_enable);
-    assert(observed.motors.left_wheel.current_target == 0.0f);
-    assert(observed.motors.right_wheel.current_target == 0.0f);
-    assert(observed.motors.left_leg_joint[0].torque_target == 0.0f);
-    assert(observed.motors.right_leg_joint[0].torque_target == 0.0f);
+    assert(observed.motors.wheels[PLATFORM_WHEEL_LEFT].current_target == 0.0f);
+    assert(observed.motors.wheels[PLATFORM_WHEEL_RIGHT].current_target == 0.0f);
+    assert(observed.motors.joints[PLATFORM_JOINT_LEFT_FRONT].torque_target == 0.0f);
+    assert(observed.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].torque_target == 0.0f);
 
     platform_device_reset_test_hooks();
     return 0;

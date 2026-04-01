@@ -88,8 +88,8 @@ static void test_pre_ready_and_post_ready_sensor_faults(void)
     assert(chassis_runtime_bus_get_latest_observation(&observed));
     assert(!observed.control_enable);
     assert(!observed.actuator_enable);
-    assert(!observed.motors.left_wheel.valid);
-    assert(!observed.motors.right_leg_joint[0].valid);
+    assert(!observed.motors.wheels[PLATFORM_WHEEL_LEFT].valid);
+    assert(!observed.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].valid);
 
     ins_msg.ready = 1U;
     platform_balance_safety_harness_seed_ins(&harness, &ins_msg);
@@ -99,8 +99,8 @@ static void test_pre_ready_and_post_ready_sensor_faults(void)
     assert(chassis_runtime_bus_get_latest_observation(&observed));
     assert(!observed.control_enable);
     assert(!observed.actuator_enable);
-    assert(!observed.motors.right_wheel.valid);
-    assert(!observed.motors.left_leg_joint[0].valid);
+    assert(!observed.motors.wheels[PLATFORM_WHEEL_RIGHT].valid);
+    assert(!observed.motors.joints[PLATFORM_JOINT_LEFT_FRONT].valid);
 }
 
 static void test_estimator_warmup_and_degrade_behavior(void)

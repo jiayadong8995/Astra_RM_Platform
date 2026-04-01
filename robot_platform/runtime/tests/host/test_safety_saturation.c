@@ -81,8 +81,8 @@ static void test_current_path_wheel_saturation_has_explicit_oracle(void)
     assert(chassis_runtime_bus_get_latest_observation(&observed));
     assert(observed.control_enable);
     assert(observed.actuator_enable);
-    assert(fabsf(observed.motors.left_wheel.current_target) <= 8000.0f);
-    assert(fabsf(observed.motors.right_wheel.current_target) <= 8000.0f);
+    assert(fabsf(observed.motors.wheels[PLATFORM_WHEEL_LEFT].current_target) <= 8000.0f);
+    assert(fabsf(observed.motors.wheels[PLATFORM_WHEEL_RIGHT].current_target) <= 8000.0f);
     oracle_flags = platform_actuator_constraint_oracle_flags();
     assert(oracle_flags != 0U);
 }

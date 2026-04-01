@@ -14,7 +14,7 @@ static platform_actuator_command_t build_command_fixture(void)
     command.control_enable = true;
     command.actuator_enable = true;
 
-    command.motors.left_leg_joint[0] = (platform_motor_command_t){
+    command.motors.joints[PLATFORM_JOINT_LEFT_FRONT] = (platform_motor_command_t){
         .control_mode = PLATFORM_MOTOR_CONTROL_TORQUE,
         .torque_target = 1.0f,
         .velocity_target = 2.0f,
@@ -24,7 +24,7 @@ static platform_actuator_command_t build_command_fixture(void)
         .kd = 6.0f,
         .valid = true,
     };
-    command.motors.left_leg_joint[1] = (platform_motor_command_t){
+    command.motors.joints[PLATFORM_JOINT_LEFT_REAR] = (platform_motor_command_t){
         .control_mode = PLATFORM_MOTOR_CONTROL_TORQUE,
         .torque_target = 11.0f,
         .velocity_target = 12.0f,
@@ -34,7 +34,7 @@ static platform_actuator_command_t build_command_fixture(void)
         .kd = 16.0f,
         .valid = false,
     };
-    command.motors.right_leg_joint[0] = (platform_motor_command_t){
+    command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT] = (platform_motor_command_t){
         .control_mode = PLATFORM_MOTOR_CONTROL_TORQUE,
         .torque_target = 21.0f,
         .velocity_target = 22.0f,
@@ -44,7 +44,7 @@ static platform_actuator_command_t build_command_fixture(void)
         .kd = 26.0f,
         .valid = true,
     };
-    command.motors.right_leg_joint[1] = (platform_motor_command_t){
+    command.motors.joints[PLATFORM_JOINT_RIGHT_REAR] = (platform_motor_command_t){
         .control_mode = PLATFORM_MOTOR_CONTROL_TORQUE,
         .torque_target = 31.0f,
         .velocity_target = 32.0f,
@@ -54,7 +54,7 @@ static platform_actuator_command_t build_command_fixture(void)
         .kd = 36.0f,
         .valid = true,
     };
-    command.motors.left_wheel = (platform_motor_command_t){
+    command.motors.wheels[PLATFORM_WHEEL_LEFT] = (platform_motor_command_t){
         .control_mode = PLATFORM_MOTOR_CONTROL_CURRENT,
         .torque_target = 41.0f,
         .velocity_target = 42.0f,
@@ -64,7 +64,7 @@ static platform_actuator_command_t build_command_fixture(void)
         .kd = 46.0f,
         .valid = true,
     };
-    command.motors.right_wheel = (platform_motor_command_t){
+    command.motors.wheels[PLATFORM_WHEEL_RIGHT] = (platform_motor_command_t){
         .control_mode = PLATFORM_MOTOR_CONTROL_CURRENT,
         .torque_target = 51.0f,
         .velocity_target = 52.0f,
@@ -78,14 +78,10 @@ static platform_actuator_command_t build_command_fixture(void)
     return command;
 }
 
-static void assert_motor_command_matches(const platform_motor_device_command_t *actual,
+static void assert_motor_command_matches(const platform_motor_command_t *actual,
                                          const platform_motor_command_t *expected,
-                                         uint8_t expected_id,
-                                         platform_motor_kind_t expected_kind,
                                          bool expected_valid)
 {
-    assert(actual->device_id == expected_id);
-    assert(actual->kind == expected_kind);
     assert(actual->control_mode == expected->control_mode);
     assert(actual->torque_target == expected->torque_target);
     assert(actual->velocity_target == expected->velocity_target);
@@ -144,35 +140,23 @@ static void test_dispatch_maps_contract_motors_into_device_command(void)
     written_command = platform_test_device_layer_get_last_command();
 
     assert(platform_test_device_layer_get_write_call_count() == 1U);
-    assert_motor_command_matches(&written_command->joints[0],
-                                 &command.motors.left_leg_joint[0],
-                                 0U,
-                                 PLATFORM_MOTOR_KIND_JOINT,
+    assert_motor_command_matches(&written_command->motors.joints[PLATFORM_JOINT_LEFT_FRONT],
+                                 &command.motors.joints[PLATFORM_JOINT_LEFT_FRONT],
                                  true);
-    assert_motor_command_matches(&written_command->joints[1],
-                                 &command.motors.left_leg_joint[1],
-                                 1U,
-                                 PLATFORM_MOTOR_KIND_JOINT,
+    assert_motor_command_matches(&written_command->motors.joints[PLATFORM_JOINT_LEFT_REAR],
+                                 &command.motors.joints[PLATFORM_JOINT_LEFT_REAR],
                                  false);
-    assert_motor_command_matches(&written_command->joints[2],
-                                 &command.motors.right_leg_joint[0],
-                                 2U,
-                                 PLATFORM_MOTOR_KIND_JOINT,
+    assert_motor_command_matches(&written_command->motors.joints[PLATFORM_JOINT_RIGHT_FRONT],
+                                 &command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT],
                                  true);
-    assert_motor_command_matches(&written_command->joints[3],
-                                 &command.motors.right_leg_joint[1],
-                                 3U,
-                                 PLATFORM_MOTOR_KIND_JOINT,
+    assert_motor_command_matches(&written_command->motors.joints[PLATFORM_JOINT_RIGHT_REAR],
+                                 &command.motors.joints[PLATFORM_JOINT_RIGHT_REAR],
                                  true);
-    assert_motor_command_matches(&written_command->wheels[0],
-                                 &command.motors.left_wheel,
-                                 0U,
-                                 PLATFORM_MOTOR_KIND_WHEEL,
+    assert_motor_command_matches(&written_command->motors.wheels[PLATFORM_WHEEL_LEFT],
+                                 &command.motors.wheels[PLATFORM_WHEEL_LEFT],
                                  true);
-    assert_motor_command_matches(&written_command->wheels[1],
-                                 &command.motors.right_wheel,
-                                 1U,
-                                 PLATFORM_MOTOR_KIND_WHEEL,
+    assert_motor_command_matches(&written_command->motors.wheels[PLATFORM_WHEEL_RIGHT],
+                                 &command.motors.wheels[PLATFORM_WHEEL_RIGHT],
                                  false);
 }
 
@@ -184,19 +168,19 @@ static void test_dispatch_clears_validity_when_actuator_or_control_is_disabled(v
     platform_test_device_layer_stubs_reset();
     command.control_enable = false;
     command.actuator_enable = true;
-    assert(command.motors.left_leg_joint[0].valid == true);
-    assert(command.motors.right_leg_joint[0].valid == true);
-    assert(command.motors.right_leg_joint[1].valid == true);
-    assert(command.motors.left_wheel.valid == true);
+    assert(command.motors.joints[PLATFORM_JOINT_LEFT_FRONT].valid == true);
+    assert(command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].valid == true);
+    assert(command.motors.joints[PLATFORM_JOINT_RIGHT_REAR].valid == true);
+    assert(command.motors.wheels[PLATFORM_WHEEL_LEFT].valid == true);
 
     platform_actuator_gateway_dispatch_command(&command, 1000U);
     written_command = platform_test_device_layer_get_last_command();
 
     for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i) {
-        assert(written_command->joints[i].valid == false);
+        assert(written_command->motors.joints[i].valid == false);
     }
     for (uint8_t i = 0; i < PLATFORM_WHEEL_MOTOR_COUNT; ++i) {
-        assert(written_command->wheels[i].valid == false);
+        assert(written_command->motors.wheels[i].valid == false);
     }
 }
 

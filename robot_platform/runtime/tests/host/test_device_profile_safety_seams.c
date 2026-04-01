@@ -90,8 +90,8 @@ int main(void)
     assert(platform_device_read_default_feedback(&feedback) == PLATFORM_DEVICE_RESULT_OK);
     assert(memcmp(&feedback, &context.feedback, sizeof(feedback)) == 0);
 
-    command.joints[0].valid = true;
-    command.wheels[0].control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
+    command.motors.joints[0].valid = true;
+    command.motors.wheels[0].control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
     assert(platform_device_write_default_command(&command) == PLATFORM_DEVICE_RESULT_OK);
     assert(context.write_count == 1U);
     assert(memcmp(&context.last_command, &command, sizeof(command)) == 0);

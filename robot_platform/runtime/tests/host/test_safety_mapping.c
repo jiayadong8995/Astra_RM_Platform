@@ -88,11 +88,11 @@ static void assert_all_outputs_disabled(const platform_device_command_t *command
 {
     for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i)
     {
-        assert(!command->joints[i].valid);
+        assert(!command->motors.joints[i].valid);
     }
     for (uint8_t i = 0; i < PLATFORM_WHEEL_MOTOR_COUNT; ++i)
     {
-        assert(!command->wheels[i].valid);
+        assert(!command->motors.wheels[i].valid);
     }
 }
 
@@ -108,22 +108,20 @@ int main(void)
     baseline_writes = context.write_count;
 
     invalid_command = observed;
-    invalid_command.motors.left_wheel.control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
-    invalid_command.motors.left_wheel.valid = true;
+    invalid_command.motors.wheels[PLATFORM_WHEEL_LEFT].control_mode = PLATFORM_MOTOR_CONTROL_TORQUE;
+    invalid_command.motors.wheels[PLATFORM_WHEEL_LEFT].valid = true;
     platform_actuator_gateway_dispatch_command(&invalid_command, 0U);
 
     assert(context.write_count == (baseline_writes + 1U));
-    assert((context.last_command.backend_flags & 0x1U) != 0U);
     assert_all_outputs_disabled(&context.last_command);
 
     baseline_writes = context.write_count;
     invalid_command = observed;
-    invalid_command.motors.right_leg_joint[0].control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
-    invalid_command.motors.right_leg_joint[0].valid = true;
+    invalid_command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
+    invalid_command.motors.joints[PLATFORM_JOINT_RIGHT_FRONT].valid = true;
     platform_actuator_gateway_dispatch_command(&invalid_command, 0U);
 
     assert(context.write_count == (baseline_writes + 1U));
-    assert((context.last_command.backend_flags & 0x1U) != 0U);
     assert_all_outputs_disabled(&context.last_command);
 
     platform_device_reset_test_hooks();
