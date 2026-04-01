@@ -23,8 +23,8 @@
 **Plans:** 2 plans
 
 Plans:
-- [ ] v2-01-01-PLAN.md — Unify command types (eliminate parallel `platform_actuator_command_t` / `platform_device_command_t`, delete ~160 lines of mapping code)
-- [ ] v2-01-02-PLAN.md — Introduce BSP port interfaces (`bsp/ports.h` + HW/SITL/fake implementations, wired into CMake)
+- [x] v2-01-01-PLAN.md — Unify command types (eliminate parallel `platform_actuator_command_t` / `platform_device_command_t`, delete ~160 lines of mapping code)
+- [x] v2-01-02-PLAN.md — Introduce BSP port interfaces (`bsp/ports.h` + HW/SITL/fake implementations, wired into CMake)
 
 **Success Criteria:**
 1. `platform_actuator_command_t` and `platform_device_command_t` are unified into a single command struct — no field mapping code remains in actuator_gateway or device_layer
@@ -39,6 +39,12 @@ Plans:
 **Dependencies:** Phase 1 (port interfaces must exist)
 
 **Requirements:** KEEP-04, KEEP-01
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] v2-02-01-PLAN.md — Enhance ports_fake with test injection API and migrate 7 hook-using tests from device_layer hooks to BSP port fakes
+- [ ] v2-02-02-PLAN.md — Migrate control tasks (ins_task, remote_task, actuator_gateway) to BSP port calls and migrate test_actuator_gateway to ports_fake
 
 **Success Criteria:**
 1. All 7 CTest targets that depended on `platform_device_set_test_hooks` now inject through link-time BSP port fakes — no test uses the old hook API
@@ -80,8 +86,8 @@ Plans:
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 1 | Port Foundation | SLIM-04, KEEP-03 | Planned |
-| 2 | Seam Migration | KEEP-04, KEEP-01 | Pending |
+| 1 | Port Foundation | SLIM-04, KEEP-03 | Complete |
+| 2 | Seam Migration | KEEP-04, KEEP-01 | Planned |
 | 3 | Device Layer Removal | SLIM-01, SLIM-02, QUAL-01 | Pending |
 | 4 | Consolidation | SLIM-03, SLIM-05, KEEP-02, QUAL-02, QUAL-03 | Pending |
 
