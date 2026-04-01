@@ -213,7 +213,10 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_SITL_BSP_DIR}/BMI088driver_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/remote_control_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
-    ${PLATFORM_SITL_BSP_DIR}/bsp_ports_sitl.c
+  )
+
+  set(BALANCE_SAFETY_HOST_FAKE_PORT_SOURCE
+    ${PLATFORM_RUNTIME_DIR}/bsp/ports_fake.c
   )
 
   set(BALANCE_SAFETY_HOST_RUNTIME_SOURCES
@@ -248,6 +251,7 @@ if(PLATFORM_HOST_TESTS)
     ${PLATFORM_HOST_TEST_DIR}/test_support/host_os_stubs.c
     ${PLATFORM_HOST_TEST_DIR}/test_support/balance_safety_harness.c
     ${BALANCE_SAFETY_HOST_BSP_SOURCES}
+    ${BALANCE_SAFETY_HOST_FAKE_PORT_SOURCE}
   )
 
   add_library(cmsis_dsp_host STATIC
@@ -519,26 +523,10 @@ if(PLATFORM_HOST_TESTS)
   )
 
   add_executable(test_bsp_ports_compile
-    ${PLATFORM_RUNTIME_DIR}/bsp/ports_fake.c
     ${PLATFORM_HOST_TEST_DIR}/test_bsp_ports_compile.c
   )
-  target_include_directories(test_bsp_ports_compile
-    PRIVATE
-      ${PLATFORM_RUNTIME_DIR}/bsp
-      ${PLATFORM_CONTROL_CONTRACT_DIR}
-      ${PLATFORM_DEVICE_DIR}
-      ${PLATFORM_HOST_TEST_DIR}
-  )
+  target_link_libraries(test_bsp_ports_compile PRIVATE balance_safety_host_runtime)
   target_compile_features(test_bsp_ports_compile PRIVATE c_std_11)
-  target_compile_options(test_bsp_ports_compile
-    PRIVATE
-      -Wall
-      -Wextra
-      -Wpedantic
-      -Wno-unused-parameter
-      -O0
-      -g3
-  )
   if(PLATFORM_HOST_TEST_SANITIZERS AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(test_bsp_ports_compile PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
     target_link_options(test_bsp_ports_compile PRIVATE -fsanitize=address,undefined)
