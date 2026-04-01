@@ -79,7 +79,11 @@ Plans:
   2. The blessed `balance_chassis` bring-up path is documented clearly enough that developers can tell which runtime path is current and which legacy paths are not.
   3. The current platform shape is simplified where needed to make testing and validation practical, without collapsing into one-off robot-specific shortcuts.
   4. `balance_chassis` remains the proving path for the reusable platform rather than a special-case bypass around it.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 04-01-PLAN.md - Converge hardware and SITL startup on one shared app-startup API and remove parallel `MX_FREERTOS_Init` authority.
+- [ ] 04-02-PLAN.md - Move the authoritative observation/control/execution chain under `runtime/control` ownership while keeping `balance_chassis` as the proving path.
+- [ ] 04-03-PLAN.md - Publish the blessed bring-up path and legacy demotion in both verification output and developer docs.
 
 ### Phase 5: Default Closure Loop
 **Goal**: Developers can use one trusted command path as the default inner loop for `balance_chassis`, with earlier validation gates enforced before firmware output is considered usable.
