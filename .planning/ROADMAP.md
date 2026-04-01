@@ -43,8 +43,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] v2-02-01-PLAN.md — Enhance ports_fake with test injection API and migrate 7 hook-using tests from device_layer hooks to BSP port fakes
-- [ ] v2-02-02-PLAN.md — Migrate control tasks (ins_task, remote_task, actuator_gateway) to BSP port calls and migrate test_actuator_gateway to ports_fake
+- [x] v2-02-01-PLAN.md — Enhance ports_fake with test injection API and migrate 7 hook-using tests from device_layer hooks to BSP port fakes
+- [x] v2-02-02-PLAN.md — Migrate control tasks (ins_task, remote_task, actuator_gateway) to BSP port calls and migrate test_actuator_gateway to ports_fake
 
 **Success Criteria:**
 1. All 7 CTest targets that depended on `platform_device_set_test_hooks` now inject through link-time BSP port fakes — no test uses the old hook API
@@ -63,9 +63,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] v2-03-01-PLAN.md — Rewire BSP port implementations to call drivers directly, relocate device_types.h, clean actuator_gateway
-- [ ] v2-03-02-PLAN.md — Delete device/ directory, remove CMake device library, relocate driver files to BSP, clean tests
-- [ ] v2-03-03-PLAN.md — Extract wait_ready startup gates into standalone functions
+- [x] v2-03-01-PLAN.md — Rewire BSP port implementations to call drivers directly, relocate device_types.h, clean actuator_gateway
+- [x] v2-03-02-PLAN.md — Delete device/ directory, remove CMake device library, relocate driver files to BSP, clean tests
+- [x] v2-03-03-PLAN.md — Extract wait_ready startup gates into standalone functions
 
 **Success Criteria:**
 1. All 29 device_layer files and 14 semantic wrapper vtable files are deleted from the repository
@@ -85,9 +85,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] v2-04-01-PLAN.md — Consolidate topic wrappers: inline PubRegister/SubGetMessage into task code, create single topics.h, delete 8 wrapper files
-- [ ] v2-04-02-PLAN.md — Relocate runtime/generated/ into bsp/boards/, verify 4-layer directory structure
-- [ ] v2-04-03-PLAN.md — CMake interface library cleanup + full validate pipeline end-to-end verification
+- [x] v2-04-01-PLAN.md — Consolidate topic wrappers: inline PubRegister/SubGetMessage into task code, create single topics.h, delete 8 wrapper files
+- [x] v2-04-02-PLAN.md — Relocate runtime/generated/ into bsp/boards/, verify 4-layer directory structure
+- [x] v2-04-03-PLAN.md — CMake interface library cleanup + full validate pipeline end-to-end verification
 
 **Success Criteria:**
 1. 10 topic wrapper files replaced by a single `topics.h` with direct `PubRegister`/`SubGetMessage` calls in task code
@@ -102,8 +102,8 @@ Plans:
 |-------|------|--------------|--------|
 | 1 | Port Foundation | SLIM-04, KEEP-03 | Complete |
 | 2 | Seam Migration | KEEP-04, KEEP-01 | Complete |
-| 3 | Device Layer Removal | SLIM-01, SLIM-02, QUAL-01 | Planned |
-| 4 | Consolidation | SLIM-03, SLIM-05, KEEP-02, QUAL-02, QUAL-03 | Planned |
+| 3 | Device Layer Removal | SLIM-01, SLIM-02, QUAL-01 | Complete |
+| 4 | Consolidation | SLIM-03, SLIM-05, KEEP-02, QUAL-02, QUAL-03 | Complete |
 
 ## Coverage
 
