@@ -164,7 +164,7 @@ if(PLATFORM_HOST_TESTS)
   add_executable(test_actuator_gateway
     ${PLATFORM_RUNTIME_DIR}/control/execution/actuator_gateway.c
     ${PLATFORM_HOST_TEST_DIR}/test_actuator_gateway.c
-    ${PLATFORM_HOST_TEST_DIR}/test_support/device_layer_stubs.c
+    ${PLATFORM_RUNTIME_DIR}/bsp/ports_fake.c
   )
 
   target_include_directories(test_actuator_gateway
@@ -174,7 +174,6 @@ if(PLATFORM_HOST_TESTS)
       ${PLATFORM_RUNTIME_DIR}/device
       ${PLATFORM_CONTROL_CONTRACT_DIR}
       ${PLATFORM_HOST_TEST_DIR}
-      ${PLATFORM_HOST_TEST_DIR}/test_support
   )
 
   target_compile_features(test_actuator_gateway PRIVATE c_std_11)

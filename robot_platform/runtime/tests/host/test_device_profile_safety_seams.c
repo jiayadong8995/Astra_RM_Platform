@@ -63,7 +63,7 @@ int main(void)
     platform_rc_input_t remote = {0};
     platform_imu_sample_t imu = {0};
     platform_device_feedback_t feedback = {0};
-    platform_device_command_t command = {0};
+    platform_motor_command_set_t motors = {0};
 
     context.remote.valid = true;
     context.remote.channels[0] = 321;
@@ -72,7 +72,7 @@ int main(void)
     context.feedback.actuator_feedback.valid = true;
     context.feedback.actuator_feedback.wheels[1].online = true;
 
-    /* Install port hooks via ports_fake (bridges to device_layer internally) */
+    /* Install port hooks via ports_fake — tasks now call ports directly */
     port_hooks.read_remote = read_remote;
     port_hooks.read_imu = read_imu;
     port_hooks.read_feedback = read_feedback;
@@ -80,35 +80,32 @@ int main(void)
     port_hooks.context = &context;
     platform_ports_fake_set_hooks(&port_hooks);
 
-    /* Verify port hooks route through device_layer default API */
-    assert(platform_device_read_default_remote(&remote) == PLATFORM_DEVICE_RESULT_OK);
+    /* Verify port hooks intercept port calls directly */
+    assert(platform_remote_read(&remote) == PLATFORM_DEVICE_RESULT_OK);
     assert(memcmp(&remote, &context.remote, sizeof(remote)) == 0);
 
-    assert(platform_device_read_default_imu(&imu) == PLATFORM_DEVICE_RESULT_OK);
+    assert(platform_imu_read(&imu) == PLATFORM_DEVICE_RESULT_OK);
     assert(memcmp(&imu, &context.imu, sizeof(imu)) == 0);
 
-    assert(platform_device_read_default_feedback(&feedback) == PLATFORM_DEVICE_RESULT_OK);
+    assert(platform_motor_read_feedback(&feedback) == PLATFORM_DEVICE_RESULT_OK);
     assert(memcmp(&feedback, &context.feedback, sizeof(feedback)) == 0);
 
-    command.motors.joints[0].valid = true;
-    command.motors.wheels[0].control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
-    assert(platform_device_write_default_command(&command) == PLATFORM_DEVICE_RESULT_OK);
+    motors.joints[0].valid = true;
+    motors.wheels[0].control_mode = PLATFORM_MOTOR_CONTROL_CURRENT;
+    assert(platform_motor_write_command(&motors) == PLATFORM_DEVICE_RESULT_OK);
     assert(context.write_count == 1U);
-    assert(memcmp(&context.last_command, &command, sizeof(command)) == 0);
+    assert(memcmp(&context.last_command.motors, &motors, sizeof(motors)) == 0);
 
     /* init_default_profile is a device_layer concept not covered by ports_fake;
        verify it still works via direct device_layer hook. */
     device_hooks.init_default_profile = init_default_profile;
-    device_hooks.read_remote = read_remote;
-    device_hooks.read_imu = read_imu;
-    device_hooks.read_feedback = read_feedback;
-    device_hooks.write_command = write_command;
     device_hooks.context = &context;
     platform_device_set_test_hooks(&device_hooks);
 
     assert(platform_device_init_default_profile() == PLATFORM_DEVICE_RESULT_OK);
     assert(context.init_count == 1U);
 
+    platform_device_reset_test_hooks();
     platform_ports_fake_reset_hooks();
     return 0;
 }

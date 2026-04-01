@@ -2,7 +2,59 @@
 #include <string.h>
 
 #include "actuator_gateway.h"
-#include "device_layer_stubs.h"
+#include "ports_fake.h"
+
+/* actuator_gateway_init still calls platform_device_init_default_profile
+   which lives in device_layer.  Provide a minimal stub here. */
+static uint32_t g_init_call_count;
+
+platform_device_result_t platform_device_init_default_profile(void)
+{
+    g_init_call_count += 1U;
+    return PLATFORM_DEVICE_RESULT_OK;
+}
+
+/* Hook context for feedback seeding */
+static platform_device_feedback_t g_seeded_feedback;
+static platform_device_result_t g_feedback_result;
+
+static platform_device_result_t hook_read_feedback(platform_device_feedback_t *feedback, void *context)
+{
+    (void)context;
+    if (feedback == NULL) {
+        return PLATFORM_DEVICE_RESULT_INVALID;
+    }
+    *feedback = g_seeded_feedback;
+    return g_feedback_result;
+}
+
+/* Hook context for write counting */
+static uint32_t g_write_call_count;
+
+static platform_device_result_t hook_write_command(const platform_device_command_t *command, void *context)
+{
+    (void)context;
+    (void)command;
+    g_write_call_count += 1U;
+    return PLATFORM_DEVICE_RESULT_OK;
+}
+
+static void reset_test_state(void)
+{
+    g_init_call_count = 0U;
+    g_write_call_count = 0U;
+    g_feedback_result = PLATFORM_DEVICE_RESULT_OK;
+    memset(&g_seeded_feedback, 0, sizeof(g_seeded_feedback));
+    platform_ports_fake_reset_hooks();
+}
+
+static void install_hooks(void)
+{
+    platform_ports_fake_hooks_t hooks = {0};
+    hooks.read_feedback = hook_read_feedback;
+    hooks.write_command = hook_write_command;
+    platform_ports_fake_set_hooks(&hooks);
+}
 
 static platform_actuator_command_t build_command_fixture(void)
 {
@@ -94,39 +146,39 @@ static void assert_motor_command_matches(const platform_motor_command_t *actual,
 
 static void test_init_calls_default_profile_once(void)
 {
-    platform_test_device_layer_stubs_reset();
+    reset_test_state();
 
     platform_actuator_gateway_init();
 
-    assert(platform_test_device_layer_get_init_call_count() == 1U);
-    assert(platform_test_device_layer_get_write_call_count() == 0U);
+    assert(g_init_call_count == 1U);
+    assert(g_write_call_count == 0U);
 }
 
 static void test_capture_feedback_forwards_result_and_payload(void)
 {
-    platform_device_feedback_t expected_feedback = {0};
     platform_device_feedback_t observed_feedback = {0};
     platform_device_result_t result;
 
-    platform_test_device_layer_stubs_reset();
-    expected_feedback.timestamp_us = 123U;
-    expected_feedback.sequence = 456U;
-    expected_feedback.backend_flags = 789U;
-    expected_feedback.actuator_feedback.valid = true;
-    expected_feedback.actuator_feedback.sample_time_us = 654U;
-    expected_feedback.actuator_feedback.joints[0].id = 3U;
-    expected_feedback.actuator_feedback.joints[0].kind = PLATFORM_MOTOR_KIND_JOINT;
-    expected_feedback.actuator_feedback.joints[0].torque_est = 4.5f;
-    expected_feedback.actuator_feedback.wheels[1].id = 1U;
-    expected_feedback.actuator_feedback.wheels[1].kind = PLATFORM_MOTOR_KIND_WHEEL;
-    expected_feedback.actuator_feedback.wheels[1].online = true;
+    reset_test_state();
+    install_hooks();
 
-    platform_test_device_layer_seed_feedback(&expected_feedback, PLATFORM_DEVICE_RESULT_TIMEOUT);
+    g_seeded_feedback.timestamp_us = 123U;
+    g_seeded_feedback.sequence = 456U;
+    g_seeded_feedback.backend_flags = 789U;
+    g_seeded_feedback.actuator_feedback.valid = true;
+    g_seeded_feedback.actuator_feedback.sample_time_us = 654U;
+    g_seeded_feedback.actuator_feedback.joints[0].id = 3U;
+    g_seeded_feedback.actuator_feedback.joints[0].kind = PLATFORM_MOTOR_KIND_JOINT;
+    g_seeded_feedback.actuator_feedback.joints[0].torque_est = 4.5f;
+    g_seeded_feedback.actuator_feedback.wheels[1].id = 1U;
+    g_seeded_feedback.actuator_feedback.wheels[1].kind = PLATFORM_MOTOR_KIND_WHEEL;
+    g_seeded_feedback.actuator_feedback.wheels[1].online = true;
+    g_feedback_result = PLATFORM_DEVICE_RESULT_TIMEOUT;
 
     result = platform_actuator_gateway_capture_feedback(&observed_feedback);
 
     assert(result == PLATFORM_DEVICE_RESULT_TIMEOUT);
-    assert(memcmp(&observed_feedback, &expected_feedback, sizeof(observed_feedback)) == 0);
+    assert(memcmp(&observed_feedback, &g_seeded_feedback, sizeof(observed_feedback)) == 0);
 }
 
 static void test_dispatch_maps_contract_motors_into_device_command(void)
@@ -134,12 +186,13 @@ static void test_dispatch_maps_contract_motors_into_device_command(void)
     platform_actuator_command_t command = build_command_fixture();
     const platform_device_command_t *written_command;
 
-    platform_test_device_layer_stubs_reset();
+    reset_test_state();
+    install_hooks();
 
     platform_actuator_gateway_dispatch_command(&command, 999U);
-    written_command = platform_test_device_layer_get_last_command();
+    written_command = platform_ports_fake_last_command();
 
-    assert(platform_test_device_layer_get_write_call_count() == 1U);
+    assert(g_write_call_count == 1U);
     assert_motor_command_matches(&written_command->motors.joints[PLATFORM_JOINT_LEFT_FRONT],
                                  &command.motors.joints[PLATFORM_JOINT_LEFT_FRONT],
                                  true);
@@ -165,7 +218,9 @@ static void test_dispatch_clears_validity_when_actuator_or_control_is_disabled(v
     platform_actuator_command_t command = build_command_fixture();
     const platform_device_command_t *written_command;
 
-    platform_test_device_layer_stubs_reset();
+    reset_test_state();
+    install_hooks();
+
     command.control_enable = false;
     command.actuator_enable = true;
     assert(command.motors.joints[PLATFORM_JOINT_LEFT_FRONT].valid == true);
@@ -174,7 +229,7 @@ static void test_dispatch_clears_validity_when_actuator_or_control_is_disabled(v
     assert(command.motors.wheels[PLATFORM_WHEEL_LEFT].valid == true);
 
     platform_actuator_gateway_dispatch_command(&command, 1000U);
-    written_command = platform_test_device_layer_get_last_command();
+    written_command = platform_ports_fake_last_command();
 
     for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i) {
         assert(written_command->motors.joints[i].valid == false);
