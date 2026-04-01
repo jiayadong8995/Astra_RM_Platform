@@ -628,8 +628,7 @@ ALL_HOST_TEST_TARGETS: list[str] = [
     "test_balance_safety_path",
     "test_safety_wheel_leg",
     # Phase 3
-    "test_device_profile_sitl_runtime_bindings",
-    "test_device_profile_safety_seams",
+    "test_bsp_ports_compile",
     # Phase 4
     "test_balance_app_startup",
 ]
