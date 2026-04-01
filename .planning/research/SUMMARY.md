@@ -1,154 +1,92 @@
-# Project Research Summary
+# v2 Research Summary: Platform Simplification
 
 **Project:** Astra RM Robot Platform
-**Domain:** Safety-sensitive embedded Robotmaster wheeled-legged control platform
-**Researched:** 2026-03-30
+**Domain:** Embedded robot platform simplification (5-6 layers → 4 layers)
+**Researched:** 2026-04-01
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This repo is not missing a new framework. It is missing a trustworthy validation path for the existing one. The research consistently points to the same v1 goal: keep the current `C11 + CMake + Python + STM32CubeMX` platform, but add a host-native C verification lane that proves the real control contracts, safety logic, and adapter wiring before SITL or hardware. For this stage, experts would build a staged pipeline, not a richer simulator or broader platform surface: `host contract/unit tests -> fake-link validation -> SITL smoke -> firmware build/generate -> constrained hardware bring-up`.
+v1 建立了可信的验证闭环，但代码架构过度设计。v2 的核心任务是瘦身：去掉 device_layer 间接层（29 文件 2806 行），收窄 message_center 包装代码（10 文件 329 行），统一冗余的命令类型（消除 160 行映射），最终从 5-6 层精简到 4 层（bsp → control → app → module）。
 
-The recommended approach is to thin and clarify the architecture rather than replace it. `runtime/control` should own state, intent, control, safety, and execution math; `runtime/device` should own backend-specific adapters only; orchestration should own lifecycle only; `projects/balance_chassis` should define composition and limits, not hide platform semantics. The highest-value corrections are explicit contract sizing, a first-class safety gate before actuator writes, and observable runtime outputs that let fake-link and SITL prove the control path is actually connected.
-
-The main risks are false confidence and unsafe coupling. A green loop that only tests Python orchestration, a message bus that can overflow contract payloads, and SITL built around stub adapters will all look like progress while leaving the dangerous failure modes intact. Mitigation is straightforward: make contract-size checks mandatory, require host-side C tests on safety-critical runtime seams, reject SITL success when outputs are `declared_only` or adapters are stubbed, and gate any hardware-facing path on explicit safety-state behavior.
+三个研究维度高度一致：device_layer 是纯间接层，所有 6 个 pub/sub topic 都是真正跨任务的（总线本身不需要去掉，只需去掉包装），测试接缝迁移必须在任何结构变更之前完成。
 
 ## Key Findings
 
-### Recommended Stack
+### Stack (STACK.md)
+- 工具链不变：C11 + CMake + Python CLI + FreeRTOS + STM32CubeMX
+- 去掉 device_layer aggregate + profile binding（30 文件 ~430 LOC 间接层）
+- 去掉 device semantic wrappers（14 文件 vtable 包装）
+- 统一两种并行命令类型，消除 actuator_gateway 和 device_layer 中的 160 行映射
+- message_center 保留，但去掉 10 个 topic wrapper 文件，改为直接调用 + 集中 topics.h
+- 用链接时多态（CMake 选择不同 .c 文件）替代运行时 vtable dispatch
 
-The stack direction is conservative by design. Keep the repo’s current embedded foundation and extend it with verification tooling that fits the existing build graph. The right v1 change is not a migration to ROS 2, Gazebo, Ceedling, or a second test framework. It is one CMake graph with host-native test targets, sanitizer-enabled runs, and lightweight C fakes around device and transport seams.
+### Features (FEATURES.md)
+- Table stakes: 去掉 device 间接层、去掉 topic wrapper、收窄 pub/sub、精简到 4 层、保留 11 个 CTest 目标、保留 HW/SITL 后端选择、保持 validate 流水线
+- Differentiators: 降低认知负担、直接 struct 传递、测试 stub 简化、contracts 成为稳定 API 边界
+- Anti-features: 不重写 message_center、不引入新抽象层替代 device_layer、不去掉 SITL 能力、不合并所有任务到 super-loop、不在简化期间加新功能
 
-**Core technologies:**
-- `C11` runtime code under `robot_platform/runtime/` remains the primary implementation surface.
-- `CMake + CTest` should stay the single build graph across hardware, SITL, and new host tests.
-- `Python 3` should stay on the orchestration side for CLI, smoke summaries, and report validation only.
-- `Unity` should be vendored for host-side C assertions on runtime modules.
-- `FFF` should be vendored for lightweight fake devices and link seams.
-- `ASan + UBSan` should be enabled on host verification targets, especially around `message_center`.
-- `gcovr` should report coverage for host C tests only, focused on hazard-bearing modules first.
-- `STM32CubeMX 6.17.0` stays in the workflow, but outside the fast inner loop.
+### Architecture (ARCHITECTURE.md)
+- 目标结构：bsp/（含 ports.h 接口定义）→ control/（含 topics.h 常量）→ app/ → module/
+- BSP 端口模式：`platform_imu_read()`, `platform_remote_read()`, `platform_motor_write_command()` — 简单函数签名，CMake 选择实现
+- 数据流从 5 跳减到 2 跳：control → BSP port → BSP implementation
+- generated/ 移入 bsp/boards/ 下
 
-### Expected Features
+### Pitfalls (PITFALLS.md)
+- **CRITICAL**: 7/11 CTest 目标依赖 `platform_device_set_test_hooks` — 必须先迁移测试接缝
+- **CRITICAL**: `wait_ready` 启动门控嵌在 topic wrapper 里 — 去掉 wrapper 前必须提取
+- **CRITICAL**: 简化不能变成重写 — 严格限定每个 phase 的文件范围
+- **HIGH**: HW/SITL 后端区分目前在一个地方（device_layer.c）— 替代方案必须保持"一处决定"原则
+- **MODERATE**: CMakeLists.txt 989 行，结构变更时容易遗漏更新
 
-V1 is about pre-hardware trust for `balance_chassis`, not end-state competition breadth. The expected baseline is a reproducible loop that proves the real runtime behavior, captures machine-readable evidence, and blocks known unsafe states before anything reaches hardware.
+## Migration Order (Risk-Minimizing)
 
-**Must have (table stakes):**
-- Reliable `build -> host test -> SITL smoke -> firmware generate` loop.
-- Host-side C tests for control-path runtime logic.
-- Fake data-link validation with observable runtime outputs.
-- Safety gates for stale data, invalid enable transitions, saturation, and unsafe output conditions.
-- Deterministic startup, disable, and fault handling.
-- Basic runtime observability: smoke JSON, counters, adapter-binding status, contract mismatch reporting.
-- One authoritative bring-up path for `projects/balance_chassis`.
+所有研究一致推荐的顺序：
 
-**Should have (competitive):**
-- Fault-injection matrix for link, sensor, and actuator degradation.
-- Replayable regression corpus from SITL and later hardware traces.
+1. **统一命令类型** — 纯重构，零行为变化
+2. **引入 BSP 端口接口** — 新旧并存
+3. **迁移测试接缝** — 用链接时 BSP 端口 fake 替代 device_layer test hooks
+4. **迁移 control 代码到端口** — ins_task, remote_task, motor_control_task
+5. **提取启动门控** — 从 topic wrapper 移到独立函数
+6. **删除 device layer** — 29 文件
+7. **精简 topic wrapper** — 10 文件 → 1 个 topics.h
+8. **扁平化目录** — generated 移入 BSP，更新 CMake
 
-**Defer (v2+):**
-- Constrained closed-loop hardware bring-up workflow as a polished product feature.
-- Generalizing the platform to a second robot profile before `balance_chassis` is proven.
-- Advanced wheeled-legged control layers and richer operator dashboards.
+关键不变量：`test_balance_safety_path` 在每一步都不能变红。
 
-### Architecture Approach
+## Complexity Reduction Targets
 
-The architecture recommendation is to keep the current platform split but make ownership singular and directional. Contracts define typed, size-checked runtime boundaries; ports isolate HW/SITL/fake adapters; control owns state, intent, controller, safety, and execution transforms; orchestration owns lifecycle and scheduling; sim owns fake-link input and output observation. The control path must stay backend-agnostic, and robot-specific semantics must live in `projects/<robot_profile>` composition and limits rather than leaking across runtime layers.
-
-**Major components:**
-1. `projects/<robot_profile>` - robot selection, limits, task graph, and safety policy composition.
-2. `runtime/contracts` and `runtime/platform_bus` - typed messages, topic ids, and transport guarantees.
-3. `runtime/device` - backend-specific sensor, remote, actuator, and link adapters behind narrow ports.
-4. `runtime/control` - state, intent, controllers, safety gate, and actuator execution mapping.
-5. `runtime/orchestration` - startup order, scheduling, lifecycle, and health transitions.
-6. `sim/adapters` and `sim/projects/*` - fake-link input, runtime observation export, smoke assertions, and reports.
-
-### Critical Pitfalls
-
-1. **Green tests that miss the real control path** - require host-side C tests on contracts, control, execution, startup, and device-profile binding before calling CI trustworthy.
-2. **Message transport violating contract sizes** - add compile-time size assertions and reject oversized topic registrations instead of relying on unchecked `memcpy()` into fixed 64-byte buffers.
-3. **Treating stubbed SITL as verification** - fail validation when adapters are still stubs or runtime outputs are not actually observed.
-4. **Split ownership across app, control, and device layers** - assign one owner per behavior boundary and keep legacy app code out of runtime semantics.
-5. **No explicit safety state machine before actuator writes** - centralize arming, freshness, degraded mode, and transition guards in one auditable supervisor stage.
-
-## Implications for Roadmap
-
-Based on research, suggested phase structure:
-
-### Phase 1: Contract and Verification Foundation
-**Rationale:** Nothing else is trustworthy until runtime contracts, transport sizing, and host test entrypoints are real.
-**Delivers:** Size-checked contracts, host C test targets in the existing CMake graph, sanitizer-enabled runs, initial Unity/FFF harness, and fast-fail checks for generated-artifact drift.
-**Addresses:** Reliable build/test/generate loop, host-side control-path tests, basic observability.
-**Avoids:** False green CI, message bus corruption, CubeMX drift.
-
-### Phase 2: Safety and Control-Path Closure
-**Rationale:** Once tests can run natively, the next highest-risk gap is unsafe or implicit control behavior.
-**Delivers:** Explicit state/intent/controller/execution seams, first-class safety supervisor, deterministic startup and disable handling, and hazard-focused regression cases.
-**Uses:** C11 runtime, CMake/CTest, Unity/FFF, sanitizers.
-**Implements:** `runtime/control` ownership model with orchestration separated from control math.
-
-### Phase 3: Fake-Link and Runtime Observability
-**Rationale:** Pre-hardware confidence requires proof that simulated inputs drive the real runtime path and produce observable outputs.
-**Delivers:** Real fake-link adapters, runtime output exporter, topic-name parity checks, machine-readable observation artifacts, and non-stub adapter validation.
-**Addresses:** Fake data-link validation, runtime observability, single authoritative bring-up path.
-**Avoids:** SITL that only proves plumbing, not behavior.
-
-### Phase 4: SITL Hardening and Gated Bring-Up
-**Rationale:** SITL becomes useful only after contracts, safety, and observability are grounded.
-**Delivers:** Trustworthy `test sim` smoke lane, replayable regression inputs, constrained promotion gates to firmware build/generate, and documented bring-up criteria for `balance_chassis`.
-**Addresses:** End-to-end pre-hardware closure and later hardware gatekeeping.
-**Avoids:** Jumping from toy simulation to uncontrolled robot tests.
-
-### Phase Ordering Rationale
-
-- Contract sizing and host-native tests come first because all later safety and simulation evidence depends on them.
-- Safety closure comes before richer SITL because unsafe control behavior is a bigger risk than incomplete simulation fidelity.
-- Fake-link observability belongs before hardening SITL smoke because the repo currently lacks proof that runtime outputs match declared validations.
-- Broader reuse, richer hardware workflows, and advanced control research should wait until `balance_chassis` passes the staged trust pipeline reliably.
-
-### Research Flags
-
-Phases likely needing deeper research during planning:
-- **Phase 2:** Safety supervisor design and actuator capability mapping need careful review against existing runtime/control and motor semantics.
-- **Phase 3:** SITL adapter parity and observation export need implementation-specific validation because current bindings appear partially stubbed.
-- **Phase 4:** Constrained hardware bring-up criteria should be researched again once host and SITL evidence are in place.
-
-Phases with standard patterns (skip research-phase):
-- **Phase 1:** Host-side C test integration, sanitizer wiring, and coverage reporting are established patterns and already fit the repo shape.
+| Metric | Before (v1) | After (v2) | Delta |
+|--------|-------------|------------|-------|
+| Runtime layers | 5-6 | 4 | -2 |
+| Device layer files | 29 | 0 | -29 |
+| Topic wrapper files | 10 | 1 | -9 |
+| Command mapping LOC | ~160 | 0 | -160 |
+| Indirection depth | 5 hops | 2 hops | -3 |
+| Max directory nesting | 4 levels | 2 levels | -2 |
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Strongly grounded in the repo’s existing build graph, toolchains, and CLI flow. |
-| Features | HIGH | Table stakes align closely with the repo’s stated blockers and current project phase. |
-| Architecture | HIGH | Recommendations are driven by visible ownership leaks and boundary problems in the current runtime layout. |
-| Pitfalls | HIGH | Main risks are backed by direct local evidence in transport, SITL bindings, and control-path gaps. |
+| Stack | HIGH | 工具链不变，变更范围明确 |
+| Features | HIGH | 基于代码行数和文件计数的具体基线 |
+| Architecture | HIGH | 目标结构匹配 basic_framework 已验证的 4 层模式 |
+| Pitfalls | HIGH | 所有风险基于直接代码分析和测试依赖审计 |
 
 **Overall confidence:** HIGH
 
-### Gaps to Address
-
-- Exact host test harness shape for FreeRTOS-adjacent runtime code needs validation during Phase 1 implementation.
-- The final transport fix for `message_center` is still a design choice: strict payload cap enforcement vs per-topic storage sizing.
-- Current SITL adapter fidelity and topic-name parity need to be revalidated once observation export exists.
-- The minimal safe actuator capability matrix for wheels vs joints should be confirmed before claiming reusable execution semantics.
-
 ## Sources
 
-### Primary (HIGH confidence)
-- `.planning/research/STACK.md` - stack direction and repo-fit build/test recommendations.
-- `.planning/research/FEATURES.md` - v1 table stakes, differentiators, and anti-features.
-- `.planning/research/ARCHITECTURE.md` - ownership model, boundaries, and build order.
-- `.planning/research/PITFALLS.md` - critical failure modes and phase warnings.
-- `.planning/PROJECT.md` and `.planning/codebase/CONCERNS.md` - current project goals, blockers, and repo maturity.
-- `robot_platform/CMakeLists.txt` and `robot_platform/tools/platform_cli/main.py` - existing build graph and orchestration path.
-
-### Secondary (MEDIUM confidence)
-- PX4 and ArduPilot SITL documentation - supports using simulation as staged validation, not final hardware proof.
-- ROS 2 Control hardware testing guidance - supports offline hardware-interface testing as standard practice.
-- External wheeled-legged control literature cited in `FEATURES.md` - supports deferring advanced control research until the validation stack is stable.
+- `.planning/research/STACK.md` — 技术栈分析和迁移策略
+- `.planning/research/FEATURES.md` — 特性景观和结果指标
+- `.planning/research/ARCHITECTURE.md` — 架构变更和目录结构
+- `.planning/research/PITFALLS.md` — 12 个陷阱和风险缓解
+- `references/external/basic_framework` — 4 层参考架构
+- `references/external/StandardRobotpp` — 直接状态共享参考
+- `references/XRobot` — 扁平模块参考
+- `references/external/ros2_control_demos`, `legged_control` — 接口标准化参考
 
 ---
-*Research completed: 2026-03-30*
-*Ready for roadmap: yes*
+*Research completed: 2026-04-01*
+*Ready for requirements: yes*
