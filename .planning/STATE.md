@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-authoritative-platform-composition-01-PLAN.md
-last_updated: "2026-04-01T12:08:26.616Z"
-last_activity: 2026-04-01 -- Phase 04 execution started
+stopped_at: Completed 04-authoritative-platform-composition-02-PLAN.md
+last_updated: "2026-04-01T12:16:42.927Z"
+last_activity: 2026-04-01
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 13
   percent: 100
 ---
 
@@ -26,9 +26,9 @@ See: `.planning/PROJECT.md` (updated 2026-03-30)
 ## Current Position
 
 Phase: 04 (authoritative-platform-composition) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 04
-Last activity: 2026-04-01 -- Phase 04 execution started
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-01
 
 Progress: [██████████] 100%
 
@@ -61,6 +61,7 @@ Progress: [██████████] 100%
 | Phase 03-fake-link-runtime-proof P01 | 5min | 2 tasks | 7 files |
 | Phase 03-fake-link-runtime-proof P02 | 624 | 2 tasks | 10 files |
 | Phase 03-fake-link-runtime-proof P03 | 12min | 2 tasks | 3 files |
+| Phase 04-authoritative-platform-composition P02 | 6min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -104,6 +105,9 @@ Recent decisions affecting current work:
 - [Phase 03-fake-link-runtime-proof]: Use unsandboxed verify phase3 runs when sandbox UDP restrictions block the SITL bridge.
 - [Phase 04-authoritative-platform-composition]: Keep balance_chassis_app_startup thin and project-owned while generated freertos.c remains the sole MX_FREERTOS_Init owner.
 - [Phase 04-authoritative-platform-composition]: SITL and hardware may keep different host entries, but both must converge on the same balance_chassis_app_startup bring-up seam.
+- [Phase 04-authoritative-platform-composition]: Keep remote task registration in app composition while moving the observe/chassis/motor registration chain under runtime/control ownership.
+- [Phase 04-authoritative-platform-composition]: Preserve legacy chassis-task helpers through a compatibility shell so existing host harnesses keep driving the authoritative runtime chain.
+- [Phase 04-authoritative-platform-composition]: Route control task timing through a neutral control header that still derives values from the current balance_chassis proving path.
 
 ### Pending Todos
 
@@ -117,6 +121,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01T12:08:02.750Z
-Stopped at: Completed 04-authoritative-platform-composition-01-PLAN.md
+Last session: 2026-04-01T12:16:42.923Z
+Stopped at: Completed 04-authoritative-platform-composition-02-PLAN.md
 Resume file: None
