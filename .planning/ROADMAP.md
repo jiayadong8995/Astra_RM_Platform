@@ -82,6 +82,13 @@ Plans:
 
 **Requirements:** SLIM-03, SLIM-05, KEEP-02, QUAL-02, QUAL-03
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] v2-04-01-PLAN.md — Consolidate topic wrappers: inline PubRegister/SubGetMessage into task code, create single topics.h, delete 8 wrapper files
+- [ ] v2-04-02-PLAN.md — Relocate runtime/generated/ into bsp/boards/, verify 4-layer directory structure
+- [ ] v2-04-03-PLAN.md — CMake interface library cleanup + full validate pipeline end-to-end verification
+
 **Success Criteria:**
 1. 10 topic wrapper files replaced by a single `topics.h` with direct `PubRegister`/`SubGetMessage` calls in task code
 2. `runtime/generated/` moved into `bsp/boards/`, runtime directory nesting is max 2 levels deep
@@ -96,7 +103,7 @@ Plans:
 | 1 | Port Foundation | SLIM-04, KEEP-03 | Complete |
 | 2 | Seam Migration | KEEP-04, KEEP-01 | Complete |
 | 3 | Device Layer Removal | SLIM-01, SLIM-02, QUAL-01 | Planned |
-| 4 | Consolidation | SLIM-03, SLIM-05, KEEP-02, QUAL-02, QUAL-03 | Pending |
+| 4 | Consolidation | SLIM-03, SLIM-05, KEEP-02, QUAL-02, QUAL-03 | Planned |
 
 ## Coverage
 
