@@ -616,6 +616,25 @@ PHASE2_CASES: dict[str, dict[str, object]] = {
     },
 }
 
+ALL_HOST_TEST_TARGETS: list[str] = [
+    # Phase 1
+    "test_message_center",
+    "test_actuator_gateway",
+    # Phase 2
+    "test_safety_mapping",
+    "test_safety_sensor_faults",
+    "test_safety_arming",
+    "test_safety_saturation",
+    "test_balance_safety_path",
+    "test_safety_wheel_leg",
+    # Phase 3
+    "test_device_profile_sitl_runtime_bindings",
+    "test_device_profile_safety_seams",
+    # Phase 4
+    "test_balance_app_startup",
+]
+ALL_HOST_TEST_REGEX: str = "|".join(ALL_HOST_TEST_TARGETS)
+
 PHASE3_CHAIN = "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output"
 AUTHORITATIVE_BRINGUP = {
     "hardware_path": "main.c -> MX_FREERTOS_Init() -> balance_chassis_app_startup() -> scheduler",
@@ -950,10 +969,8 @@ def _run_validate(project: str, report_path: Path) -> int:
     if stage["exit_code"] != 0:
         return _fail("build_sitl", "build_failed")
 
-    # Stage 2: host_tests — all PHASE2_CASES host C safety tests
-    all_targets = [str(PHASE2_CASES[name]["target"]) for name in PHASE2_CASES]
-    all_regex = "|".join(str(PHASE2_CASES[name]["regex"]) for name in PHASE2_CASES)
-    stage = _run_stage("host_tests", lambda: _run_host_ctest(all_targets, all_regex))
+    # Stage 2: host_tests — all host C test targets
+    stage = _run_stage("host_tests", lambda: _run_host_ctest(ALL_HOST_TEST_TARGETS, ALL_HOST_TEST_REGEX))
     stages.append(stage)
     if stage["exit_code"] != 0:
         return _fail("host_tests", "host_tests_failed")

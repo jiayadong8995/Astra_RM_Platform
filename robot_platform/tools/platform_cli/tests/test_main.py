@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from robot_platform.tools.platform_cli.main import (
+    ALL_HOST_TEST_TARGETS,
     _generate_balance_chassis,
     _parse_sim_args,
     _parse_validate_args,
@@ -688,6 +689,31 @@ class ValidateTests(unittest.TestCase):
             self.assertEqual(payload["overall_status"], "passed")
             self.assertEqual(payload["hw_elf_status"], "failed")
             self.assertEqual(len(payload["stages"]), 6)
+
+    def test_host_tests_stage_runs_all_targets(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            report_path = repo_root / "build" / "closure_reports" / "closure.json"
+
+            fake_profile = mock.Mock(report_name="sitl_smoke.json", sitl_target="balance_chassis_sitl")
+            with (
+                mock.patch("robot_platform.tools.platform_cli.main._repo_root", return_value=repo_root),
+                mock.patch("robot_platform.tools.platform_cli.main.get_project_profile", return_value=fake_profile),
+                mock.patch("robot_platform.tools.platform_cli.main._build_sitl", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_host_ctest", return_value=0) as mock_ctest,
+                mock.patch("robot_platform.tools.platform_cli.main._run_tests", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_sim", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._run_verify_phase3", return_value=0),
+                mock.patch("robot_platform.tools.platform_cli.main._require_generated_artifact_freshness", return_value=1),
+            ):
+                self._make_smoke_report(repo_root, passed=True)
+                _run_validate("balance_chassis", report_path)
+
+            mock_ctest.assert_called_once()
+            called_targets, called_regex = mock_ctest.call_args[0]
+            self.assertEqual(called_targets, ALL_HOST_TEST_TARGETS)
+            for target in ALL_HOST_TEST_TARGETS:
+                self.assertIn(target, called_regex)
 
 
 class GeneratedArtifactFreshnessTests(unittest.TestCase):
