@@ -335,9 +335,9 @@ class VerifyPhase3Tests(unittest.TestCase):
             self.assertEqual(payload["cases"][3]["status"], "passed")
             self.assertEqual(payload["cases"][4]["status"], "passed")
             self.assertEqual(payload["cases"][5]["status"], "passed")
-            self.assertEqual(payload["authoritative_bringup"]["hardware_path"], "main.c -> MX_FREERTOS_Init() -> balance_chassis_app_startup() -> scheduler")
-            self.assertEqual(payload["authoritative_bringup"]["sitl_path"], "main_sitl.c -> balance_chassis_app_startup() -> scheduler")
-            self.assertEqual(payload["authoritative_bringup"]["shared_app_startup_api"], "balance_chassis_app_startup()")
+            self.assertEqual(payload["authoritative_bringup"]["hardware_path"], "main.c -> MX_FREERTOS_Init() -> balance_chassis_start_tasks() -> scheduler")
+            self.assertEqual(payload["authoritative_bringup"]["sitl_path"], "main_sitl.c -> balance_chassis_start_tasks() -> scheduler")
+            self.assertEqual(payload["authoritative_bringup"]["shared_app_startup_api"], "balance_chassis_start_tasks()")
             self.assertEqual(
                 payload["authoritative_bringup"]["legacy_paths"],
                 [],

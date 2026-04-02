@@ -55,7 +55,6 @@ set(PLATFORM_MODULE_CONTROL_LIB_DIR ${PLATFORM_RUNTIME_DIR}/module/lib/control)
 set(PLATFORM_HOST_TEST_DIR ${PLATFORM_RUNTIME_DIR}/tests/host)
 
 set(BALANCE_CHASSIS_APP_SOURCES
-  ${PLATFORM_APP_STARTUP_DIR}/balance_chassis_app_startup.c
   ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
   ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_task.c
   ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
@@ -263,6 +262,7 @@ if(PLATFORM_HOST_TESTS)
       ${PLATFORM_DRIVERS_MOTOR_DIR}
       ${PLATFORM_DRIVERS_IMU_DIR}
       ${PLATFORM_LEGACY_APP_DIR}
+      ${PLATFORM_LEGACY_APP_DIR}/app_config
       ${PLATFORM_APP_IO_DIR}
       ${PLATFORM_CONTROL_CONTRACT_DIR}
       ${CHASSIS_HAL_DIR}/Inc
@@ -317,12 +317,10 @@ if(PLATFORM_HOST_TESTS)
   )
 
   add_executable(test_balance_app_startup
-    ${PLATFORM_APP_STARTUP_DIR}/balance_chassis_app_startup.c
     ${PLATFORM_HOST_TEST_DIR}/test_balance_app_startup.c
   )
   target_include_directories(test_balance_app_startup PRIVATE
     ${PLATFORM_LEGACY_APP_DIR}
-    ${PLATFORM_APP_STARTUP_DIR}
     ${PLATFORM_HOST_TEST_DIR}
   )
   target_link_libraries(test_balance_app_startup PRIVATE platform_test_config)
@@ -450,9 +448,6 @@ set(BALANCE_CHASSIS_BSP_SEED_SOURCES
   ${PLATFORM_BOARD_BSP_DIR}/bsp_ports_hw.c
   ${PLATFORM_DRIVERS_REMOTE_DIR}/remote_control.c
   ${PLATFORM_DRIVERS_MOTOR_DIR}/dm4310_drv.c
-  ${PLATFORM_BSP_DRIVERS_DIR}/imu/bmi088_device_hw.c
-  ${PLATFORM_BSP_DRIVERS_DIR}/remote/dbus_remote_device_hw.c
-  ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor/motor_actuator_device_hw.c
 )
 
 add_library(balance_chassis_generated_raw STATIC
@@ -597,7 +592,7 @@ target_include_directories(balance_chassis_hw_seed.elf
     ${PLATFORM_DRIVERS_MOTOR_DIR}
     ${PLATFORM_DRIVERS_IMU_DIR}
     ${PLATFORM_LEGACY_APP_DIR}
-    ${PLATFORM_APP_STARTUP_DIR}
+    ${PLATFORM_LEGACY_APP_DIR}/app_config
     ${PLATFORM_APP_IO_DIR}
     ${PLATFORM_CONTROL_CONTRACT_DIR}
     ${PLATFORM_RUNTIME_DIR}/control/controllers
@@ -676,9 +671,6 @@ if(PLATFORM_TARGET_SIM)
     ${PLATFORM_SITL_BSP_DIR}/remote_control_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/dm4310_drv_sitl.c
     ${PLATFORM_SITL_BSP_DIR}/bsp_ports_sitl.c
-    ${PLATFORM_BSP_DRIVERS_DIR}/imu/bmi088_device_sitl.c
-    ${PLATFORM_BSP_DRIVERS_DIR}/remote/dbus_remote_device_sitl.c
-    ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor/motor_actuator_device_sitl.c
   )
 
   add_library(cmsis_dsp_sitl STATIC
@@ -729,7 +721,7 @@ if(PLATFORM_TARGET_SIM)
       ${PLATFORM_BSP_DRIVERS_DIR}/actuator
       ${PLATFORM_BSP_DRIVERS_DIR}/actuator/motor
       ${PLATFORM_LEGACY_APP_DIR}
-      ${PLATFORM_APP_STARTUP_DIR}
+      ${PLATFORM_LEGACY_APP_DIR}/app_config
       ${PLATFORM_APP_IO_DIR}
       ${PLATFORM_CONTROL_CONTRACT_DIR}
       # CMSIS / Core headers needed by FreeRTOS CMSIS wrapper and others

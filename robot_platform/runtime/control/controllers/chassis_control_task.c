@@ -2,7 +2,7 @@
 
 #include "cmsis_os.h"
 
-#include "../control_config/control_task_params.h"
+#include "app_params.h"
 #include "../readiness.h"
 #include "../topics.h"
 #include "../../app/balance_chassis/app_io/chassis_topics.h"

@@ -4,6 +4,11 @@
 static platform_ports_fake_hooks_t g_fake_hooks;
 static platform_device_command_t g_last_command;
 
+void platform_ports_init(void)
+{
+}
+
+
 void platform_ports_fake_set_hooks(const platform_ports_fake_hooks_t *hooks)
 {
     if (hooks == 0)

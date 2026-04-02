@@ -4,6 +4,7 @@
 #include "cmsis_os.h"
 
 #include "../app_config/app_params.h"
+#include "../../../bsp/ports.h"
 #include "../../../control/controllers/chassis_control_task.h"
 #include "../../../control/execution/motor_control_task.h"
 #include "../../../control/state/ins_task.h"
@@ -48,6 +49,8 @@ static void Remote_Thread(void const *argument)
 
 void balance_chassis_start_tasks(void)
 {
+    platform_ports_init();
+
     osThreadDef(INS_TASK, INS_Thread, APP_INS_TASK_PRIORITY, 0, APP_INS_TASK_STACK_BYTES);
     INS_TASKHandle = osThreadCreate(osThread(INS_TASK), NULL);
 

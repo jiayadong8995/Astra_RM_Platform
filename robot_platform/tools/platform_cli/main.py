@@ -636,9 +636,9 @@ ALL_HOST_TEST_REGEX: str = "|".join(ALL_HOST_TEST_TARGETS)
 
 PHASE3_CHAIN = "remote input + state observation -> intent parsing / mode constraints -> chassis control -> execution output"
 AUTHORITATIVE_BRINGUP = {
-    "hardware_path": "main.c -> MX_FREERTOS_Init() -> balance_chassis_app_startup() -> scheduler",
-    "sitl_path": "main_sitl.c -> balance_chassis_app_startup() -> scheduler",
-    "shared_app_startup_api": "balance_chassis_app_startup()",
+    "hardware_path": "main.c -> MX_FREERTOS_Init() -> balance_chassis_start_tasks() -> scheduler",
+    "sitl_path": "main_sitl.c -> balance_chassis_start_tasks() -> scheduler",
+    "shared_app_startup_api": "balance_chassis_start_tasks()",
     "legacy_paths": [],
 }
 

@@ -6,6 +6,8 @@
 #include "actuator_command.h"
 #include "device_types.h"
 
+void platform_ports_init(void);
+
 platform_device_result_t platform_imu_read(platform_imu_sample_t *sample);
 platform_device_result_t platform_remote_read(platform_rc_input_t *input);
 platform_device_result_t platform_motor_write_command(const platform_motor_command_set_t *cmd);
