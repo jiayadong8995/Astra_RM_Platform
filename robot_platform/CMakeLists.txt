@@ -56,16 +56,14 @@ set(PLATFORM_HOST_TEST_DIR ${PLATFORM_RUNTIME_DIR}/tests/host)
 
 set(BALANCE_CHASSIS_APP_SOURCES
   ${PLATFORM_APP_STARTUP_DIR}/balance_chassis_app_startup.c
-  ${PLATFORM_LEGACY_APP_DIR}/app_bringup/chassis_task.c
   ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
-  ${PLATFORM_LEGACY_APP_DIR}/app_bringup/remote_task.c
+  ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_task.c
   ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
   ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
   ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
   ${PLATFORM_RUNTIME_DIR}/control/state/ins_task.c
   ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c
   ${PLATFORM_RUNTIME_DIR}/control/state/observe_task.c
-  ${PLATFORM_RUNTIME_DIR}/control/task_registry/control_task_registry.c
   ${PLATFORM_RUNTIME_DIR}/control/controllers/balance_controller.c
   ${PLATFORM_RUNTIME_DIR}/control/controllers/chassis_control_task.c
   ${PLATFORM_RUNTIME_DIR}/control/constraints/actuator_constraints.c
@@ -178,7 +176,7 @@ if(PLATFORM_HOST_TESTS)
   )
 
   set(BALANCE_SAFETY_HOST_RUNTIME_SOURCES
-    ${PLATFORM_LEGACY_APP_DIR}/app_bringup/remote_task.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_task.c
     ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c

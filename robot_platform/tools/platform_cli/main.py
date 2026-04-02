@@ -639,13 +639,7 @@ AUTHORITATIVE_BRINGUP = {
     "hardware_path": "main.c -> MX_FREERTOS_Init() -> balance_chassis_app_startup() -> scheduler",
     "sitl_path": "main_sitl.c -> balance_chassis_app_startup() -> scheduler",
     "shared_app_startup_api": "balance_chassis_app_startup()",
-    "legacy_paths": [
-        {
-            "path": "runtime/app/balance_chassis/app_bringup/freertos_app.c",
-            "status": "compatibility-only",
-            "reason": "removed as an authoritative startup owner in favor of balance_chassis_app_startup().",
-        }
-    ],
+    "legacy_paths": [],
 }
 
 PHASE3_CASES: dict[str, dict[str, object]] = {

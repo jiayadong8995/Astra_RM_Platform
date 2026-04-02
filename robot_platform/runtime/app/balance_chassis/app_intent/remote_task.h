@@ -5,7 +5,7 @@
 #include "../../../control/contracts/robot_intent.h"
 #include "../../../control/contracts/robot_state.h"
 #include "../../../bsp/device_types.h"
-#include "../app_intent/remote_intent_state.h"
+#include "remote_intent_state.h"
 #include "message_center.h"
 
 typedef struct

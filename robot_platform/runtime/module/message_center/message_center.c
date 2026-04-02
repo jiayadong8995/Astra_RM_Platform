@@ -41,9 +41,9 @@ static Publisher_t *find_topic(const char *name)
     return NULL;
 }
 
-static size_t count_subscribers(const Publisher_t *pub)
+static uint8_t count_subscribers(const Publisher_t *pub)
 {
-    size_t count = 0U;
+    uint8_t count = 0U;
     const Subscriber_t *iter = pub->first_subs;
 
     while (iter != NULL) {
@@ -70,7 +70,7 @@ Publisher_t *PubRegister(char *name, size_t data_len)
         return existing_topic;
     }
 
-    if ((MSG_MAX_TOTAL_PAYLOAD_BYTES - payload_pool_used) < data_len) {
+    if ((MSG_MAX_TOTAL_PAYLOAD_BYTES - payload_pool_used) < data_len * 2U) {
         return NULL;
     }
 
@@ -80,9 +80,10 @@ Publisher_t *PubRegister(char *name, size_t data_len)
             topic_pool[i].used = 1U;
             topic_pool[i].data_len = data_len;
             topic_pool[i].payload_offset = payload_pool_used;
+            topic_pool[i].write_index = 0U;
             strncpy(topic_pool[i].topic_name, name, MSG_MAX_TOPIC_NAME);
             topic_pool[i].topic_name[MSG_MAX_TOPIC_NAME] = '\0';
-            payload_pool_used += data_len;
+            payload_pool_used += data_len * 2U;
             return &topic_pool[i];
         }
     }
@@ -130,7 +131,9 @@ uint8_t PubPushMessage(Publisher_t *pub, void *data_ptr)
         return 0U;
     }
 
-    memcpy(&payload_pool[pub->payload_offset], data_ptr, pub->data_len);
+    memcpy(&payload_pool[pub->payload_offset + pub->write_index * pub->data_len],
+           data_ptr, pub->data_len);
+    pub->write_index = 1U - pub->write_index;
     ++pub->generation;
 
     return (uint8_t)count_subscribers(pub);
@@ -149,7 +152,9 @@ uint8_t SubGetMessage(Subscriber_t *sub, void *data_ptr)
         return 0U;
     }
 
-    memcpy(data_ptr, &payload_pool[pub->payload_offset], pub->data_len);
+    memcpy(data_ptr,
+           &payload_pool[pub->payload_offset + (1U - pub->write_index) * pub->data_len],
+           pub->data_len);
     sub->last_read_generation = pub->generation;
     return 1U;
 }

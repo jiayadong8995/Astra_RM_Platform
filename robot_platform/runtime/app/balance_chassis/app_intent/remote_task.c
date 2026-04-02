@@ -17,8 +17,8 @@
 #include "remote_task.h"
 #include "cmsis_os.h"
 #include "../app_config/app_params.h"
-#include "../app_intent/remote_intent.h"
-#include "../app_intent/remote_intent_state.h"
+#include "remote_intent.h"
+#include "remote_intent_state.h"
 #include "../../../control/topics.h"
 #include "../../../bsp/ports.h"
 #include <string.h>

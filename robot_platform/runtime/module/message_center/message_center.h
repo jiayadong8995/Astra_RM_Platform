@@ -24,7 +24,7 @@
 #define MSG_MAX_TOPIC_NAME  24
 #define MSG_MAX_TOPICS      8
 #define MSG_MAX_SUBSCRIBERS 16
-#define MSG_MAX_TOTAL_PAYLOAD_BYTES 2048U
+#define MSG_MAX_TOTAL_PAYLOAD_BYTES 4096U
 
 /* ============ Subscriber ============ */
 struct pub;
@@ -43,6 +43,7 @@ typedef struct pub {
     size_t payload_offset;
     uint32_t generation;
     uint8_t used;
+    uint8_t write_index;
     Subscriber_t *first_subs;
 } Publisher_t;
 

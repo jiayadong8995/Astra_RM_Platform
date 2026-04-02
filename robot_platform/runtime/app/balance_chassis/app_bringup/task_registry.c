@@ -4,23 +4,62 @@
 #include "cmsis_os.h"
 
 #include "../app_config/app_params.h"
-#include "../../../control/task_registry/control_task_registry.h"
-#include "remote_task.h"
+#include "../../../control/controllers/chassis_control_task.h"
+#include "../../../control/execution/motor_control_task.h"
+#include "../../../control/state/ins_task.h"
+#include "../../../control/state/observe_task.h"
+#include "../app_intent/remote_task.h"
 
+osThreadId INS_TASKHandle;
+osThreadId CHASSIS_TASKHandle;
+osThreadId MOTOR_CONTROL_TASKHandle;
+osThreadId OBSERVE_TASKHandle;
 osThreadId REMOTE_TASKHandle;
 
-static void Remote_Task(void const *argument);
-
-void balance_chassis_start_tasks(void)
+static void INS_Thread(void const *argument)
 {
-    platform_control_start_tasks();
-
-    osThreadDef(REMOTE_TASK, Remote_Task, APP_REMOTE_TASK_PRIORITY, 0, APP_REMOTE_TASK_STACK_BYTES);
-    REMOTE_TASKHandle = osThreadCreate(osThread(REMOTE_TASK), NULL);
+    (void)argument;
+    INS_task();
 }
 
-static void Remote_Task(void const *argument)
+static void Chassis_Control_Thread(void const *argument)
+{
+    (void)argument;
+    platform_chassis_control_task();
+}
+
+static void Motor_Control_Thread(void const *argument)
+{
+    (void)argument;
+    motor_control_task();
+}
+
+static void Observe_Thread(void const *argument)
+{
+    (void)argument;
+    Observe_task();
+}
+
+static void Remote_Thread(void const *argument)
 {
     (void)argument;
     remote_task();
+}
+
+void balance_chassis_start_tasks(void)
+{
+    osThreadDef(INS_TASK, INS_Thread, APP_INS_TASK_PRIORITY, 0, APP_INS_TASK_STACK_BYTES);
+    INS_TASKHandle = osThreadCreate(osThread(INS_TASK), NULL);
+
+    osThreadDef(CHASSIS_CONTROL_TASK, Chassis_Control_Thread, APP_CHASSIS_TASK_PRIORITY, 0, APP_CHASSIS_TASK_STACK_BYTES);
+    CHASSIS_TASKHandle = osThreadCreate(osThread(CHASSIS_CONTROL_TASK), NULL);
+
+    osThreadDef(MOTOR_CONTROL_TASK, Motor_Control_Thread, APP_MOTOR_CONTROL_TASK_PRIORITY, 0, APP_MOTOR_CONTROL_STACK_BYTES);
+    MOTOR_CONTROL_TASKHandle = osThreadCreate(osThread(MOTOR_CONTROL_TASK), NULL);
+
+    osThreadDef(OBSERVE_TASK, Observe_Thread, APP_OBSERVE_TASK_PRIORITY, 0, APP_OBSERVE_TASK_STACK_BYTES);
+    OBSERVE_TASKHandle = osThreadCreate(osThread(OBSERVE_TASK), NULL);
+
+    osThreadDef(REMOTE_TASK, Remote_Thread, APP_REMOTE_TASK_PRIORITY, 0, APP_REMOTE_TASK_STACK_BYTES);
+    REMOTE_TASKHandle = osThreadCreate(osThread(REMOTE_TASK), NULL);
 }
