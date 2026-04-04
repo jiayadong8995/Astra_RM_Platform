@@ -450,6 +450,8 @@ set(BALANCE_CHASSIS_BSP_SEED_SOURCES
   ${PLATFORM_BOARD_BSP_DIR}/bsp_ports_hw.c
   ${PLATFORM_DRIVERS_REMOTE_DIR}/remote_control.c
   ${PLATFORM_DRIVERS_MOTOR_DIR}/dm4310_drv.c
+  ${PLATFORM_DRIVERS_IMU_DIR}/BMI088driver.c
+  ${PLATFORM_DRIVERS_IMU_DIR}/BMI088Middleware.c
 )
 
 add_library(balance_chassis_generated_raw STATIC

@@ -2,11 +2,16 @@
 
 #include <string.h>
 
+#include "bsp_dwt.h"
+#include "can_bsp.h"
 #include "drivers/imu/bmi088/BMI088driver.h"
 #include "drivers/remote/dbus/remote_control.h"
 #include "drivers/actuator/motor/dm4310/dm4310_drv.h"
 #include "fdcan.h"
 #include "spi.h"
+#include "usart.h"
+
+#define MOTOR_ENABLE_DELAY_MS 100U
 
 static Joint_Motor_t *g_joints[PLATFORM_JOINT_MOTOR_COUNT];
 static chassis_motor_measure_t *g_wheels[PLATFORM_WHEEL_MOTOR_COUNT];
@@ -19,8 +24,20 @@ void platform_ports_init(void)
         return;
     }
 
+    /* DWT cycle counter for INS timing */
+    DWT_Init(480);
+
+    /* CAN bus application-level config (filters, notifications, start) */
+    FDCAN1_Config();
+    FDCAN2_Config();
+
+    /* Start DBUS UART DMA receive */
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart5, sbus_rx_buf, RC_FRAME_LENGTH * 2);
+
+    /* IMU init with calibration (blocks until done) */
     BMI088_Init(&hspi2, 1U);
 
+    /* Joint motors: init state, enable MIT mode */
     for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i)
     {
         g_joints[i] = get_joint_motor_state(i);
@@ -28,10 +45,14 @@ void platform_ports_init(void)
         enable_motor_mode(&hfdcan1, g_joints[i]->para.id, g_joints[i]->mode);
     }
 
+    /* Wheel motors: get state pointers */
     for (uint8_t i = 0; i < PLATFORM_WHEEL_MOTOR_COUNT; ++i)
     {
         g_wheels[i] = get_chassis_motor_measure_point(i);
     }
+
+    /* Allow DM4310 to complete mode transition before control loop starts */
+    HAL_Delay(MOTOR_ENABLE_DELAY_MS);
 
     g_initialized = true;
 }
@@ -80,23 +101,31 @@ platform_device_result_t platform_remote_read(platform_rc_input_t *input)
 
 platform_device_result_t platform_motor_write_command(const platform_motor_command_set_t *cmd)
 {
-    mit_ctrl(&hfdcan1, g_joints[0]->para.id, 0.0f, 0.0f,
-             cmd->joints[PLATFORM_JOINT_LEFT_FRONT].kp, cmd->joints[PLATFORM_JOINT_LEFT_FRONT].kd,
-             cmd->joints[PLATFORM_JOINT_LEFT_FRONT].torque_target);
-    mit_ctrl(&hfdcan1, g_joints[1]->para.id, 0.0f, 0.0f,
-             cmd->joints[PLATFORM_JOINT_LEFT_REAR].kp, cmd->joints[PLATFORM_JOINT_LEFT_REAR].kd,
-             cmd->joints[PLATFORM_JOINT_LEFT_REAR].torque_target);
-    mit_ctrl(&hfdcan1, g_joints[2]->para.id, 0.0f, 0.0f,
-             cmd->joints[PLATFORM_JOINT_RIGHT_FRONT].kp, cmd->joints[PLATFORM_JOINT_RIGHT_FRONT].kd,
-             cmd->joints[PLATFORM_JOINT_RIGHT_FRONT].torque_target);
-    mit_ctrl(&hfdcan1, g_joints[3]->para.id, 0.0f, 0.0f,
-             cmd->joints[PLATFORM_JOINT_RIGHT_REAR].kp, cmd->joints[PLATFORM_JOINT_RIGHT_REAR].kd,
-             cmd->joints[PLATFORM_JOINT_RIGHT_REAR].torque_target);
+    for (uint8_t i = 0; i < PLATFORM_JOINT_MOTOR_COUNT; ++i)
+    {
+        if (cmd->joints[i].valid)
+        {
+            mit_ctrl(&hfdcan1, g_joints[i]->para.id, 0.0f, 0.0f,
+                     cmd->joints[i].kp, cmd->joints[i].kd,
+                     cmd->joints[i].torque_target);
+        }
+        else
+        {
+            mit_ctrl(&hfdcan1, g_joints[i]->para.id, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+        }
+    }
 
-    CAN_cmd_chassis(&hfdcan2,
-                    (int16_t)cmd->wheels[PLATFORM_WHEEL_LEFT].current_target,
-                    (int16_t)cmd->wheels[PLATFORM_WHEEL_RIGHT].current_target,
-                    0, 0);
+    if (cmd->wheels[PLATFORM_WHEEL_LEFT].valid && cmd->wheels[PLATFORM_WHEEL_RIGHT].valid)
+    {
+        CAN_cmd_chassis(&hfdcan2,
+                        (int16_t)cmd->wheels[PLATFORM_WHEEL_LEFT].current_target,
+                        (int16_t)cmd->wheels[PLATFORM_WHEEL_RIGHT].current_target,
+                        0, 0);
+    }
+    else
+    {
+        CAN_cmd_chassis(&hfdcan2, 0, 0, 0, 0);
+    }
 
     return PLATFORM_DEVICE_RESULT_OK;
 }
