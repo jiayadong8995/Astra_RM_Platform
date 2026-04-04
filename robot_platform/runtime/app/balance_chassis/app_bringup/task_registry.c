@@ -10,12 +10,14 @@
 #include "../../../control/state/ins_task.h"
 #include "../../../control/state/observe_task.h"
 #include "../app_intent/remote_task.h"
+#include "../app_detect/detect_task.h"
 
 osThreadId INS_TASKHandle;
 osThreadId CHASSIS_TASKHandle;
 osThreadId MOTOR_CONTROL_TASKHandle;
 osThreadId OBSERVE_TASKHandle;
 osThreadId REMOTE_TASKHandle;
+osThreadId DETECT_TASKHandle;
 
 static void INS_Thread(void const *argument)
 {
@@ -47,6 +49,12 @@ static void Remote_Thread(void const *argument)
     remote_task();
 }
 
+static void Detect_Thread(void const *argument)
+{
+    (void)argument;
+    detect_task();
+}
+
 void balance_chassis_start_tasks(void)
 {
     platform_ports_init();
@@ -65,4 +73,7 @@ void balance_chassis_start_tasks(void)
 
     osThreadDef(REMOTE_TASK, Remote_Thread, APP_REMOTE_TASK_PRIORITY, 0, APP_REMOTE_TASK_STACK_BYTES);
     REMOTE_TASKHandle = osThreadCreate(osThread(REMOTE_TASK), NULL);
+
+    osThreadDef(DETECT_TASK, Detect_Thread, APP_DETECT_TASK_PRIORITY, 0, APP_DETECT_TASK_STACK_BYTES);
+    DETECT_TASKHandle = osThreadCreate(osThread(DETECT_TASK), NULL);
 }

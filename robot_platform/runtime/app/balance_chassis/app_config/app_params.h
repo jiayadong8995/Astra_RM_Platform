@@ -16,6 +16,7 @@
 #define APP_MOTOR_CONTROL_STACK_BYTES    2048U
 #define APP_OBSERVE_TASK_STACK_BYTES     2048U
 #define APP_REMOTE_TASK_STACK_BYTES      2048U
+#define APP_DETECT_TASK_STACK_BYTES     512U
 
 #define APP_DEFAULT_TASK_PRIORITY        osPriorityNormal
 #define APP_INS_TASK_PRIORITY            osPriorityRealtime
@@ -23,6 +24,7 @@
 #define APP_MOTOR_CONTROL_TASK_PRIORITY  osPriorityAboveNormal
 #define APP_OBSERVE_TASK_PRIORITY        osPriorityHigh
 #define APP_REMOTE_TASK_PRIORITY         osPriorityAboveNormal
+#define APP_DETECT_TASK_PRIORITY         osPriorityNormal
 
 #define APP_CHASSIS_STARTUP_DELAY_MS     6U
 

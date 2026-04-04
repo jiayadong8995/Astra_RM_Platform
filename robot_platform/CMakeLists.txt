@@ -58,6 +58,7 @@ set(BALANCE_CHASSIS_APP_SOURCES
   ${PLATFORM_LEGACY_APP_DIR}/app_bringup/task_registry.c
   ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_task.c
   ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
+  ${PLATFORM_LEGACY_APP_DIR}/app_detect/detect_task.c
   ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
   ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c
   ${PLATFORM_RUNTIME_DIR}/control/state/ins_task.c
@@ -177,6 +178,7 @@ if(PLATFORM_HOST_TESTS)
   set(BALANCE_SAFETY_HOST_RUNTIME_SOURCES
     ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_task.c
     ${PLATFORM_LEGACY_APP_DIR}/app_intent/remote_intent.c
+    ${PLATFORM_LEGACY_APP_DIR}/app_detect/detect_task.c
     ${PLATFORM_LEGACY_APP_DIR}/app_io/chassis_topics.c
     ${PLATFORM_RUNTIME_DIR}/control/state/chassis_observer.c
     ${PLATFORM_RUNTIME_DIR}/control/state/ins_state_estimator.c

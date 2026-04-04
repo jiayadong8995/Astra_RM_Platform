@@ -6,6 +6,7 @@
 #include "app_params.h"
 #include "../topics.h"
 #include "../../bsp/ports.h"
+#include "../../app/balance_chassis/app_detect/detect_task.h"
 #include "ins_state_estimator.h"
 #include "ins_state_message.h"
 #include "message_center.h"
@@ -31,6 +32,8 @@ void INS_task(void)
         ins_dt = DWT_GetDeltaT(&runtime_state.dwt_count);
         if (platform_imu_read(&sample) == PLATFORM_DEVICE_RESULT_OK && sample.valid)
         {
+            detect_hook(IMU_ACCEL_TOE);
+            detect_hook(IMU_GYRO_TOE);
             platform_ins_state_estimator_apply_sample(&runtime_state, ins_dt, sample.accel, sample.gyro);
         }
         platform_ins_state_estimator_build_msg(&runtime_state, &msg);

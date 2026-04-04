@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "../../drivers/actuator/motor/dm4310/dm4310_drv.h"
+#include "../../app/balance_chassis/app_detect/detect_task.h"
 #include "fdcan.h"
 
 FDCAN_RxHeaderTypeDef RxHeader1;
@@ -131,10 +132,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
             switch (RxHeader1.Identifier)
             {
-            case 0x11: dm4310_fbdata(get_joint_motor_state(0), g_Can1RxData, RxHeader1.DataLength); break;
-            case 0x12: dm4310_fbdata(get_joint_motor_state(1), g_Can1RxData, RxHeader1.DataLength); break;
-            case 0x13: dm4310_fbdata(get_joint_motor_state(2), g_Can1RxData, RxHeader1.DataLength); break;
-            case 0x14: dm4310_fbdata(get_joint_motor_state(3), g_Can1RxData, RxHeader1.DataLength); break;
+            case 0x11: dm4310_fbdata(get_joint_motor_state(0), g_Can1RxData, RxHeader1.DataLength); detect_hook(JOINT_MOTOR1_TOE); break;
+            case 0x12: dm4310_fbdata(get_joint_motor_state(1), g_Can1RxData, RxHeader1.DataLength); detect_hook(JOINT_MOTOR2_TOE); break;
+            case 0x13: dm4310_fbdata(get_joint_motor_state(2), g_Can1RxData, RxHeader1.DataLength); detect_hook(JOINT_MOTOR3_TOE); break;
+            case 0x14: dm4310_fbdata(get_joint_motor_state(3), g_Can1RxData, RxHeader1.DataLength); detect_hook(JOINT_MOTOR4_TOE); break;
             default: break;
             }
         }
@@ -152,8 +153,8 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo1ITs)
 
             switch (RxHeader2.Identifier)
             {
-            case 0x201: get_motor_measure(get_chassis_motor_measure_point(0), g_Can2RxData, RxHeader2.DataLength); break;
-            case 0x202: get_motor_measure(get_chassis_motor_measure_point(1), g_Can2RxData, RxHeader2.DataLength); break;
+            case 0x201: get_motor_measure(get_chassis_motor_measure_point(0), g_Can2RxData, RxHeader2.DataLength); detect_hook(WHEEL_MOTOR1_TOE); break;
+            case 0x202: get_motor_measure(get_chassis_motor_measure_point(1), g_Can2RxData, RxHeader2.DataLength); detect_hook(WHEEL_MOTOR2_TOE); break;
             default: break;
             }
         }

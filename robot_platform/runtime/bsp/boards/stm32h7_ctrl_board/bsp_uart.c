@@ -3,6 +3,7 @@
 #include "dma.h"
 #include "main.h"
 #include "../../drivers/remote/dbus/remote_control.h"
+#include "../../app/balance_chassis/app_detect/detect_task.h"
 #include "usart.h"
 
 extern UART_HandleTypeDef huart1;
@@ -26,6 +27,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
         {
             HAL_UARTEx_ReceiveToIdle_DMA(&huart5, sbus_rx_buf, RC_FRAME_LENGTH * 2);
             sbus_to_rc(sbus_rx_buf, &rc_ctrl);
+            detect_hook(DBUS_TOE);
         }
         else
         {
@@ -41,6 +43,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     {
         HAL_UART_Receive_DMA(&huart5, sbus_rx_buf, RC_FRAME_LENGTH * 2);
         sbus_to_rc(sbus_rx_buf, &rc_ctrl);
+        detect_hook(DBUS_TOE);
     }
 }
 

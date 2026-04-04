@@ -21,6 +21,7 @@
 #include "remote_intent_state.h"
 #include "../../../control/topics.h"
 #include "../../../bsp/ports.h"
+#include "../app_detect/detect_task.h"
 #include <string.h>
 
 void remote_task_init(platform_remote_task_runtime_t *runtime)
@@ -43,7 +44,7 @@ void remote_task_step(platform_remote_task_runtime_t *runtime)
     }
 
     runtime->rc_result = platform_remote_read(&runtime->rc_input);
-    if (runtime->rc_result != PLATFORM_DEVICE_RESULT_OK)
+    if (runtime->rc_result != PLATFORM_DEVICE_RESULT_OK || toe_is_error(DBUS_TOE))
     {
         memset(&runtime->rc_input, 0, sizeof(runtime->rc_input));
         runtime->rc_input.valid = false;
